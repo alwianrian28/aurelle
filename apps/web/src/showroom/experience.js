@@ -24,6 +24,12 @@ export function initExperience(root,{storeUrl='./store.html',initialLanguage='en
  listen(drawer,'keydown',e=>{if(e.key==='Escape')openMenu(false);if(e.key==='Tab'){const focusable=Array.from(drawer.querySelectorAll('button'));const first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
  const closing=root.querySelector('.closing-card');
  const state={p:0,end:0};
+ let endingTween;
+ function updateEnding(){
+  if(state.p>=.999){if(!endingTween)endingTween=gsap.to(state,{end:1,duration:1.1,ease:'power2.inOut',onUpdate:update});}
+  else if(endingTween||state.end){endingTween?.kill();endingTween=null;state.end=0;}
+  update();
+ }
  function update(){root.style.setProperty('--ending',String(state.end));root.style.setProperty('--closing',String(gsap.utils.clamp(0,1,(state.end-.5)*2)));if(closing){closing.inert=!simple&&state.end<.5;closing.setAttribute('aria-hidden',String(!simple&&state.end<.5));}
  const p=state.p;scene?.setProgress(p);if(indicator)indicator.style.transform=`scaleX(${p})`;
  const raw=p*lastChapter,index=Math.min(lastChapter,Math.round(raw));if(index!==active)paintChapter(index);
@@ -32,10 +38,10 @@ export function initExperience(root,{storeUrl='./store.html',initialLanguage='en
  const opacity=simple?1:(1-gsap.utils.clamp(0,.92,(distance-.22)/.27))*(1-handoff);copyWrap.style.opacity=String(opacity);copyWrap.style.setProperty('--copy-y',`${(1-opacity)*12}px`);
  root.dataset.scene=String(index);root.style.setProperty('--progress',String(p));root.style.setProperty('--pov',String(simple?0:handoff));
  }
- function setup(){timeline?.kill();trigger?.kill();timeline=null;trigger=null;root.classList.toggle('simple-motion',simple);
+ function setup(){endingTween?.kill();endingTween=null;timeline?.kill();trigger?.kill();timeline=null;trigger=null;root.classList.toggle('simple-motion',simple);
  state.end=0;
  if(simple){state.p=(lastChapter-2)/lastChapter;update();} // calm full-ring view; the final pose is a full-screen macro
- else{state.p=0;timeline=gsap.timeline({scrollTrigger:{trigger:stage,pin:true,start:'top top',end:()=>`+=${Math.round(innerHeight*(lastChapter+1.5)*(innerWidth<760?20/17:24/17))}`,scrub:true,anticipatePin:1,invalidateOnRefresh:true}});timeline.to(state,{p:1,duration:1,ease:'none',onUpdate:update}).to(state,{end:1,duration:.14,ease:'none',onUpdate:update});trigger=timeline.scrollTrigger;update();ScrollTrigger.refresh();}
+ else{state.p=0;timeline=gsap.timeline({scrollTrigger:{trigger:stage,pin:true,start:'top top',end:()=>`+=${Math.round(innerHeight*(lastChapter+1.5)*(innerWidth<760?20/17:24/17)/1.14+80)}`,scrub:true,anticipatePin:1,invalidateOnRefresh:true}});timeline.to(state,{p:1,duration:1,ease:'none',onUpdate:updateEnding}).to({},{duration:.006});trigger=timeline.scrollTrigger;update();ScrollTrigger.refresh();}
  motionButton.textContent=simple?ui[language].enable:ui[language].motion;motionButton.setAttribute('aria-pressed',String(simple));
  }
  function fail(){onError();root.classList.add('webgl-failed');status.textContent=ui[language].fallback;simple=true;if(scene)setup();}
@@ -44,9 +50,9 @@ export function initExperience(root,{storeUrl='./store.html',initialLanguage='en
  listen(motionButton,'click',()=>{if(!scene)return;simple=!simple;setup();});listen(media,'change',e=>{simple=e.matches;setup();});
  listen(qualityButton,'click',()=>{low=!low;scene?.setQuality(low);qualityButton.textContent=low?ui[language].light:ui[language].quality;qualityButton.setAttribute('aria-pressed',String(low));});
  root.querySelectorAll('[data-jump]').forEach(b=>listen(b,'click',()=>{if(menuOpen)openMenu(false);state.end=0;
- if(simple){state.p=Number(b.dataset.jump)/lastChapter;update();return;}if(!trigger)return;window.scrollTo({top:trigger.start+(trigger.end-trigger.start)/1.14*Number(b.dataset.jump)/lastChapter,behavior:media.matches?'instant':'smooth'});}));
+ if(simple){state.p=Number(b.dataset.jump)/lastChapter;update();return;}if(!trigger)return;window.scrollTo({top:trigger.start+(trigger.end-trigger.start)/1.006*Number(b.dataset.jump)/lastChapter,behavior:media.matches?'instant':'smooth'});}));
  root.querySelectorAll('[data-replay]').forEach(b=>listen(b,'click',()=>window.scrollTo({top:0,behavior:media.matches?'instant':'smooth'})));
  languageChange(language);setup();
  root.aurellePreview={show(p){state.p=Math.min(1,Math.max(0,p));update();scene?.renderNow?.();}};
- return ()=>{listeners.forEach(f=>f());timeline?.kill();trigger?.kill();scene?.dispose();root.classList.remove('three-ready','simple-motion','webgl-failed');};
+ return ()=>{listeners.forEach(f=>f());endingTween?.kill();timeline?.kill();trigger?.kill();scene?.dispose();root.classList.remove('three-ready','simple-motion','webgl-failed');};
 }

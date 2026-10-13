@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,400;125,500;125,600&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,400;125,500;125,600&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
 @scope (#aurelle) {
 /* Display face: Ambroise François Std (Adobe Fonts, family "ambroise-francois-std"), loaded through the
    project's Typekit kit (data-typekit on #aurelle). Bodoni Moda is the open-licence fallback. */
@@ -98,11 +98,14 @@ em{font-style:italic}
 .exit-mark{width:44px;height:auto;margin-bottom:12px}
 .exit h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(40px,5vw,76px);line-height:1.04}
 .exit p{margin:0;max-width:26rem;font-size:13px;font-stretch:100%;line-height:1.7;color:var(--mist)}
-.exit-cta{margin-top:16px;display:inline-flex;gap:14px;align-items:center;background:var(--white);color:var(--dark-ink);border:1px solid var(--white);padding:17px 32px;font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;transition:background .3s,color .3s,border-color .3s}
-.exit-cta:hover{background:var(--pearl);color:var(--dark-ink);opacity:1}
-.exit-cta:focus-visible{outline-color:var(--white)}
-.exit-secondary{font-size:10px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--white);padding:13px 24px;border:1px solid rgba(184,193,204,.45)!important;transition:border-color .3s,background .3s}
-.exit-secondary:hover{border-color:var(--platinum)!important;background:rgba(184,193,204,.08)}
+.closing-actions{display:flex;flex-direction:column;gap:12px;width:min(100%,300px);margin-top:16px}
+.exit-cta,.exit-secondary{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;padding:16px 20px;border-radius:2px;font-family:var(--wide);font-size:10px;font-weight:600;line-height:1.5;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;transition:background .3s ease,color .3s ease,border-color .3s ease,transform .3s ease,box-shadow .3s ease}
+.exit-cta{background:var(--white);color:var(--dark-ink);border:1px solid var(--white);text-decoration:none}
+.exit-cta:hover{background:var(--pearl);border-color:var(--pearl);color:var(--dark-ink);opacity:1;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.16)}
+.exit-secondary{color:var(--mist);background:transparent;border:1px solid rgba(184,193,204,.3)!important}
+.exit-secondary:hover{color:var(--white);border-color:rgba(184,193,204,.65)!important;background:rgba(184,193,204,.06);transform:translateY(-2px)}
+.exit-cta:focus-visible,.exit-secondary:focus-visible{outline:2px solid var(--white);outline-offset:5px}
+.exit-cta:active,.exit-secondary:active{transform:translateY(0)}
 .site-footer{display:flex;justify-content:space-between;padding:26px var(--pad);background:var(--pure-black);border-top:1px solid var(--divider-dark);font-size:10px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--mist)}
 
 @media (max-height:640px){.rail-scroll{display:none}.rail{top:calc(var(--pad) + 176px)}}
@@ -139,11 +142,20 @@ em{font-style:italic}
 /* Final scroll phase: fade the showroom, then reveal the closing card. */
 #aurelle .rail{width:76px}
 #aurelle .rail-num{white-space:nowrap;font-size:13px;letter-spacing:.08em}
-#aurelle .closing-shade{position:absolute;inset:0;z-index:7;background:#0e1116;opacity:var(--ending,0);pointer-events:none}
-#aurelle .closing-card{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px 24px;text-align:center;opacity:var(--closing,0);transform:translateY(calc(18px * (1 - var(--closing,0))));}
+#aurelle .closing-shade{position:absolute;inset:0;z-index:7;background:#000;opacity:var(--ending,0);pointer-events:none}
+#aurelle .closing-card{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:40px 24px;text-align:center;opacity:var(--closing,0);transform:translateY(calc(18px * (1 - var(--closing,0))));}
 #aurelle .closing-card[inert]{pointer-events:none;visibility:hidden}
-#aurelle .closing-card h2{font-family:var(--display);font-weight:400;font-size:clamp(36px,5vw,76px);line-height:1.04}
-#aurelle .closing-card p{max-width:26rem;font-size:13px;line-height:1.7;color:#a5aeba}
+#aurelle .closing-card .exit-mark{width:48px;height:auto;margin:0 0 20px;opacity:.8}
+#aurelle .closing-card h2::before{content:"";display:block;width:1px;height:38px;margin:0 auto 30px;background:linear-gradient(to bottom,rgba(255,255,255,.5),transparent)}
+#aurelle .closing-card h2{max-width:850px;font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(44px,8vw,96px);letter-spacing:-.025em;line-height:.98;color:#edeef0}
+#aurelle .closing-card h2 em{color:#b7b9bd;font-weight:400}
+#aurelle .closing-card p{width:100%;max-width:440px;margin-top:32px;font-size:14px;font-stretch:normal;font-weight:400;letter-spacing:.01em;line-height:1.8;color:#a5a8ae;text-wrap:balance}
+#aurelle .closing-actions{width:min(100%,320px);margin-top:36px;gap:26px;align-items:center}
+#aurelle .closing-card .exit-cta{min-height:64px;padding:20px 26px;border-radius:999px;background:#edeef0;border-color:#edeef0;font-size:12px;letter-spacing:.24em}
+#aurelle .closing-card .exit-secondary{width:auto;min-height:0;padding:0 0 9px;border:0!important;border-bottom:1px solid rgba(255,255,255,.25)!important;border-radius:0;font-size:11px;letter-spacing:.24em;color:#a9adb3}
+#aurelle .closing-card .exit-secondary:hover{background:transparent;color:#fff;border-bottom-color:#fff!important}
 #aurelle .simple-motion .closing-shade{display:none}
 #aurelle .simple-motion .showroom{height:auto;min-height:100svh;padding-top:100svh}
-#aurelle .simple-motion .closing-card{position:relative;min-height:80svh;opacity:1;transform:none;background:#0e1116;visibility:visible;pointer-events:auto}
+#aurelle .simple-motion .closing-card{position:relative;min-height:80svh;opacity:1;transform:none;background:#000;visibility:visible;pointer-events:auto}
+@media(max-width:600px){#aurelle .closing-card h2{font-size:clamp(42px,10vw,60px)}#aurelle .closing-card p{max-width:320px}#aurelle .closing-actions{margin-top:36px}}
+@media(max-height:700px){#aurelle .closing-card .exit-mark{width:40px;margin-bottom:12px}#aurelle .closing-card h2::before{height:26px;margin-bottom:22px}#aurelle .closing-card h2{font-size:clamp(42px,7.5vw,84px)}#aurelle .closing-card p{margin-top:24px}#aurelle .closing-actions{margin-top:36px}}

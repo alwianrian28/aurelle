@@ -29,8 +29,10 @@ const experienceMarkup = `<a class="skip" data-store href="./store.html">Skip to
  <img class="exit-mark" src="/media/showroom/aurelle-monogram.png" alt="">
  <h2 data-ui="endTitle">Made for the moments<br>you <em>keep.</em></h2>
  <p data-ui="endBody">Engagement rings, wedding bands and fine jewelry, made with the same attention to detail.</p>
- <a class="exit-cta" data-store href="/store"><span data-ui="enter">Enter the Store</span><span aria-hidden="true">↗</span></a>
- <button type="button" class="exit-secondary" data-replay data-ui="replay">Replay the journey</button>
+ <div class="closing-actions">
+  <a id="closing-enter-store" class="exit-cta" data-store href="/store"><span data-ui="enter">Enter the Store</span></a>
+  <button id="closing-replay-journey" type="button" class="exit-secondary" data-replay data-ui="replay">Replay the journey</button>
+ </div>
 </section>
 
 </section>
