@@ -1,0 +1,95 @@
+/*
+ * Aurelle design tokens — PRD v2.0 §8.
+ * Warna inti diambil dari §8.2. Warna status, font final (OD-17),
+ * dan skala lainnya adalah default kerja [U] yang dapat diganti tim desain.
+ */
+:root {
+  /* PRD v2.0 §8.2 — silver identity; status colors retain their meaning. */
+  --c-black: #000000;
+  --c-graphite: #0e1116;
+  --c-charcoal: #191e26;
+  --c-pearl: #f5f7fa;
+  --c-surface: #e8edf2;
+  --c-white: #ffffff;
+  --c-silver: #b8c1cc;
+  --c-ink: #151922;
+  --c-muted: #555f6d;
+  --c-mist: #a5aeba;
+  --c-frost: #dde7f2;
+  --c-pearl-deep: #edf0f5;
+  --c-silver-soft: #dce1e8;
+  --c-slate: #555f6d;
+  --c-line: #dce1e8;
+  --c-line-strong: #a5aeba;
+  --c-dark-divider: #353e4b;
+  --c-overlay: rgba(14, 17, 22, 0.55);
+  --c-success: #4f6b4a;
+  --c-warning: #9a6a1f;
+  --c-error: #9b3b2f;
+  --c-info: #4a5a6b;
+  --grad-silver: linear-gradient(135deg, #b8c1cc, #edf0f5 45%, #a5aeba);
+  --grad-pearl: linear-gradient(180deg, #ffffff, #f5f7fa);
+
+  /* ---- Tipografi (OD-17 terbuka; default kerja) ---- */
+  --font-serif: 'Cormorant Garamond', 'Times New Roman', serif;
+  --font-sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.375rem;
+  --fs-xl: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  --fs-2xl: clamp(2.25rem, 1.6rem + 2.6vw, 3.75rem);
+  --fs-display: clamp(3rem, 1.8rem + 5.6vw, 7.5rem);
+
+  --lh-tight: 1.05;
+  --lh-snug: 1.25;
+  --lh-body: 1.65;
+
+  --ls-wide: 0.18em;
+  --ls-wider: 0.28em;
+
+  /* ---- Spasi & layout ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --space-9: 7rem;
+
+  --container: 1320px;
+  --gutter: clamp(1.25rem, 4vw, 3rem);
+  --header-h: 76px;
+
+  /* ---- Bentuk ---- */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 10px 30px -18px rgba(21, 25, 34, 0.35);
+  --shadow-lift: 0 24px 60px -30px rgba(21, 25, 34, 0.45);
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 180ms;
+  --dur-base: 320ms;
+  --dur-slow: 700ms;
+
+  --z-header: 50;
+  --z-drawer: 80;
+  --z-toast: 100;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}

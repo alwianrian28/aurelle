@@ -1,0 +1,81 @@
+/* F-19 Contact — memakai token design system (ivory-gold). */
+.contact__title { margin-bottom: var(--space-4); }
+
+.contact__channels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+}
+.contact__channel {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  transition: transform var(--dur-fast, 0.2s) ease, border-color var(--dur-fast, 0.2s) ease;
+}
+.contact__channel:hover { transform: translateY(-2px); border-color: var(--c-silver); }
+.contact__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--c-surface);
+  color: var(--c-slate);
+  font-size: 1.25rem;
+}
+
+.contact__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .contact__grid { grid-template-columns: 1fr; }
+}
+
+.contact__composer,
+.contact__help {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+.contact__aside { display: grid; gap: var(--space-5); }
+
+.contact__preview {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--c-line-strong);
+  background: var(--c-pearl, var(--c-surface));
+}
+.contact__preview p { white-space: pre-wrap; }
+
+.contact__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+
+.contact__links { list-style: none; padding: 0; margin: 0; display: grid; }
+.contact__links a {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--c-line);
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease, padding 0.2s ease;
+}
+.contact__links a:hover,
+.contact__links a:focus-visible { color: var(--c-slate); padding-left: var(--space-2); }
+
+.contact__faq { border-bottom: 1px solid var(--c-line); padding-bottom: var(--space-3); }
+.contact__faq summary { cursor: pointer; font-weight: 600; }
+.contact__faq p { margin-top: var(--space-2); }
+.contact__more { color: var(--c-slate); text-decoration: underline; text-underline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .contact__channel, .contact__links a { transition: none; }
+  .contact__channel:hover { transform: none; }
+}

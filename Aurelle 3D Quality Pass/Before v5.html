@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AURELLE — v5 (before) comparison</title>
+<link rel="stylesheet" href="./Aurelle_Scroll_Showroom/dist/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.184.0/examples/jsm/",
+    "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+    "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/ScrollTrigger.js"
+  }
+}
+</script>
+</head>
+<body>
+<!-- Untouched v5 source from the upload, shown with the same stylesheet for a like-for-like comparison. -->
+<script>const g=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,o){return g.call(this,t,t.startsWith('webgl')?{...o,preserveDrawingBuffer:true}:o);};</script>
+<div id="aurelle"></div>
+<script type="module">
+import {initExperience} from './uploads/Aurelle_Scroll_Showroom/src/experience.js';
+import {showroomMarkup} from './uploads/Aurelle_Scroll_Showroom/src/markup.js';
+const root=document.querySelector('#aurelle');root.innerHTML=showroomMarkup;root.querySelector('.poster')?.remove();
+initExperience(root,{storeUrl:'./store.html'});
+</script>
+</body>
+</html>

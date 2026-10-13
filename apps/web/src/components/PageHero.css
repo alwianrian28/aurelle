@@ -1,0 +1,74 @@
+.page-hero {
+  position: relative;
+  display: grid;
+  gap: var(--space-7);
+  align-items: center;
+  padding-bottom: var(--space-7);
+  margin-bottom: var(--space-7);
+  border-bottom: 1px solid var(--c-line);
+}
+.page-hero--split { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+.page-hero--compact {
+  padding: var(--space-7) var(--space-7) var(--space-7);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(214, 186, 140, 0.28), transparent 55%),
+    linear-gradient(180deg, var(--c-white), var(--c-pearl));
+  overflow: hidden;
+}
+.page-hero--compact::after {
+  content: '';
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 1px dashed var(--c-line-strong);
+  pointer-events: none;
+}
+.page-hero__copy { display: grid; gap: var(--space-4); align-content: center; position: relative; z-index: 1; }
+.page-hero__intro { color: var(--c-muted); max-width: 58ch; font-size: var(--fs-md); line-height: 1.7; }
+.page-hero__extra { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; margin-top: var(--space-2); }
+
+.page-hero__visual {
+  position: relative;
+  aspect-ratio: 5 / 4;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lift);
+  isolation: isolate;
+}
+.page-hero__visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: page-hero-zoom 14s var(--ease-in-out) infinite alternate;
+}
+.page-hero__visual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(200deg, rgba(255, 255, 255, 0) 55%, rgba(21, 25, 34, 0.18));
+}
+.page-hero__ring {
+  position: absolute;
+  inset: 8%;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: calc(var(--radius-lg) - 4px);
+  z-index: 1;
+  pointer-events: none;
+}
+@keyframes page-hero-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-hero__visual img { animation: none; }
+}
+@media (max-width: 860px) {
+  .page-hero--split { grid-template-columns: 1fr; gap: var(--space-5); }
+  .page-hero__visual { aspect-ratio: 16 / 10; order: -1; }
+  .page-hero--compact { padding: var(--space-6) var(--space-5); }
+}

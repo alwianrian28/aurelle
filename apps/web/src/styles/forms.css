@@ -1,0 +1,175 @@
+/*
+ * Aurelle — komponen form bersama (Alamat, Profil, Checkout).
+ * Gaya input konsisten dengan Auth.css, tetapi dapat dipakai lintas halaman.
+ */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.form-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.form-row--phone {
+  grid-template-columns: 120px minmax(0, 1fr);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+.field input,
+.field select,
+.field textarea {
+  border: 1px solid var(--c-line-strong);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  background: var(--c-white);
+  font-weight: 400;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--c-slate);
+  box-shadow: 0 0 0 3px rgba(184, 193, 204, 0.18);
+}
+.field [aria-invalid='true'] {
+  border-color: var(--c-error);
+}
+.field input:disabled {
+  background: var(--c-pearl-deep);
+  color: var(--c-muted);
+}
+
+.field-error {
+  color: var(--c-error);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
+
+.field-hint {
+  color: var(--c-muted);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.check input {
+  margin-top: 3px;
+  accent-color: var(--c-slate);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Opsi pilihan bergaya kartu (alamat, layanan kirim, metode bayar) */
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--c-line-strong);
+  border-radius: var(--radius-md);
+  background: var(--c-white);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.option:hover {
+  border-color: var(--c-silver);
+}
+.option.is-selected {
+  border-color: var(--c-slate);
+  background: linear-gradient(180deg, #ffffff 0%, #faf4e8 100%);
+  box-shadow: var(--shadow-soft);
+}
+.option.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.option input[type='radio'] {
+  margin-top: 4px;
+  accent-color: var(--c-slate);
+  flex-shrink: 0;
+}
+.option__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--fs-sm);
+}
+.option__title {
+  font-weight: 600;
+  font-size: var(--fs-base);
+}
+.option__aside {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Alert inline */
+.alert {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  border: 1px solid transparent;
+}
+.alert--info { background: #eef1f4; border-color: #d5dde5; color: var(--c-info); }
+.alert--warning { background: #f8efe0; border-color: #ead6b2; color: var(--c-warning); }
+.alert--error { background: #f6e4e0; border-color: #e8c4bd; color: var(--c-error); }
+.alert--success { background: #e8efe5; border-color: #c9d8c4; color: var(--c-success); }
+.alert a,
+.alert button.link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+button.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--c-slate);
+  cursor: pointer;
+}
+button.link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  .form-row--phone {
+    grid-template-columns: 100px minmax(0, 1fr);
+  }
+}

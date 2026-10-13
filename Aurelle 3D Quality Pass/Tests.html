@@ -1,0 +1,12 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Aurelle — test run (browser)</title>
+<style>body{margin:0;padding:32px;background:#F8F5EF;color:#292620;font:13px/1.6 ui-monospace,Menlo,monospace}h1{font:400 22px Georgia,serif;margin:0 0 16px}.ok{color:#3c6b3c}.bad{color:#9b2c2c}</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.184.0/build/three.module.js","node:assert/strict":"./Aurelle_Scroll_Showroom/tests/browser/assert-shim.js"}}</script>
+</head><body><h1>tests/motion.test.mjs — executed in the browser</h1><div id="out"></div>
+<script type="module">
+const out=document.getElementById('out'),line=(t,c)=>{const p=document.createElement('div');p.className=c;p.textContent=t;out.append(p);};
+const log=console.log;console.log=(...a)=>{line(a.join(' '),'ok');log(...a);};
+const t0=performance.now();
+try{await import('./Aurelle_Scroll_Showroom/tests/motion.test.mjs');line('All assertions passed in '+Math.round(performance.now()-t0)+' ms.','ok');}
+catch(e){line('FAIL: '+e.message,'bad');console.error(e);}
+</script></body></html>

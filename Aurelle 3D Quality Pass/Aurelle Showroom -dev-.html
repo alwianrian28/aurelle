@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="id" style="background:#0E1116">
+<head>
+<meta charset="utf-8">
+<meta name="theme-color" content="#0E1116">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AURELLE — The Art of Detail (v6 preview)</title>
+<link rel="stylesheet" href="./Aurelle_Scroll_Showroom/dist/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+    "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/ScrollTrigger.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT"
+  }
+}
+</script>
+</head>
+<body>
+<!-- Preview harness: loads the unbundled source through an import map. Production uses dist/index.html + dist/app.js. -->
+<script>window.AURELLE_CAPTURE=true; /* preview only: keeps the WebGL buffer readable for screenshots */</script>
+<div id="aurelle" data-store-url="./store.html" data-poster="./Aurelle_Scroll_Showroom/dist/ring-poster.png" data-asset-base="./Aurelle_Scroll_Showroom/dist/" data-typekit=""></div>
+<script type="module" src="./Aurelle_Scroll_Showroom/src/main.js"></script>
+</body>
+</html>

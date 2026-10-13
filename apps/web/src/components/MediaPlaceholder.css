@@ -1,0 +1,14 @@
+.media-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-slate);
+  opacity: 0.55;
+}
+
+.media-placeholder--ring { background: linear-gradient(135deg, #e8edf2 0%, #e6d6b8 60%, #dce1e8 100%); }
+.media-placeholder--bracelet { background: linear-gradient(135deg, #efe6d4 0%, #ded0ad 60%, #c7ab77 100%); }
+.media-placeholder--necklace { background: linear-gradient(135deg, #f6f0e4 0%, #e3d3af 60%, #cdb27e 100%); }
+.media-placeholder--earring { background: linear-gradient(135deg, #f1e9da 0%, #e0cfa8 60%, #c9ad79 100%); }

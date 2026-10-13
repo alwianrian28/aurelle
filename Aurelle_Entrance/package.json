@@ -1,0 +1,17 @@
+{
+  "name": "aurelle-cinematic-showroom",
+  "version": "6.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node tests/motion.test.mjs && node tests/loading.test.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.1",
+    "gsap": "3.15.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
