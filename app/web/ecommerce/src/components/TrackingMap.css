@@ -1,0 +1,6 @@
+.tracking-map { width: 100%; height: 320px; border: 1px solid var(--svc-line); border-radius: 8px; background: var(--svc-paper); z-index: 0; }
+.tracking-map--pick { cursor: crosshair; }
+.tracking-dot { border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(21, 25, 34, .4); }
+.tracking-dot--past { background: #9aa1ab; }
+.tracking-dot--current { background: #151922; }
+.tracking-dot--draft { background: #c2410c; }

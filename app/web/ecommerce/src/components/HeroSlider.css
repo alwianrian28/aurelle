@@ -1,0 +1,25 @@
+.hero-slider { position: absolute; inset: 0; overflow: hidden; }
+.hero-slider__track { position: relative; height: 100%; touch-action: pan-y; cursor: grab; user-select: none; transition: transform .9s cubic-bezier(.65, 0, .35, 1); }
+.hero-slider__track.is-dragging { cursor: grabbing; transition: none; }
+.hero-slider__slide { position: absolute; inset: 0; }
+.hero-slider__slide img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+
+/* Indicators sit above the hero's gradient overlay, bottom-right, clear of the copy. */
+.hero-slider__dots { position: absolute; z-index: 2; right: clamp(18px, 3vw, 44px); bottom: clamp(18px, 3vw, 40px); display: flex; gap: 6px; }
+.hero-slider__dot { position: relative; width: 34px; height: 24px; padding: 0; border: 0; background: none; cursor: pointer; }
+.hero-slider__dot::before, .hero-slider__dot span { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; border-radius: 2px; }
+.hero-slider__dot::before { background: rgba(255, 255, 255, .38); }
+.hero-slider__dot span { background: #fff; transform: scaleX(0); transform-origin: left; }
+.hero-slider__dot.is-active span { animation: hero-slider-progress linear forwards; }
+.hero-slider__dot.is-active.is-paused span { animation: none; transform: scaleX(1); }
+.hero-slider__dot:focus-visible { outline: 1px solid #fff; outline-offset: 3px; border-radius: 4px; }
+@keyframes hero-slider-progress { to { transform: scaleX(1); } }
+
+@media (max-width: 700px) {
+  .hero-slider__dots { top: 18px; right: 18px; bottom: auto; }
+  .hero-slider__dot { width: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-slider__track { transition: none; }
+  .hero-slider__dot.is-active span { animation: none; transform: scaleX(1); }
+}

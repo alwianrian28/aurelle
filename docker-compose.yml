@@ -1,0 +1,36 @@
+# Aurelle development database: MySQL only. Passwords come from .env.
+# The backend and the two websites run on your machine, not in Docker:
+#   cd app/backend && venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+#   cd app/web/ecommerce && npm run dev -- --port 5173
+#   cd app/web/dashboard && npm run dev -- --port 5174
+#
+#   docker compose up -d        start MySQL
+#   docker compose down         stop; the database stays in the "mysql-data" volume
+#
+#   Shop:       http://localhost:5173
+#   Dashboard:  http://localhost:5174
+#   API:        http://localhost:8000   (docs at /api/docs)
+#   MySQL:      localhost:3311          (user "aurelle", database "aurelle")
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: aurelle
+      MYSQL_USER: aurelle
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      # For the backend on this machine and its tests; not reachable from other machines.
+      - "127.0.0.1:3311:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mysql-data:

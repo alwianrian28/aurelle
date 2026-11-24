@@ -1,0 +1,26 @@
+/* Shared primitives for the service blocks, guide dialogs and footer. */
+:root {
+  --svc-ink: #151922;
+  --svc-muted: #555f6d;
+  --svc-soft: #777d85;
+  --svc-line: #e7e7e3;
+  --svc-stone: #f3f2ee;
+  --svc-paper: #f8f8f6;
+}
+
+.svc-eyebrow { margin: 0 0 18px; font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--svc-muted); }
+
+/* Pill buttons. */
+.guide-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 52px; padding: 0 30px; border: 1px solid var(--svc-ink); border-radius: 999px; background: var(--svc-ink); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+.guide-btn:hover { background: #fff; color: var(--svc-ink); }
+/* Quiet variant: hairline pill that fills with ink on hover. */
+.guide-btn--outline { min-height: 46px; padding: 0 26px; background: transparent; color: var(--svc-ink); font-size: 11px; font-weight: 500; letter-spacing: .18em; }
+.guide-btn--outline:hover { background: var(--svc-ink); color: #fff; }
+.guide-btn:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
+
+
+/* Round icon badge. */
+.guide-icon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 60px; height: 60px; border: 1px solid var(--svc-line); border-radius: 50%; background: #fff; color: var(--svc-ink); }
+
+/* PNG icon painted with the current text color (see ServiceIcons). */
+.icon-mask { display: inline-block; flex-shrink: 0; background-color: currentColor; mask: center / contain no-repeat; -webkit-mask: center / contain no-repeat; }

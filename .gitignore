@@ -1,0 +1,11 @@
+# Secrets and local settings
+.env
+# Dependencies and build output
+node_modules
+dist
+.venv
+venv
+__pycache__
+.pytest_cache
+# OS / editor
+.DS_Store

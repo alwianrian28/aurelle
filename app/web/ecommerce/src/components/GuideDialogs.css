@@ -1,0 +1,73 @@
+/* Guide dialogs: flat sheet, hairlines only. */
+.guide-dialog { width: min(920px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 0; border-radius: 4px; background: #fff; color: var(--svc-ink); box-shadow: 0 24px 60px rgba(21, 25, 34, .18); overflow: auto; overscroll-behavior: contain; }
+.guide-dialog[open] { animation: guide-dialog-in .28s var(--ease-out); }
+.guide-dialog::backdrop { background: rgba(21, 25, 34, .4); }
+@keyframes guide-dialog-in { from { opacity: 0; transform: translateY(10px); } }
+
+.guide-dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 36px 40px 0; }
+.guide-dialog__eyebrow { margin: 0 0 10px; font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--svc-soft); }
+.guide-dialog__title { margin: 0; font: 400 clamp(26px, 2.6vw, 32px)/1.15 var(--font-serif); }
+.guide-dialog__intro { margin: 10px 0 0; font-size: 14px; color: var(--svc-muted); }
+.guide-dialog__close { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 36px; height: 36px; margin: -6px -8px 0 0; border: 0; background: none; color: var(--svc-ink); cursor: pointer; transition: color var(--dur-base) var(--ease-out); }
+.guide-dialog__close:hover { color: var(--svc-soft); }
+.guide-dialog__close:focus-visible { outline: 1px solid var(--svc-ink); outline-offset: 2px; }
+.guide-dialog__body { padding: 32px 40px 40px; }
+.guide-dialog__label { margin: 0; font-family: var(--font-sans); font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--svc-soft); }
+
+/* Size chart: fixed sheet so switching Rings/Bracelets never resizes it; the table scrolls inside. */
+#size-chart { display: flex; flex-direction: column; height: min(780px, calc(100dvh - 48px)); overflow: hidden; }
+#size-chart:not([open]) { display: none; }
+#size-chart .guide-dialog__body { flex: 1; min-height: 0; overflow-y: auto; }
+.size-chart { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr); gap: 56px; min-height: 100%; }
+.size-chart__how { display: flex; flex-direction: column; }
+.size-chart__steps { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+.size-chart__steps li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; font-size: 14px; line-height: 1.6; color: var(--svc-muted); }
+.size-chart__steps span { font: 400 15px/1 var(--font-serif); color: var(--svc-ink); }
+.size-chart__tip { margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--svc-line); font-size: 13px; line-height: 1.65; color: var(--svc-soft); }
+.size-chart__tip strong { font-weight: 500; color: var(--svc-ink); }
+.size-chart__chat { display: inline-flex; gap: 10px; align-items: center; margin-top: auto; padding-top: 28px; font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--svc-ink); }
+.size-chart__chat .icon-mask { flex-shrink: 0; }
+.size-chart__chat:hover { text-decoration: underline; text-underline-offset: 3px; }
+.size-chart__tabs { display: flex; gap: 28px; border-bottom: 1px solid var(--svc-line); }
+.size-chart__tabs button { position: relative; padding: 0 0 12px; border: 0; background: none; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--svc-soft); cursor: pointer; transition: color var(--dur-base) var(--ease-out); }
+.size-chart__tabs button::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--svc-ink); transform: scaleX(0); transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
+.size-chart__tabs button:hover, .size-chart__tabs button[aria-selected=true] { color: var(--svc-ink); }
+.size-chart__tabs button[aria-selected=true]::after { transform: scaleX(1); }
+.size-chart__tabs button:focus-visible { outline: 1px solid var(--svc-ink); outline-offset: 4px; }
+.size-chart__scroll { overflow-x: auto; }
+.size-chart table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 14px; }
+.size-chart thead th { padding: 16px 0 10px; border-bottom: 1px solid var(--svc-line); font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; text-align: left; color: var(--svc-soft); }
+.size-chart tbody th, .size-chart tbody td { padding: 11px 0; border-bottom: 1px solid var(--svc-line); text-align: left; }
+.size-chart tbody tr:last-child > * { border-bottom: 0; }
+.size-chart tbody th { font-weight: 500; color: var(--svc-ink); }
+.size-chart tbody td { color: var(--svc-muted); }
+.size-chart__note { margin: 14px 0 0; font-size: 12px; color: var(--svc-soft); }
+
+/* Care guide */
+.care-guide { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.care-guide__card { padding: 0 28px; }
+.care-guide__card:first-child { padding-left: 0; }
+.care-guide__card:last-child { padding-right: 0; }
+.care-guide__card + .care-guide__card { border-left: 1px solid var(--svc-line); }
+.care-guide__card header { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.care-guide__card h3 { margin: 6px 0 0; font: 400 24px/1.15 var(--font-serif); }
+.care-guide__card ul { margin: 18px 0 0; padding: 0; list-style: none; }
+.care-guide__card li { padding: 12px 0; border-top: 1px solid var(--svc-line); font-size: 14px; line-height: 1.6; color: var(--svc-muted); }
+.care-guide__cta { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--svc-line); }
+.care-guide__cta p { margin: 0; font-size: 13px; color: var(--svc-soft); }
+.care-guide__cta .care-guide__cta-title { margin-bottom: 4px; font-size: 14px; font-weight: 500; color: var(--svc-ink); }
+
+@media (max-width: 760px) {
+  .guide-dialog, #size-chart { width: 100vw; max-width: 100vw; max-height: 100dvh; height: 100dvh; margin: 0; border-radius: 0; }
+  .guide-dialog__head { padding: 26px 20px 0; }
+  .guide-dialog__body { padding: 26px 20px 36px; }
+  .size-chart { grid-template-columns: 1fr; gap: 32px; }
+  .size-chart__chat { margin-top: 0; padding-top: 20px; }
+  .care-guide { grid-template-columns: 1fr; }
+  .care-guide__card, .care-guide__card:first-child, .care-guide__card:last-child { padding: 0; }
+  .care-guide__card + .care-guide__card { margin-top: 28px; padding-top: 28px; border-left: 0; border-top: 1px solid var(--svc-line); }
+  .care-guide__cta { flex-direction: column; align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-dialog[open] { animation: none; }
+}

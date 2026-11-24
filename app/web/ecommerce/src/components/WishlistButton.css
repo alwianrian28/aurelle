@@ -1,0 +1,2 @@
+.wish-btn { display: inline-flex; align-items: center; justify-content: center; }
+.wish-btn__heart { display: block; flex-shrink: 0; background: center / contain no-repeat; pointer-events: none; }

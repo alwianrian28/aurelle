@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Perhiasan Perak — 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="ext-resource-dependency" content="vendor/three.module.js" data-resource-id="lib0">
+<meta name="ext-resource-dependency" content="vendor/three.core.js" data-resource-id="lib1">
+<meta name="ext-resource-dependency" content="vendor/OrbitControls.js" data-resource-id="lib2">
+<meta name="ext-resource-dependency" content="vendor/OBJExporter.js" data-resource-id="lib3">
+<meta name="ext-resource-dependency" content="vendor/GLTFExporter.js" data-resource-id="lib4">
+<meta name="ext-resource-dependency" content="diamond.js" data-resource-id="mod-diamond">
+<meta name="ext-resource-dependency" content="rings-v2.js" data-resource-id="mod-rings-v2">
+<meta name="ext-resource-dependency" content="bracelets-v2.js" data-resource-id="mod-bracelets-v2">
+<meta name="ext-resource-dependency" content="earrings-v2.js" data-resource-id="mod-earrings-v2">
+<meta name="ext-resource-dependency" content="models-extra.js" data-resource-id="mod-models-extra">
+<script>
+(function(){var R=window.__resources||{},abs=function(p){return new URL(p,document.baseURI).href};
+var d=[["three","vendor/three.module.js"],["three/core","vendor/three.core.js"],["three/addons/controls/OrbitControls.js","vendor/OrbitControls.js"],["three/addons/exporters/OBJExporter.js","vendor/OBJExporter.js"],["three/addons/exporters/GLTFExporter.js","vendor/GLTFExporter.js"]],imports={};d.forEach(function(x,i){imports[x[0]]=R['lib'+i]||abs(x[1])});
+window.__mod=function(n){return R['mod-'+n]||abs(n+'.js')};
+var s=document.createElement('script');s.type='importmap';s.textContent=JSON.stringify({imports:imports});document.currentScript.after(s);})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,400;125,500;125,600&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;background:#0E1116;color:#fff;font-family:'Archivo',system-ui,sans-serif;font-stretch:125%;-webkit-font-smoothing:antialiased;overflow:hidden}
+  body{background:radial-gradient(circle at 50% 48%,#1D232C 0%,#191E26 32%,rgba(25,30,38,.55) 58%,#0E1116 85%)}
+  a{color:#fff;text-decoration:none}a:hover{color:#fff;opacity:.7}
+  three-d-stage:not(:defined){visibility:hidden}
+  three-d-stage{display:block;width:100vw;height:100vh}
+  #head{position:fixed;z-index:10;inset:0 0 auto;display:flex;justify-content:space-between;align-items:flex-start;padding:clamp(20px,3.2vw,48px);pointer-events:none}
+  #title{margin:0;font-family:'Bodoni Moda',Didot,serif;font-weight:400;font-size:clamp(30px,3.4vw,52px);line-height:1.02}
+  #note{position:fixed;z-index:10;left:clamp(20px,3.2vw,48px);bottom:clamp(20px,3.2vw,48px);margin:0;max-width:min(26rem,calc(100vw - 260px));padding:14px 16px;background:rgba(14,17,22,.78);border-left:1px solid #B8C1CC;pointer-events:none;font-size:12px;font-stretch:100%;line-height:1.7;color:#A5AEBA;text-wrap:pretty}
+  #note:empty{display:none}
+  #eyebrow{margin:0 0 16px;display:flex;align-items:center;gap:14px;font-size:10px;font-weight:600;letter-spacing:.34em;text-transform:uppercase;color:#A5AEBA}
+  #eyebrow::before{content:"";width:32px;height:1px;background:#B8C1CC}
+  #nav{display:flex;flex-direction:column;align-items:flex-end;gap:22px;pointer-events:auto}
+  #cats,#list{display:flex;gap:22px;flex-wrap:wrap;justify-content:flex-end}
+  #list{gap:6px;max-width:300px}
+  #nav button{font:inherit;background:none;border:0;padding:0 0 6px;cursor:pointer;font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#A5AEBA;border-bottom:1px solid transparent;transition:color .3s,border-color .3s}
+  #list button{padding:8px 0;width:34px;font-size:12px;letter-spacing:.04em;font-variant-numeric:tabular-nums;border:1px solid #353E4B}
+  #nav button:hover{color:#fff}
+  #nav button[aria-pressed="true"]{color:#fff;border-bottom-color:#B8C1CC}
+  #list button[aria-pressed="true"]{border-color:#B8C1CC;background:rgba(184,193,204,.08)}
+  #nav button:focus-visible{outline:1px solid #B8C1CC;outline-offset:5px}
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#0E1116"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#0E1116"/><g fill="none" stroke="#E4E5E8" stroke-width="2.5" stroke-linejoin="round"><path d="M38 40h24l8 9-20 22-20-22z"/><path d="M30 49h40M44 40l-4 9 10 22 10-22-4-9"/></g></svg></template>
+</head>
+<body>
+<header id="head">
+  <div><p id="eyebrow">Silver Edition</p><h1 id="title">Kalung Berlapis</h1></div>
+  <div id="nav"><nav id="cats" aria-label="Kategori"></nav><nav id="list" aria-label="Model"></nav></div>
+</header>
+<p id="note"></p>
+<three-d-stage name="kalung-berlapis" background="transparent" autorotate></three-d-stage>
+<script src="three-d-stage.js"></script>
+<script type="module">
+const stage = document.querySelector('three-d-stage');
+const { THREE } = await stage.ready;
+
+// Studio lighting (from the Aurelle showroom): metal reflects a bright strip-lit product studio,
+// stones are ray-traced against a darker diamond-photography studio with pin lights.
+const { makeStudioMap, brilliantGeometry, diamondMaterial, bindDiamond } = await import(window.__mod('diamond'));
+const renderer = stage._renderer, scene = stage._scene;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.0;
+const metalStudio = makeStudioMap({ width: 2048, surround: .7, metal: true });
+const pm = new THREE.PMREMGenerator(renderer);
+scene.environment = pm.fromEquirectangular(metalStudio).texture;
+pm.dispose(); metalStudio.dispose();
+const stoneStudio = makeStudioMap({ width: 1024, surround: .55, stone: true });
+scene.traverse(o => {
+  if (o.isHemisphereLight) o.intensity = 0;
+  if (o.isDirectionalLight) { o.intensity = o.castShadow ? 0.35 : 0; o.shadow.normalBias = 0.00002; o.shadow.radius = 8; }
+  if (o.isMesh && o.material.isShadowMaterial) o.material.opacity = 0.35;
+});
+
+// Materials — rhodium-white silver #E4E5E8
+const silver = new THREE.MeshPhysicalMaterial({ name: 'silver', color: 0xE4E5E8, metalness: 1, roughness: 0.05, envMapIntensity: 1 });
+const chainMat = new THREE.MeshPhysicalMaterial({ name: 'silver_chain', color: 0xE4E5E8, metalness: 1, roughness: 0.08, flatShading: true, envMapIntensity: 1 });
+// Exportable stand-in for the traced stone shader (used by OBJ/GLB downloads)
+const cz = new THREE.MeshPhysicalMaterial({ name: 'cz_stone', color: 0xffffff, metalness: 0, roughness: 0.015, transmission: 0.96, ior: 2.417, thickness: 0.0005, dispersion: 0.025 });
+const stoneGeo = {}, stoneMat = {};
+function stoneParts(r) {
+  if (!stoneGeo[r]) { stoneGeo[r] = brilliantGeometry(r, r, { detailed: r > 2 }); stoneMat[r] = diamondMaterial(stoneGeo[r], stoneStudio, { bounces: r > 2 ? 8 : 4, seat: 1 }); stoneMat[r].name = 'cz_stone'; }
+  return [stoneGeo[r], stoneMat[r]];
+}
+
+class ParamCurve extends THREE.Curve {
+  constructor(fn) { super(); this.fn = fn; }
+  getPoint(t, target = new THREE.Vector3()) { return target.copy(this.fn(t)); }
+}
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const UP = V(0, 1, 0);
+
+function mesh(name, geo, mat) { const m = new THREE.Mesh(geo, mat); m.name = name; return m; }
+function tube(name, fn, segs, r, closed, mat = silver, radial = 12) {
+  return mesh(name, new THREE.TubeGeometry(new ParamCurve(fn), segs, r, radial, closed), mat);
+}
+function bead(name, r, pos) {
+  const m = mesh(name, new THREE.SphereGeometry(r, 20, 14), silver); m.position.copy(pos); return m;
+}
+// Brilliant-cut stone, table facing local +y, girdle at y=0
+function stone(name, r) {
+  const [geo, mat] = stoneParts(r);
+  const m = mesh(name, geo, mat);
+  bindDiamond(m, { radius: r * 0.001, lodRef: 260 });
+  return m;
+}
+// Stone in a cup (bezel), optional prongs; oriented so table faces `normal`
+function setStone(name, r, pos, normal, prongs = 0) {
+  const g = new THREE.Group(); g.name = name;
+  g.add(stone(name + '_stone', r));
+  const cup = mesh(name + '_cup', new THREE.CylinderGeometry(r * 0.9, r * 0.55, r * 0.9, 24, 1, true), silver);
+  cup.position.y = -r * 0.42; g.add(cup);
+  const base = mesh(name + '_base', new THREE.CylinderGeometry(r * 0.55, r * 0.4, r * 0.3, 20), silver);
+  base.position.y = -r * 1.0; g.add(base);
+  for (let i = 0; i < prongs; i++) {
+    const a = (i / prongs) * Math.PI * 2 + Math.PI / prongs, c = Math.cos(a), s = Math.sin(a), tr = Math.max(0.2, r * 0.12);
+    const P = (k, y) => V(c * r * k, r * y, s * r * k);
+    const curve = new THREE.CatmullRomCurve3([P(0.8, 0.3), P(1.03, 0.08), P(1.0, -0.15), P(0.86, -0.5), P(0.62, -0.85), P(0.4, -1.0)], false, 'centripetal');
+    g.add(tube(`${name}_claw${i + 1}`, (t) => curve.getPoint(t), 48, tr, false, silver, 10));
+    g.add(bead(`${name}_claw${i + 1}_tip`, tr * 1.05, P(0.8, 0.3)));
+  }
+  g.position.copy(pos);
+  g.quaternion.setFromUnitVectors(UP, normal.clone().normalize());
+  return g;
+}
+// Forward-facing stone in a claw setting with a girdle frame and soldered loops.
+// topPt = centre of the top loop (put it on the chain so the chain threads through).
+const LOOP = 0.75, LT = 0.22;
+function pendantStone(name, r, topPt, { bottom = false, prongs = 4 } = {}) {
+  const g = new THREE.Group(); g.name = name;
+  const fr = r * 1.03 + 0.05, cy = topPt.y - LOOP - fr - 0.05;
+  const c = V(topPt.x, cy, topPt.z);
+  g.add(setStone(name + '_set', r, c, V(0, 0, 1), prongs));
+  const frame = mesh(name + '_frame', new THREE.TorusGeometry(fr, 0.26, 16, 64), silver); frame.position.set(c.x, c.y, c.z - 0.12); g.add(frame);
+  const top = mesh(name + '_top_loop', new THREE.TorusGeometry(LOOP, LT, 12, 32), silver); top.position.copy(topPt); top.position.z = c.z - 0.12; top.rotation.y = Math.PI / 2; g.add(top);
+  let bottomPt = null;
+  if (bottom) {
+    const by = cy - fr - LOOP - 0.05;
+    const b = mesh(name + '_bottom_loop', new THREE.TorusGeometry(LOOP, LT, 12, 32), silver); b.position.set(c.x, by, c.z - 0.12); g.add(b);
+    bottomPt = V(c.x, by - LOOP + LT, c.z - 0.12);
+  }
+  return { g, bottomPt, center: c };
+}
+// Cable chain of oval links hanging from `start` (inner bottom of a loop). Returns inner bottom of the last link.
+function linkChain(name, start, len, matl = chainMat) {
+  const g = new THREE.Group(); g.name = name;
+  const lr = 0.55, ls = 1.4, wire = 0.17, pitch = 2 * lr * ls - 2 * wire * 1.6;
+  const n = Math.max(2, Math.round(len / pitch));
+  let y = start.y - lr * ls + wire;
+  for (let i = 0; i < n; i++) {
+    const l = mesh(`${name}_link${i + 1}`, new THREE.TorusGeometry(lr, wire, 8, 20), matl); l.scale.y = ls;
+    l.position.set(start.x, y, start.z); if (i % 2 === 0) l.rotation.y = Math.PI / 2; g.add(l);
+    if (i < n - 1) y -= pitch;
+  }
+  return { g, end: V(start.x, y - lr * ls + wire, start.z) };
+}
+
+// Evenly spaced points by arc length along a closed/open param function
+function spaced(fn, from, to, step, samples = 2000) {
+  const pts = []; let acc = 0, prev = fn(from); pts.push(from);
+  for (let i = 1; i <= samples; i++) {
+    const t = from + (to - from) * i / samples, p = fn(t);
+    acc += p.distanceTo(prev); prev = p;
+    if (acc >= step) { pts.push(t); acc = 0; }
+  }
+  return pts;
+}
+const mm = (g) => { const root = new THREE.Group(); root.name = g.name + '_root'; g.scale.setScalar(0.001); root.add(g); return root; };
+
+// 1. Layered necklace: teardrop pendant + Y lariat
+function necklace() {
+  const g = new THREE.Group(); g.name = 'layered_necklace';
+  const loop = (R, drop, k) => (t) => {
+    const a = t * Math.PI * 2, f = Math.pow((1 + Math.cos(a)) / 2, 2.2);
+    return V(R * Math.sin(a), -drop * f, R * k * Math.cos(a));
+  };
+  const inner = loop(62, 92, 0.78), outer = loop(66, 150, 0.8);
+  g.add(tube('chain_inner', inner, 600, 0.38, true, chainMat, 6));
+  g.add(tube('chain_outer', outer, 600, 0.45, true, chainMat, 6));
+
+  // Teardrop pendant (tip up) hanging from inner chain
+  const top = inner(0), w = 5.6, h = 8.5;
+  const cy = top.y - 2.2 - h, cz0 = top.z + 0.6;
+  const drop = (t) => { const a = t * Math.PI * 2; return V(w * Math.sin(a) * Math.abs(Math.sin(a / 2)), cy + h * Math.cos(a), cz0); };
+  const pend = new THREE.Group(); pend.name = 'teardrop_pendant';
+  pend.add(tube('pendant_wire', drop, 200, 0.42, true));
+  spaced(drop, 0.03, 0.97, 1.55).forEach((t, i) => pend.add(bead(`pendant_bead${i + 1}`, 0.62, drop(t).add(V(0, 0, 0.45)))));
+  const bale = mesh('pendant_bale', new THREE.TorusGeometry(1.1, 0.32, 12, 32), silver);
+  bale.position.set(0, top.y - 1.1, top.z + 0.3); bale.rotation.y = Math.PI / 2;
+  pend.add(bale);
+  g.add(pend);
+
+  // Lariat: station stone + drop chain + end stone
+  const o = outer(0);
+  const st = pendantStone('lariat_station', 1.8, o, { bottom: true }); g.add(st.g);
+  const ch = linkChain('lariat_drop', st.bottomPt, 80); g.add(ch.g);
+  const endTop = ch.end.clone(); endTop.y -= LOOP - LT - 0.1;
+  g.add(pendantStone('lariat_end', 1.6, endTop).g);
+  return mm(g);
+}
+
+// 2. Oval ring: band crossing a beaded oval frame
+function ovalRing() {
+  const g = new THREE.Group(); g.name = 'oval_ring';
+  const R = 9.3;
+  g.add(mesh('band', new THREE.TorusGeometry(R, 0.75, 24, 128), silver));
+  const ax = 5.6, az = 8.2, onCyl = (x, z, rr) => { const a = x / rr; return V(rr * Math.sin(a), rr * Math.cos(a), z); };
+  const oval = (t) => { const a = t * Math.PI * 2; return onCyl(ax * Math.cos(a), az * Math.sin(a), R + 0.3); };
+  g.add(tube('oval_frame', oval, 200, 0.5, true));
+  spaced(oval, 0, 0.985, 1.55).forEach((t, i) => {
+    const a = t * Math.PI * 2;
+    const x = ax * Math.cos(a), al = x / (R + 0.3); g.add(setStone(`oval_stone${i + 1}`, 0.7, onCyl(x, az * Math.sin(a), R + 1.05), V(Math.sin(al), Math.cos(al), 0)));
+  });
+  return mm(g);
+}
+
+// 3. Bracelet: stone line with prong-set centre stone
+function bracelet() {
+  const g = new THREE.Group(); g.name = 'stone_bracelet';
+  const A = 32, B = 26;
+  const ell = (rr = 0) => (t) => { const a = t * Math.PI * 2; return V((A + rr) * Math.sin(a), 0, (B + rr) * Math.cos(a)); };
+  const nrm = (t) => { const a = t * Math.PI * 2; return V(Math.sin(a) / A, 0, Math.cos(a) / B).normalize(); };
+  g.add(tube('bracelet_chain', ell(-0.6), 500, 0.42, true, chainMat, 6));
+  const s = new THREE.Group(); s.name = 'stone_line';
+  const fn = ell(0);
+  const side = spaced(fn, 0.02, 0.27, 3.0);
+  side.forEach((t, i) => {
+    s.add(setStone(`stone_r${i + 1}`, 1.15, fn(t).add(nrm(t).multiplyScalar(0.6)), nrm(t)));
+    const tl = 1 - t;
+    s.add(setStone(`stone_l${i + 1}`, 1.15, fn(tl).add(nrm(tl).multiplyScalar(0.6)), nrm(tl)));
+  });
+  g.add(s);
+  g.add(setStone('centre_stone', 2.5, fn(0).add(V(0, 0, 1.6)), V(0, 0, 1), 4));
+  const clasp = mesh('clasp_ring', new THREE.TorusGeometry(1.6, 0.4, 12, 32), silver);
+  clasp.position.copy(fn(0.5)); g.add(clasp);
+  const clasp2 = mesh('clasp_lobster', new THREE.CapsuleGeometry(1.1, 3.2, 6, 16), silver);
+  clasp2.position.copy(fn(0.47)).add(V(0, 0, -0.6)); clasp2.rotation.z = Math.PI / 2; clasp2.rotation.y = 0.2;
+  g.add(clasp2);
+  return mm(g);
+}
+
+// 4. Stacking set: chevron, twin-ball and beaded bands
+function stackRings() {
+  const g = new THREE.Group(); g.name = 'stacking_rings';
+  const R = 9.3;
+  // Chevron ring
+  const vr = new THREE.Group(); vr.name = 'chevron_ring';
+  const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  const vfn = (rr) => (t) => { const a = t * Math.PI * 2, z = 3.0 * Math.max(0, 1 - Math.abs(wrap(a)) / 0.7); return V(rr * Math.sin(a), rr * Math.cos(a), z); };
+  vr.add(tube('chevron_band', vfn(R), 400, 0.6, true, silver, 16));
+  spaced(vfn(R + 0.9), -0.115, 0.115, 1.45).forEach((t, i) => { const p = vfn(R + 0.9)(t); vr.add(setStone(`chevron_stone${i + 1}`, 0.66, p, V(p.x, p.y, 0).normalize())); });
+  vr.position.z = 1.22;
+  // Twin-ball ring
+  const br = new THREE.Group(); br.name = 'ball_ring';
+  br.add(mesh('ball_band', new THREE.TorusGeometry(R, 0.62, 20, 128), silver));
+  [-0.2, 0.2].forEach((a, i) => { const n = V(Math.sin(a), Math.cos(a), 0); br.add(setStone(`twin_stone${i + 1}`, 1.25, n.clone().multiplyScalar(R + 1.35), n, 4)); });
+  // Beaded ring
+  const dr = new THREE.Group(); dr.name = 'beaded_ring';
+  dr.add(mesh('stone_ring_core', new THREE.TorusGeometry(R, 0.55, 16, 128), silver));
+  const N = 36;
+  for (let i = 0; i < N; i++) { const a = (i / N) * Math.PI * 2, n = V(Math.sin(a), Math.cos(a), 0); dr.add(setStone(`ring_stone${i + 1}`, 0.8, n.clone().multiplyScalar(R + 0.75), n)); }
+  dr.position.z = -1.44;
+  g.add(vr, br, dr);
+  return mm(g);
+}
+
+const { buildRings } = await import(window.__mod('rings-v2'));
+const rings2 = buildRings(THREE, { silver, stone, bead, mesh, mm, V, UP });
+const { buildBracelets } = await import(window.__mod('bracelets-v2'));
+const bracelets2 = buildBracelets(THREE, { silver, chainMat, tube, bead, stone, setStone, spaced, mesh, mm, V, UP });
+const { buildEarrings } = await import(window.__mod('earrings-v2'));
+const earrings2 = buildEarrings(THREE, { silver, chainMat, tube, bead, stone, mesh, mm, V, UP });
+const { buildExtras } = await import(window.__mod('models-extra'));
+const extras = buildExtras(THREE, { pendantStone, linkChain, LOOP, LT, silver, chainMat, tube, bead, setStone, stone, spaced, mm, mesh, V, UP });
+const list = [
+  { cat: 'Cincin', name: 'Cincin Oval', file: 'cincin-oval', fn: rings2.ovalRing },
+  { cat: 'Cincin', name: 'Cincin Susun', file: 'cincin-susun', fn: rings2.stackRings },
+  { cat: 'Kalung', name: 'Kalung Berlapis', file: 'kalung-berlapis', fn: necklace },
+  ...bracelets2,
+  ...extras.filter(it => it.cat !== 'Gelang' && it.cat !== 'Anting'),
+  ...earrings2,
+];
+const CATS = ['Cincin', 'Kalung', 'Gelang', 'Anting'];
+const items = Object.fromEntries(list.map(it => [it.file, it]));
+const cache = {};
+const catsEl = document.getElementById('cats'), listEl = document.getElementById('list');
+CATS.forEach(c => { const b = document.createElement('button'); b.textContent = c; b.dataset.c = c; b.onclick = () => show(list.find(it => it.cat === c).file); catsEl.append(b); });
+function show(k) {
+  if (!items[k]) k = 'kalung-berlapis';
+  const it = items[k], group = list.filter(x => x.cat === it.cat), idx = group.indexOf(it);
+  cache[k] ??= it.fn();
+  stage.setAttribute('name', it.file);
+  document.getElementById('title').textContent = it.name;
+  document.getElementById('note').textContent = it.note || '';
+  document.getElementById('eyebrow').textContent = `${it.cat} · ${String(idx + 1).padStart(2, '0')} / ${String(group.length).padStart(2, '0')}`;
+  stage.setObject(cache[k]);
+  // leave room for the header and the note overlay
+  { const c = stage._camera, t = stage._controls.target; c.position.sub(t).multiplyScalar(1.3).add(t); c.updateProjectionMatrix(); stage._controls.update(); }
+  renderer.compile(scene, stage._camera);
+  [...catsEl.children].forEach(b => b.setAttribute('aria-pressed', b.dataset.c === it.cat));
+  listEl.replaceChildren(...group.map((x, i) => { const b = document.createElement('button'); b.textContent = String(i + 1).padStart(2, '0'); b.title = x.name; b.setAttribute('aria-label', x.name); b.setAttribute('aria-pressed', x === it); b.onclick = () => show(x.file); return b; }));
+  localStorage.setItem('perhiasan3d.item', k);
+}
+// Downloads: swap traced stones for the exportable physical material while the toolbar exports
+let swapT;
+stage.addEventListener('pointerdown', (e) => {
+  if (!e.composedPath().some(el => el.tagName === 'BUTTON')) return;
+  const obj = stage._object; if (!obj) return;
+  obj.traverse(o => { if (o.isMesh && o.material.isShaderMaterial) { o.userData.live = o.material; o.material = cz; } });
+  clearTimeout(swapT);
+  swapT = setTimeout(() => obj.traverse(o => { if (o.userData.live) { o.material = o.userData.live; delete o.userData.live; } }), 2500);
+}, true);
+show(localStorage.getItem('perhiasan3d.item') || 'kalung-berlapis');
+</script>
+</body>
+</html>

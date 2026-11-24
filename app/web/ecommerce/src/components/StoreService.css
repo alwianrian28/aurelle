@@ -1,0 +1,29 @@
+/* Flat two-column block: no fills, one hairline between the columns. */
+.store-service { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 24px; padding: 72px 0 80px; border-top: 1px solid var(--svc-line); }
+.store-service__col { display: flex; flex-direction: column; align-items: flex-start; padding: 0 clamp(24px, 5vw, 80px); }
+.store-service__col:first-child { padding-left: 0; }
+.store-service__col + .store-service__col { border-left: 1px solid var(--svc-line); }
+.store-service__title { margin: 0; font: 400 clamp(28px, 2.5vw, 38px)/1.15 var(--font-serif); color: var(--svc-ink); }
+.store-service__body { max-width: 420px; margin: 14px 0 0; font-size: 15px; line-height: 1.7; color: var(--svc-muted); }
+.store-service__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 26px; margin-top: 32px; }
+.store-service__hours { margin: 0; font-size: 13px; color: var(--svc-soft); }
+.store-service__link { padding: 4px 0; border: 0; border-bottom: 1px solid currentColor; background: none; font-size: 13px; font-weight: 500; letter-spacing: .04em; color: var(--svc-ink); cursor: pointer; transition: color var(--dur-base) var(--ease-out); }
+.store-service__link:hover { color: var(--svc-soft); }
+.store-service__link:focus-visible { outline: 1px solid var(--svc-ink); outline-offset: 4px; }
+
+/* Full-bleed band: the content stays in the container, the background runs edge to edge. */
+.store-trust { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin: 0; padding: 50px 0; background: var(--svc-paper); border-image: conic-gradient(var(--svc-paper) 0 0) fill 0 / 0 / 0 100vw; /* paints the band past the container, no layout */ list-style: none; }
+.store-trust li { display: flex; align-items: center; gap: 20px; }
+.store-trust__title { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.35; color: var(--svc-ink); }
+.store-trust__body { margin: 4px 0 0; font-size: 14px; line-height: 1.6; color: var(--svc-muted); }
+.store-trust__body a { color: var(--svc-ink); text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 1100px) {
+  .store-trust { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 32px; }
+}
+@media (max-width: 760px) {
+  .store-service { grid-template-columns: 1fr; padding: 48px 0 56px; }
+  .store-service__col { padding: 0; }
+  .store-service__col + .store-service__col { margin-top: 40px; padding-top: 40px; border-left: 0; border-top: 1px solid var(--svc-line); }
+  .store-trust { grid-template-columns: 1fr; padding-block: 36px; }
+}
