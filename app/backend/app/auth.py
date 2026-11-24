@@ -248,15 +248,13 @@ def google_login(body: GoogleIn, db: Db, response: Response):
         if len(name) < 3:
             name = email.split("@")[0][:80].ljust(3, "_")
         user_id = str(uuid.uuid4())
-        try:
-            # No password is set: the hash is of a random secret nobody holds. The customer can
-            # still add one later through "Forgot password".
-            db.execute(
-                "INSERT INTO users (id, email, username, password_hash, provider, email_verified, created_at) VALUES (?, ?, ?, ?, 'google', 1, ?)",
-                (user_id, email, name, hash_password(new_token()), now_iso()),
-            )
-        except IntegrityError:  # the same address signed up a moment ago
-            pass
+        # No password is set: the hash is of a random secret nobody holds. The customer can
+        # still add one later through "Forgot password". ON CONFLICT: the same address may have
+        # signed up a moment ago, and in Postgres a failed INSERT would abort the transaction.
+        db.execute(
+            "INSERT INTO users (id, email, username, password_hash, provider, email_verified, created_at) VALUES (?, ?, ?, ?, 'google', 1, ?) ON CONFLICT (email) DO NOTHING",
+            (user_id, email, name, hash_password(new_token()), now_iso()),
+        )
     user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
     _start_session(db, response, user["id"], body.keep)
     return {"user": public_user(user)}

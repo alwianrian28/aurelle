@@ -1,7 +1,7 @@
 fastapi>=0.115
 uvicorn[standard]>=0.30
-# MySQL driver; the rsa extra is needed for MySQL 8's default password authentication.
-pymysql[rsa]>=1.1
+# Postgres driver (Supabase in production, the docker-compose Postgres locally).
+psycopg[binary]>=3.2
 bcrypt>=4.1
 # Verifies Google ID tokens for "Continue with Google" (requests is its HTTP transport).
 google-auth>=2.30

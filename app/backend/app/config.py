@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
+from urllib.parse import quote
 
-# Local development: pick up the repository's .env (MySQL passwords) so the backend starts
+# Local development: pick up the repository's .env (database password or URL) so the backend starts
 # with a plain `uvicorn app.main:app`. Variables already set in the environment win.
 _env_file = Path(__file__).resolve().parents[3] / ".env"
 if _env_file.is_file():
@@ -32,16 +33,17 @@ def google_client_id() -> str | None:
     return os.environ.get("GOOGLE_CLIENT_ID", "").strip() or None
 
 
-def db_settings() -> dict:
-    """MySQL connection settings. The password has no default: it comes from the environment or .env."""
-    return {
-        "host": os.environ.get("DB_HOST", "127.0.0.1"),
-        # 3311 is where docker-compose publishes MySQL on this machine.
-        "port": int(os.environ.get("DB_PORT", "3311")),
-        "user": os.environ.get("DB_USER", "aurelle"),
-        "password": os.environ.get("DB_PASSWORD") or os.environ["MYSQL_PASSWORD"],
-        "database": os.environ.get("DB_NAME", "aurelle"),
-    }
+def database_url() -> str:
+    """Postgres connection string.
+
+    DATABASE_URL points at Supabase (Dashboard > Connect > "Transaction pooler", port 6543: the
+    one meant for one-connection-per-request and serverless hosts). Without it, the local
+    Postgres from docker-compose is used, with the password from .env."""
+    url = os.environ.get("DATABASE_URL", "").strip()
+    if url:
+        return url
+    # 5433 is where docker-compose publishes Postgres on this machine.
+    return f"postgresql://aurelle:{quote(os.environ['POSTGRES_PASSWORD'], safe='')}@127.0.0.1:5433/aurelle"
 
 
 def media_dir() -> str:

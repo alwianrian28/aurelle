@@ -1,17 +1,16 @@
-"""MySQL access. One connection per request; money is stored as integer rupiah."""
+"""Postgres access (Supabase in production). One connection per request; money is stored as integer rupiah."""
 import time
 from collections.abc import Iterator, Sequence
 from typing import Any
 
-import pymysql
-from pymysql.cursors import Cursor, DictCursor
+import psycopg
 
-from .config import db_settings
+from .config import database_url
 
-IntegrityError = pymysql.err.IntegrityError
+IntegrityError = psycopg.IntegrityError
 
-# Each statement is executed separately on startup. utf8mb4 everywhere; ids and hashes are
-# VARCHAR because MySQL cannot index unbounded TEXT.
+# Each statement is executed separately on startup. Flags are SMALLINT 0/1, so queries
+# compare them with `= 1`.
 SCHEMA = [
     """CREATE TABLE IF NOT EXISTS users (
       id VARCHAR(40) PRIMARY KEY,
@@ -20,39 +19,41 @@ SCHEMA = [
       password_hash VARCHAR(200) NOT NULL,
       role VARCHAR(20) NOT NULL DEFAULT 'customer',
       provider VARCHAR(10) NOT NULL DEFAULT 'email',
-      email_verified TINYINT NOT NULL DEFAULT 0,
+      email_verified SMALLINT NOT NULL DEFAULT 0,
       phone_country_code VARCHAR(5),
       phone VARCHAR(20),
       preferred_locale VARCHAR(5) NOT NULL DEFAULT 'id',
       preferred_currency VARCHAR(3) NOT NULL DEFAULT 'IDR',
-      newsletter TINYINT NOT NULL DEFAULT 0,
+      newsletter SMALLINT NOT NULL DEFAULT 0,
       created_at VARCHAR(32) NOT NULL,
       CONSTRAINT users_role CHECK (role IN ('customer', 'admin'))
     )""",
     """CREATE TABLE IF NOT EXISTS sessions (
       token_hash CHAR(64) PRIMARY KEY,
       user_id VARCHAR(40) NOT NULL,
-      expires_at DOUBLE NOT NULL,
+      expires_at DOUBLE PRECISION NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )""",
+    "CREATE INDEX IF NOT EXISTS sessions_user ON sessions (user_id)",
     # Single-use email links (verify / reset). Only the hash is stored.
     """CREATE TABLE IF NOT EXISTS tokens (
       token_hash CHAR(64) PRIMARY KEY,
       kind VARCHAR(10) NOT NULL,
       user_id VARCHAR(40) NOT NULL,
-      expires_at DOUBLE NOT NULL,
-      used_at DOUBLE,
+      expires_at DOUBLE PRECISION NOT NULL,
+      used_at DOUBLE PRECISION,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       CONSTRAINT tokens_kind CHECK (kind IN ('verify', 'reset'))
     )""",
+    "CREATE INDEX IF NOT EXISTS tokens_user ON tokens (user_id)",
     # Catalog (seeded from app/seed/catalog.json on first start; edited from the dashboard).
     """CREATE TABLE IF NOT EXISTS products (
       id VARCHAR(80) PRIMARY KEY,
       slug VARCHAR(120) NOT NULL UNIQUE,
       category VARCHAR(20) NOT NULL,
-      active TINYINT NOT NULL DEFAULT 1,
+      active SMALLINT NOT NULL DEFAULT 1,
       sort INT NOT NULL,
-      data MEDIUMTEXT NOT NULL
+      data TEXT NOT NULL
     )""",
     """CREATE TABLE IF NOT EXISTS variants (
       id VARCHAR(80) PRIMARY KEY,
@@ -67,6 +68,7 @@ SCHEMA = [
       CONSTRAINT variants_price CHECK (price_idr > 0),
       CONSTRAINT variants_stock CHECK (stock >= 0)
     )""",
+    "CREATE INDEX IF NOT EXISTS variants_product ON variants (product_id)",
     """CREATE TABLE IF NOT EXISTS shipping_services (
       id VARCHAR(80) PRIMARY KEY,
       courier VARCHAR(60) NOT NULL,
@@ -83,28 +85,31 @@ SCHEMA = [
       status VARCHAR(30) NOT NULL,
       payment_status VARCHAR(30) NOT NULL,
       total_idr BIGINT NOT NULL,
-      data MEDIUMTEXT NOT NULL,
+      data TEXT NOT NULL,
       courier VARCHAR(60),
       tracking_number VARCHAR(60),
       created_at VARCHAR(32) NOT NULL,
       updated_at VARCHAR(32) NOT NULL,
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      INDEX orders_created (created_at),
-      INDEX orders_status (status)
+      FOREIGN KEY (user_id) REFERENCES users(id)
     )""",
+    # Postgres does not index foreign keys on its own, so the ones we look up by are explicit.
+    "CREATE INDEX IF NOT EXISTS orders_created ON orders (created_at)",
+    "CREATE INDEX IF NOT EXISTS orders_status ON orders (status)",
+    "CREATE INDEX IF NOT EXISTS orders_user ON orders (user_id)",
     # Lines of each order, used for stock arithmetic (the full snapshot lives in orders.data).
     """CREATE TABLE IF NOT EXISTS order_items (
-      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
       order_id VARCHAR(80) NOT NULL,
       variant_id VARCHAR(80) NOT NULL,
       qty INT NOT NULL,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-      INDEX order_items_variant (variant_id),
       CONSTRAINT order_items_qty CHECK (qty > 0)
     )""",
+    "CREATE INDEX IF NOT EXISTS order_items_variant ON order_items (variant_id)",
+    "CREATE INDEX IF NOT EXISTS order_items_order ON order_items (order_id)",
     # Status trail with who changed it (audit, AC-18).
     """CREATE TABLE IF NOT EXISTS order_events (
-      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
       order_id VARCHAR(80) NOT NULL,
       status VARCHAR(30) NOT NULL,
       payment_status VARCHAR(30) NOT NULL,
@@ -112,21 +117,23 @@ SCHEMA = [
       at VARCHAR(32) NOT NULL,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
     )""",
+    "CREATE INDEX IF NOT EXISTS order_events_order ON order_events (order_id)",
     # Shipment checkpoints shown on the tracking map.
     """CREATE TABLE IF NOT EXISTS tracking_points (
-      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
       order_id VARCHAR(80) NOT NULL,
       label VARCHAR(120) NOT NULL,
       note VARCHAR(300) NOT NULL DEFAULT '',
-      lat DOUBLE NOT NULL,
-      lng DOUBLE NOT NULL,
+      lat DOUBLE PRECISION NOT NULL,
+      lng DOUBLE PRECISION NOT NULL,
       actor VARCHAR(60) NOT NULL,
       at VARCHAR(32) NOT NULL,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
     )""",
+    "CREATE INDEX IF NOT EXISTS tracking_points_order ON tracking_points (order_id)",
     # Who changed which catalog value, and from what to what (audit, AC-18).
     """CREATE TABLE IF NOT EXISTS catalog_audit (
-      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
       actor VARCHAR(60) NOT NULL,
       entity VARCHAR(20) NOT NULL,
       entity_id VARCHAR(80) NOT NULL,
@@ -137,6 +144,8 @@ SCHEMA = [
     )""",
 ]
 
+TABLES = ("users", "sessions", "tokens", "products", "variants", "shipping_services", "settings", "orders", "order_items", "order_events", "tracking_points", "catalog_audit")
+
 
 class Row(dict):
     """A result row addressable by column name or by position."""
@@ -145,8 +154,9 @@ class Row(dict):
         return list(self.values())[key] if isinstance(key, int) else super().__getitem__(key)
 
 
-class _RowCursor(DictCursor):
-    dict_type = Row
+def _row_factory(cursor: psycopg.Cursor) -> Any:
+    names = [column.name for column in cursor.description or ()]
+    return lambda values: Row(zip(names, values))
 
 
 class Database:
@@ -155,13 +165,11 @@ class Database:
     Values are always passed as parameters, never formatted into the SQL text.
     """
 
-    def __init__(self, conn: pymysql.connections.Connection) -> None:
+    def __init__(self, conn: psycopg.Connection) -> None:
         self._conn = conn
 
-    def execute(self, sql: str, params: Sequence[Any] = ()) -> Cursor:
-        cursor = self._conn.cursor()
-        cursor.execute(sql.replace("?", "%s"), tuple(params))
-        return cursor
+    def execute(self, sql: str, params: Sequence[Any] = ()) -> psycopg.Cursor:
+        return self._conn.execute(sql.replace("?", "%s"), tuple(params) or None)
 
     def executemany(self, sql: str, rows: Sequence[Sequence[Any]]) -> None:
         if rows:
@@ -178,38 +186,38 @@ class Database:
 
 
 def connect() -> Database:
-    conn = pymysql.connect(**db_settings(), charset="utf8mb4", cursorclass=_RowCursor, autocommit=False)
-    # READ COMMITTED: once a checkout holds the row locks on its variants, its next read
-    # must see orders other customers have just committed (REPEATABLE READ would not).
-    with conn.cursor() as cursor:
-        cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
-    return Database(conn)
+    # Postgres runs READ COMMITTED by default: once a checkout holds the row locks on its
+    # variants, its next read sees orders other customers have just committed.
+    # prepare_threshold=None: Supabase's transaction pooler does not keep prepared statements.
+    return Database(psycopg.connect(database_url(), row_factory=_row_factory, prepare_threshold=None, connect_timeout=10))
 
 
-def _migrate(db: Database) -> None:
-    """Columns added after a table first shipped; CREATE TABLE IF NOT EXISTS leaves old tables alone."""
-    has_provider = db.execute(
-        "SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'provider'"
-    ).fetchone()
-    if not has_provider:
-        # How the account was created: 'email' (password) or 'google' (Google sign-in).
-        db.execute("ALTER TABLE users ADD COLUMN provider VARCHAR(10) NOT NULL DEFAULT 'email'")
+def _lock_out_data_api(db: Database) -> None:
+    """Supabase serves every table in `public` over its REST API to anyone holding the project's
+    public key, unless row level security is on. This backend connects as the table owner,
+    which RLS does not restrict, so switching it on (with no policies) closes that door only."""
+    rows = db.execute(
+        "SELECT relname FROM pg_class WHERE relnamespace = current_schema()::regnamespace AND relkind = 'r' AND NOT relrowsecurity AND relname = ANY(?)",
+        (list(TABLES),),
+    ).fetchall()
+    for row in rows:
+        db.execute(f"ALTER TABLE {row[0]} ENABLE ROW LEVEL SECURITY")
 
 
 def init_db(retries: int = 30) -> None:
-    """Create tables and seed the catalog. Waits for MySQL, which may still be starting."""
+    """Create tables and seed the catalog. Waits for a local Postgres that may still be starting."""
     for attempt in range(retries):
         try:
             db = connect()
             break
-        except pymysql.err.OperationalError:
+        except psycopg.OperationalError:
             if attempt == retries - 1:
                 raise
             time.sleep(2)
     try:
         for statement in SCHEMA:
             db.execute(statement)
-        _migrate(db)
+        _lock_out_data_api(db)
         from .catalog import seed_catalog  # late import: catalog depends on this module
 
         seed_catalog(db)

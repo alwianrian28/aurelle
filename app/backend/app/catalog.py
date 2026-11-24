@@ -54,7 +54,7 @@ def held_stock(db: Database) -> dict[str, int]:
         f"SELECT i.variant_id, SUM(i.qty) FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.status IN ({marks}) GROUP BY i.variant_id",
         STOCK_HOLDING,
     ).fetchall()
-    return {r[0]: int(r[1]) for r in rows}  # SUM() comes back as Decimal
+    return {r[0]: int(r[1]) for r in rows}  # SUM() of INT is BIGINT
 
 
 def served_countries(db: Database) -> list[str]:

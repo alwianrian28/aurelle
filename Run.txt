@@ -1,4 +1,4 @@
-docker compose up -d                                             # MySQL
+docker compose up -d                                             # Postgres
 cd app/backend && uvicorn app.main:app --port 8000 --reload      # API
 cd app/web/ecommerce && npm run dev                              # toko, :5173
 cd app/web/dashboard && npm run dev                              # dashboard, :5174
