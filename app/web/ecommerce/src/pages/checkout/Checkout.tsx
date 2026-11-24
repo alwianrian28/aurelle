@@ -11,15 +11,21 @@ import { useCatalogVersion } from '../../lib/catalogSync';
 import { shippingServices } from '../../mocks/catalog';
 import { useLocalePath, useLocalized, usePrice } from '../../hooks/useLocale';
 import { computeCostBreakdown, SERVED_COUNTRIES } from '../../utils/checkout';
-import { isAddressComplete } from '../../utils/address';
+import { isAddressComplete, type AddressDraft } from '../../utils/address';
+import { BRAND_CONTACT, buildWhatsAppLink } from '../../config/brand';
 import type { CartItem, PaymentMethod } from '../../types/domain';
 import SmartImage from '../../components/SmartImage';
-import CostBreakdownList from '../../components/CostBreakdownList';
+import AddressForm from '../../components/AddressForm';
 import EmailVerifyNotice from '../../components/EmailVerifyNotice';
+import Icon from '../../components/ServiceIcons';
 import './Checkout.css';
 
+const YEAR = new Date().getFullYear();
+const FOOT_LINKS = ['shipping', 'payment', 'revision-return', 'privacy', 'terms'] as const;
+
 /**
- * F-08 Checkout ready stock (alur §7.1).
+ * F-08 Checkout ready stock (alur §7.1), on its own page chrome: no site navigation, so
+ * nothing pulls the customer away mid-purchase.
  * 1. Pilih alamat → cek negara layanan & kelengkapan (FR-02-03, AC-02-05).
  * 2. Pilih layanan kirim → rincian biaya terpisah (BR-15, AC-08-02).
  * 3. Pilih metode bayar (hanya lunas, FR-08-02) & setujui ketentuan (FR-08-07).
@@ -34,12 +40,13 @@ export default function Checkout() {
 
   const user = useAuthStore((s) => s.user);
   const { items, clear } = useCartStore();
-  const addresses = useAddressStore((s) => s.addresses);
+  const { addresses, addAddress } = useAddressStore();
   const { currency, usdToIdr } = usePreferenceStore();
   useCatalogVersion(); // re-render when server prices or stock refresh
 
   const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0];
   const [addressId, setAddressId] = useState(defaultAddr?.id ?? '');
+  const [adding, setAdding] = useState(false);
   const [serviceId, setServiceId] = useState(shippingServices[0]?.id ?? '');
   const [selectedMethod, setMethod] = useState<PaymentMethod>('card');
   const [agreed, setAgreed] = useState(false);
@@ -65,15 +72,15 @@ export default function Checkout() {
   const costs = service && countryServed ? computeCostBreakdown(subtotalIdr, service.costIdr) : null;
 
   const emailVerified = !!user?.emailVerified;
-  const canSubmit =
-    items.length > 0 &&
-    !cartBlocked &&
-    emailVerified &&
-    addressComplete &&
-    countryServed &&
-    !!costs &&
-    agreed &&
-    !submitting;
+  const ready = items.length > 0 && !cartBlocked && emailVerified && addressComplete && countryServed && !!costs;
+  const canSubmit = ready && agreed && !submitting;
+  // The one thing still standing between the customer and the button.
+  const hint = cartBlocked ? t('checkout.cartBlocked')
+    : !emailVerified ? t('checkout.verifyRequired')
+    : !address ? t('checkout.addAddressFirst')
+    : !addressComplete || !countryServed ? t('checkout.hintAddress')
+    : !agreed ? t('checkout.hintAgree')
+    : '';
 
   const handleSubmit = async () => {
     if (!canSubmit || !user || !address || !service) return;
@@ -93,238 +100,222 @@ export default function Checkout() {
     navigate(path(`/checkout/payment/${result.order.id}`), { replace: true });
   };
 
+  const saveAddress = (draft: AddressDraft) => {
+    setAddressId(addAddress(draft).id);
+    setAdding(false);
+  };
+
+  const chrome = (content: React.ReactNode) => (
+    <div className="co">
+      <title>{`${t('checkout.title')} — Aurelle`}</title>
+      <header className="co-bar">
+        <div className="co__inner">
+          <NavLink id="checkout-back" to={path('/cart')} className="co-bar__back"><ArrowLeftIcon />{t('checkout.backToBag')}</NavLink>
+          <NavLink to={path('/store')} className="co-bar__logo" aria-label="Aurelle">AURELLE</NavLink>
+          <span className="co-bar__secure"><LockIcon />{t('checkout.secure')}</span>
+        </div>
+      </header>
+      {content}
+      <footer className="co-foot">
+        <div className="co__inner">
+          <span>&copy; {YEAR} Aurelle</span>
+          <nav aria-label={t('help.center')}>
+            {FOOT_LINKS.map((key) => <NavLink key={key} to={path(`/policies/${key}`)} target="_blank">{t(`checkout.foot.${key}`)}</NavLink>)}
+          </nav>
+        </div>
+      </footer>
+    </div>
+  );
+
   if (items.length === 0) {
-    return (
-      <div className="container section checkout-empty">
-        <h1 className="heading-xl">{t('checkout.title')}</h1>
-        <p className="text-muted">{t('checkout.emptyCart')}</p>
-        <NavLink to={path('/shop')} className="btn btn--primary">
-          {t('account.startShopping')}
-        </NavLink>
-      </div>
+    return chrome(
+      <div className="co__inner co-empty">
+        <h1>{t('checkout.title')}</h1>
+        <p>{t('checkout.emptyCart')}</p>
+        <NavLink id="checkout-shop" to={path('/shop')} className="guide-btn">{t('account.startShopping')}</NavLink>
+      </div>,
     );
   }
 
-  return (
-    <div className="container section checkout">
-      <header className="checkout__head">
-        <p className="eyebrow">Aurelle</p>
-        <h1 className="heading-xl">{t('checkout.title')}</h1>
-      </header>
+  return chrome(
+    <div className="co__inner co__layout">
+      <div className="co__main">
+        <h1>{t('checkout.title')}</h1>
 
-      <div className="checkout__layout">
-        <div className="checkout__main">
+        <section className="co-section" aria-labelledby="co-contact-title">
+          <h2 id="co-contact-title">{t('checkout.contact')}</h2>
+          <p className="co-contact">
+            <strong>{user?.email}</strong>
+            {emailVerified && <span className="co-chip"><CheckIcon />{t('acct.verified')}</span>}
+            <span>{t('checkout.updatesHere')}</span>
+          </p>
           {!emailVerified && <EmailVerifyNotice />}
+        </section>
 
-          {/* 1 — Alamat */}
-          <section className="checkout-step card">
-            <div className="checkout-step__head">
-              <span className="checkout-step__num">1</span>
-              <h2>{t('checkout.stepAddress')}</h2>
-              <NavLink to={path('/account/addresses')} className="link text-sm checkout-step__aside">
-                {t('checkout.manageAddresses')}
-              </NavLink>
-            </div>
-
-            {addresses.length === 0 ? (
-              <div className="alert alert--warning">
-                <span>
-                  {t('checkout.addAddressFirst')}{' '}
-                  <NavLink to={path('/account/addresses')}>{t('address.add')}</NavLink>
-                </span>
-              </div>
-            ) : (
-              <fieldset className="option-list" aria-label={t('checkout.shipTo')}>
-                {addresses.map((a) => (
-                  <label key={a.id} className={`option ${a.id === address?.id ? 'is-selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="address"
-                      value={a.id}
-                      checked={a.id === address?.id}
-                      onChange={() => setAddressId(a.id)}
-                    />
-                    <span className="option__body">
-                      <span className="option__title">
-                        {a.recipient}{' '}
-                        {a.isDefault && <span className="pill pill--silver">{t('address.default')}</span>}
-                      </span>
-                      <span className="text-muted">
-                        {a.line1}, {a.city}, {a.country} · {a.phoneCountryCode} {a.phone}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
-            )}
-
-            {address && !addressComplete && (
-              <div className="alert alert--error">
-                <span>
-                  {t('checkout.addressIncomplete')}{' '}
-                  <NavLink to={path('/account/addresses')}>{t('checkout.manageAddresses')}</NavLink>
-                </span>
-              </div>
-            )}
-            {address && addressComplete && !countryServed && (
-              <div className="alert alert--error">
-                <span>
-                  {t('checkout.countryNotServed', { country: address.country })}{' '}
-                  <NavLink id="checkout-contact" to={path(`/contact?reason=country&country=${encodeURIComponent(address.country)}`)}>{t('checkout.contactUs')}</NavLink>
-                </span>
-              </div>
-            )}
-
-            {address && addressComplete && countryServed && (
-              <>
-                <h3 className="checkout-step__sub">{t('checkout.shippingService')}</h3>
-                <fieldset className="option-list" aria-label={t('checkout.shippingService')}>
-                  {shippingServices.map((s) => (
-                    <label key={s.id} className={`option ${s.id === serviceId ? 'is-selected' : ''}`}>
-                      <input
-                        type="radio"
-                        name="service"
-                        value={s.id}
-                        checked={s.id === serviceId}
-                        onChange={() => setServiceId(s.id)}
-                      />
-                      <span className="option__body">
-                        <span className="option__title">
-                          {s.courier} — {localized(s.name)}
-                        </span>
-                        <span className="text-muted">{t('checkout.eta', { days: s.etaDays })}</span>
-                      </span>
-                      <span className="option__aside">{price(s.costIdr)}</span>
-                    </label>
-                  ))}
-                </fieldset>
-              </>
-            )}
-          </section>
-
-          {/* 2 — Pembayaran */}
-          <section className={`checkout-step card ${!costs ? 'is-locked' : ''}`} aria-disabled={!costs}>
-            <div className="checkout-step__head">
-              <span className="checkout-step__num">2</span>
-              <h2>{t('checkout.stepPayment')}</h2>
-            </div>
-            <p className="text-sm text-muted">{t('checkout.fullPaymentOnly')}</p>
-
-            <fieldset className="option-list" aria-label={t('checkout.paymentMethod')} disabled={!costs}>
-              <label className={`option ${method === 'card' ? 'is-selected' : ''}`}>
-                <input type="radio" name="method" checked={method === 'card'} onChange={() => setMethod('card')} />
-                <span className="option__body">
-                  <span className="option__title">{t('checkout.card')}</span>
-                </span>
-                <span className="checkout-brands" aria-hidden="true">
-                  <span>VISA</span>
-                  <span>MC</span>
-                </span>
-              </label>
-              {qrisAvailable ? (
-                <label className={`option ${method === 'qris' ? 'is-selected' : ''}`}>
-                  <input type="radio" name="method" checked={method === 'qris'} onChange={() => setMethod('qris')} />
-                  <span className="option__body">
-                    <span className="option__title">{t('checkout.qris')}</span>
-                  </span>
-                </label>
-              ) : (
-                <p className="field-hint">{t('checkout.qrisIdrOnly')}</p>
-              )}
-            </fieldset>
-
-            <label className="check" style={{ marginTop: 'var(--space-2)' }}>
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-                disabled={!costs}
-                id="checkout-agree"
-              />
-              <span>
-                {t('checkout.agreeTerms')}{' '}
-                <NavLink to={path('/policies/terms')} target="_blank" className="link">
-                  {t('checkout.readTerms')}
-                </NavLink>
-              </span>
-            </label>
-          </section>
-        </div>
-
-        {/* Ringkasan */}
-        <aside className="checkout__summary card">
-          <h2 className="heading-md">{t('checkout.summary')}</h2>
-          <ul className="checkout-items">
-            {resolved.map(({ item, product, variant, unavailable, exceedsStock }) => (
-              <li key={item.variantId} className="checkout-item">
-                <div className="checkout-item__media">
-                  <SmartImage src={product?.media[0]?.src} alt="" category={product?.category ?? 'ring'} />
-                  <span className="checkout-item__qty">{item.qty}</span>
-                </div>
-                <div className="checkout-item__info">
-                  <span>{localized(product?.name)}</span>
-                  <span className="text-muted text-sm">{localized(variant?.label)}</span>
-                  {(unavailable || exceedsStock) && (
-                    <span className="field-error">{t('cart.unavailable')}</span>
-                  )}
-                </div>
-                <span className="checkout-item__price">{variant ? price(variant.priceIdr * item.qty) : '—'}</span>
-              </li>
-            ))}
-          </ul>
-
-          <hr className="divider" />
-
-          {costs ? (
-            <CostBreakdownList costs={costs} format={price} />
-          ) : (
-            <dl className="dl-list">
-              <div>
-                <dt>{t('common.subtotal')}</dt>
-                <dd>{price(subtotalIdr)}</dd>
-              </div>
-            </dl>
-          )}
-
-          <div className="checkout__notes">
-            <p>{t('checkout.estimateNote')}</p>
-            <p>{t('checkout.lockNote')}</p>
-            {currency === 'USD' && (
-              <p>{t('checkout.usdNote', { rate: `Rp${usdToIdr.toLocaleString('id-ID')}` })}</p>
-            )}
+        <section className="co-section" aria-labelledby="co-address-title">
+          <div className="co-section__head">
+            <h2 id="co-address-title">{t('checkout.shippingAddress')}</h2>
+            <NavLink id="checkout-manage-addresses" to={path('/account/addresses')}>{t('checkout.manageAddresses')}</NavLink>
           </div>
 
-          {cartBlocked && (
-            <div className="alert alert--error">
-              <span>
-                {t('checkout.cartBlocked')} <NavLink to={path('/cart')}>{t('checkout.reviewCart')}</NavLink>
-              </span>
-            </div>
+          {addresses.length > 0 && (
+            <fieldset className="co-options" aria-label={t('checkout.shipTo')}>
+              {addresses.map((a) => (
+                <label key={a.id} className={`co-option${a.id === address?.id ? ' is-selected' : ''}`}>
+                  <input type="radio" name="address" value={a.id} checked={a.id === address?.id} onChange={() => setAddressId(a.id)} />
+                  <span className="co-option__body">
+                    <strong>{a.recipient}{a.isDefault && <span className="co-tag">{t('address.default')}</span>}</strong>
+                    <span>{[a.line1, a.line2, `${a.city}, ${a.state} ${a.postalCode}`.trim(), a.country].filter(Boolean).join(', ')}</span>
+                    <small>{a.phoneCountryCode} {a.phone}</small>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
           )}
-          {submitError && (
-            <div className="alert alert--error" role="alert">
-              <span>
-                {t(submitError === 'price_changed' ? 'checkout.priceChanged' : submitError === 'out_of_stock' ? 'checkout.outOfStock' : submitError === 'unverified' ? 'checkout.verifyRequired' : submitError === 'network' ? 'authPage.networkError' : 'checkout.orderFailed')}{' '}
-                <NavLink to={path('/cart')}>{t('checkout.reviewCart')}</NavLink>
-              </span>
-            </div>
-          )}
-          {!emailVerified && <p className="field-error">{t('checkout.verifyRequired')}</p>}
 
-          <button
-            className="btn btn--primary btn--block"
-            disabled={!canSubmit}
-            onClick={() => void handleSubmit()}
-            id="checkout-place-order"
-          >
-            {t('checkout.placeOrder')}
-          </button>
-          <p className="field-hint" style={{ textAlign: 'center' }}>
-            {t('checkout.reservationNote', { minutes: RESERVATION_MINUTES })}
-          </p>
-        </aside>
+          {adding ? (
+            <div className="co-address-form">
+              <AddressForm onSubmit={saveAddress} onCancel={() => setAdding(false)} />
+            </div>
+          ) : (
+            <button id="checkout-add-address" type="button" className="co-add" onClick={() => setAdding(true)}>
+              <span aria-hidden="true">+</span>{t('acct.addNewAddress')}
+            </button>
+          )}
+
+          {address && !addressComplete && (
+            <p className="co-alert" role="alert">
+              {t('checkout.addressIncomplete')}{' '}
+              <NavLink to={path('/account/addresses')}>{t('checkout.manageAddresses')}</NavLink>
+            </p>
+          )}
+          {address && addressComplete && !countryServed && (
+            <p className="co-alert" role="alert">
+              {t('checkout.countryNotServed', { country: address.country })}{' '}
+              <NavLink id="checkout-contact" to={path(`/contact?reason=country&country=${encodeURIComponent(address.country)}`)}>{t('checkout.contactUs')}</NavLink>
+            </p>
+          )}
+        </section>
+
+        {address && addressComplete && countryServed && (
+          <section className="co-section" aria-labelledby="co-delivery-title">
+            <h2 id="co-delivery-title">{t('checkout.delivery')}</h2>
+            <fieldset className="co-options" aria-label={t('checkout.shippingService')}>
+              {shippingServices.map((s) => (
+                <label key={s.id} className={`co-option${s.id === serviceId ? ' is-selected' : ''}`}>
+                  <input type="radio" name="service" value={s.id} checked={s.id === serviceId} onChange={() => setServiceId(s.id)} />
+                  <span className="co-option__body">
+                    <strong>{s.courier} · {localized(s.name)}</strong>
+                    <span>{t('checkout.eta', { days: s.etaDays })}</span>
+                  </span>
+                  <span className="co-option__aside">{price(s.costIdr)}</span>
+                </label>
+              ))}
+            </fieldset>
+            <p className="co-note">{t('checkout.deliveryNote')}</p>
+          </section>
+        )}
+
+        <section className="co-section" aria-labelledby="co-payment-title">
+          <h2 id="co-payment-title">{t('checkout.stepPayment')}</h2>
+          <p className="co-section__sub">{t('checkout.payNote')}</p>
+          <fieldset className="co-options" aria-label={t('checkout.paymentMethod')} disabled={!costs}>
+            <label className={`co-option${method === 'card' ? ' is-selected' : ''}`}>
+              <input id="checkout-method-card" type="radio" name="method" checked={method === 'card'} onChange={() => setMethod('card')} />
+              <span className="co-option__body">
+                <strong>{t('checkout.cardTitle')}</strong>
+                <span>{t('checkout.cardBody')}</span>
+              </span>
+              <span className="co-brands" aria-hidden="true"><span>VISA</span><span>MC</span></span>
+            </label>
+            {qrisAvailable ? (
+              <label className={`co-option${method === 'qris' ? ' is-selected' : ''}`}>
+                <input id="checkout-method-qris" type="radio" name="method" checked={method === 'qris'} onChange={() => setMethod('qris')} />
+                <span className="co-option__body">
+                  <strong>{t('checkout.qris')}</strong>
+                  <span>{t('checkout.qrisBody')}</span>
+                </span>
+              </label>
+            ) : <p className="co-note">{t('checkout.qrisIdrOnly')}</p>}
+          </fieldset>
+        </section>
       </div>
-    </div>
+
+      <aside className="co-summary" aria-labelledby="co-summary-title">
+        <h2 id="co-summary-title">{t('checkout.summary')}</h2>
+        <ul className="co-items">
+          {resolved.map(({ item, product, variant, unavailable, exceedsStock }) => (
+            <li key={item.variantId}>
+              <div className="co-items__media">
+                <SmartImage src={product?.media[0]?.src} alt="" category={product?.category ?? 'ring'} />
+                <span>{item.qty}</span>
+              </div>
+              <div>
+                <strong>{localized(product?.name)}</strong>
+                <span>{localized(variant?.label)}</span>
+                {(unavailable || exceedsStock) && <em>{t('cart.unavailable')}</em>}
+              </div>
+              <span>{variant ? price(variant.priceIdr * item.qty) : '—'}</span>
+            </li>
+          ))}
+        </ul>
+
+        <dl className="co-costs">
+          <div><dt>{t('common.subtotal')}</dt><dd>{price(subtotalIdr)}</dd></div>
+          {costs && service && (
+            <>
+              <div><dt>{t('checkout.shippingRow', { courier: service.courier })}</dt><dd>{price(costs.shipping)}</dd></div>
+              {costs.tax > 0 && <div><dt>{t('common.tax')}</dt><dd>{price(costs.tax)}</dd></div>}
+              <div><dt>{t('common.duty')} <small>{t('checkout.estimate')}</small></dt><dd>{price(costs.duty)}</dd></div>
+              {costs.other > 0 && <div><dt>{t('common.other')}</dt><dd>{price(costs.other)}</dd></div>}
+            </>
+          )}
+        </dl>
+        {costs && (
+          <p className="co-total"><span>{t('common.total')}</span><strong id="checkout-total">{price(costs.total)}</strong></p>
+        )}
+        <p className="co-summary__note">
+          {t('checkout.chargedNote', { currency })}
+          {currency === 'USD' && <> {t('checkout.usdNote', { rate: `Rp${usdToIdr.toLocaleString('id-ID')}` })}</>}
+        </p>
+
+        <label className="co-agree">
+          <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} disabled={!ready} id="checkout-agree" />
+          <span>
+            {t('checkout.agreeA')} <NavLink to={path('/policies/terms')} target="_blank">{t('checkout.termsLink')}</NavLink>
+            {t('checkout.agreeB')} <NavLink to={path('/policies/revision-return')} target="_blank">{t('checkout.nonReturnable')}</NavLink>.
+          </span>
+        </label>
+
+        {submitError && (
+          <p className="co-alert" role="alert">
+            {t(submitError === 'price_changed' ? 'checkout.priceChanged' : submitError === 'out_of_stock' ? 'checkout.outOfStock' : submitError === 'unverified' ? 'checkout.verifyRequired' : submitError === 'network' ? 'authPage.networkError' : 'checkout.orderFailed')}{' '}
+            <NavLink to={path('/cart')}>{t('checkout.reviewCart')}</NavLink>
+          </p>
+        )}
+
+        <button className="guide-btn co-submit" disabled={!canSubmit} onClick={() => void handleSubmit()} id="checkout-place-order" aria-describedby="checkout-hint">
+          {submitting ? t('checkout.placing') : costs ? t('checkout.placeOrderTotal', { total: price(costs.total) }) : t('checkout.placeOrder')}
+        </button>
+        <p id="checkout-hint" className="co-summary__hint" role="status">
+          {hint}
+          {cartBlocked && <> <NavLink to={path('/cart')}>{t('checkout.reviewCart')}</NavLink></>}
+        </p>
+
+        <ul className="co-assure">
+          <li><LockIcon />{t('checkout.held', { minutes: RESERVATION_MINUTES })}</li>
+          <li>
+            <Icon name="whatsapp" size={16} />
+            <span>
+              {t('checkout.questions')}{' '}
+              {BRAND_CONTACT.isPlaceholder
+                ? <NavLink id="checkout-help" to={path('/contact')}>{t('help.contactPage')}</NavLink>
+                : <a id="checkout-help" href={buildWhatsAppLink('')} target="_blank" rel="noopener noreferrer">{t('help.chat')}</a>}
+            </span>
+          </li>
+        </ul>
+      </aside>
+    </div>,
   );
 }
 
@@ -336,4 +327,15 @@ function snapshotPrices(items: CartItem[]): Record<string, number> {
     if (variant) out[item.variantId] = variant.priceIdr;
   }
   return out;
+}
+
+const SVG = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const;
+function ArrowLeftIcon() {
+  return <svg {...SVG}><path d="M19 12H5M11 6l-6 6 6 6" /></svg>;
+}
+function LockIcon() {
+  return <svg {...SVG}><rect x="5" y="10.500" width="14" height="9.500" rx="1.500" /><path d="M8.500 10.500V8a3.500 3.500 0 0 1 7 0v2.500" /></svg>;
+}
+function CheckIcon() {
+  return <svg {...SVG} width={12} height={12} strokeWidth={2.2}><path d="M4.500 12.500l5 5 10-11" /></svg>;
 }

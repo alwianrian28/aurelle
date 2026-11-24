@@ -18,7 +18,7 @@ export default function SystemPage({ kind }: { kind: SystemKind }) {
       <p className="eyebrow" style={{ justifyContent: 'center' }}>{code}</p>
       <h1 className="heading-xl">{title}</h1>
       <p className="text-muted" style={{ marginTop: 'var(--space-3)' }}>{t(`system.${kind}Body`)}</p>
-      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', marginTop: 'var(--space-6)' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', flexWrap: 'wrap', marginTop: 'var(--space-6)' }}>
         {kind !== 'notFound' && (
           <button id="system-reload" type="button" className="btn btn--outline" onClick={() => window.location.reload()}>
             {t('system.reload')}

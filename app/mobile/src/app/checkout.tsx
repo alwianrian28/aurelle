@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link, Redirect, useRouter } from 'expo-router';
 import { api, type Costs, type Order } from '@/lib/api';
@@ -32,7 +32,7 @@ export default function Checkout() {
   const [busy, setBusy] = useState(false);
   const [devToken, setDevToken] = useState('');
   // One id per checkout attempt: a retry after a dropped connection cannot create a second order.
-  const orderId = useRef(`ord-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`);
+  const [orderId] = useState(() => `ord-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`);
 
   const cartKey = cart.map((l) => `${l.variantId}:${l.qty}`).join(',');
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function Checkout() {
     saveAddress(form);
     const res = await api<{ order: Order }>('/orders', {
       body: {
-        id: orderId.current,
+        id: orderId,
         items: cart.map((l) => ({ variantId: l.variantId, qty: l.qty, expectedPriceIdr: find(l.variantId)?.variant.priceIdr ?? 0 })),
         address: { ...form, recipient: form.recipient.trim(), phoneCountryCode: form.phoneCountryCode.trim(), phone: form.phone.trim(), state: form.state.trim(), city: form.city.trim(), line1: form.line1.trim() },
         shippingServiceId: serviceId, paymentMethod: method, currency: 'IDR',

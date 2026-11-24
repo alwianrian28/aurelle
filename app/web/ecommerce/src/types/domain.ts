@@ -109,6 +109,8 @@ export interface User {
   preferredLocale: Locale;
   preferredCurrency: Currency;
   newsletter: boolean;
+  /** When the account was created (ISO), for "Member since". */
+  createdAt?: string;
 }
 
 export interface ShippingService {
@@ -212,8 +214,28 @@ export interface Order {
   history: OrderStatusEvent[];
 }
 
+/**
+ * What the Track order page shows. The public lookup (order number + email, no login)
+ * returns exactly this: no street address, phone, prices or account ids.
+ */
+export interface TrackedOrder {
+  /** Only set for the signed-in customer's own orders, to link to the full detail page. */
+  id?: string;
+  number: string;
+  status: ReadyStockOrderStatus;
+  paymentStatus: PaymentStatus;
+  createdAt: string;
+  updatedAt?: string;
+  cancelReason?: 'payment_expired' | null;
+  history: OrderStatusEvent[];
+  tracking?: OrderTracking;
+  items: Pick<OrderItemSnapshot, 'name' | 'variantLabel' | 'image' | 'qty'>[];
+  shippingService: Pick<ShippingService, 'courier' | 'name' | 'etaDays'>;
+  destination: { city: string; country: string };
+}
+
 /* ------------------------------------------------------------------ */
-/* F-06 Newsletter                                                     */
+/* F-06 Newsletter                                                    */
 /* ------------------------------------------------------------------ */
 
 export type SubscriberStatus = 'pending_confirmation' | 'active' | 'unsubscribed';

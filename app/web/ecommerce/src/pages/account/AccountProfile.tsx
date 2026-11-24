@@ -6,8 +6,8 @@ import EmailVerifyNotice from '../../components/EmailVerifyNotice';
 import type { Currency } from '../../types/domain';
 
 /**
- * F-02 Profil & Preferensi (FR-02-01): username, email, telepon berkode negara,
- * bahasa, mata uang, dan status newsletter.
+ * F-02 Profile & preferences (FR-02-01): name, email, phone with country code,
+ * display currency and newsletter consent.
  */
 export default function AccountProfile() {
   const { t } = useTranslation();
@@ -18,7 +18,6 @@ export default function AccountProfile() {
     username: user?.username ?? '',
     phoneCountryCode: user?.phoneCountryCode ?? '+62',
     phone: user?.phone ?? '',
-    newsletter: user?.newsletter ?? false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
@@ -39,109 +38,80 @@ export default function AccountProfile() {
       username: form.username.trim(),
       phoneCountryCode: form.phoneCountryCode.trim(),
       phone: form.phone.trim() || undefined,
-      newsletter: form.newsletter,
     });
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2500);
   };
 
+  const usdReady = isUsdAvailable();
+  const currencies: { value: Currency; label: string; disabled?: boolean }[] = [
+    { value: 'IDR', label: t('acct.idr') },
+    { value: 'USD', label: t('acct.usd'), disabled: !usdReady },
+  ];
+
   return (
     <>
+      <header className="acct-title">
+        <div><h2>{t('account.profile')}</h2></div>
+      </header>
+
       {!user.emailVerified && <EmailVerifyNotice />}
 
-      <div className="card account-panel">
-        <div className="account-panel__head">
-          <h2>{t('account.profile')}</h2>
-        </div>
-
-        <form className="form" onSubmit={handleSubmit} noValidate>
-          <div className="form-row">
-            <label className="field" htmlFor="profile-email">
-              {t('auth.email')}
+      <section className="acct-card" aria-labelledby="profile-personal-title">
+        <h3 id="profile-personal-title" className="acct-label acct-label--ink">{t('acct.personal')}</h3>
+        <form className="acct-form" onSubmit={handleSubmit} noValidate>
+          <div className="acct-form__row">
+            <div className="acct-field">
+              <label htmlFor="profile-username">{t('acct.fullName')}</label>
+              <input id="profile-username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} aria-invalid={!!errors.username} autoComplete="name" maxLength={80} />
+              {errors.username && <p className="acct-field__error">{errors.username}</p>}
+            </div>
+            <div className="acct-field">
+              <label htmlFor="profile-email">{t('auth.email')}</label>
               <input id="profile-email" value={user.email} disabled />
-              <span className="field-hint">
-                {t('account.loginMethod')}: {user.provider === 'google' ? 'Google' : 'Email'}
-              </span>
-            </label>
-            <label className="field" htmlFor="profile-username">
-              {t('auth.username')}
-              <input
-                id="profile-username"
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-                aria-invalid={!!errors.username}
-              />
-              {errors.username && <span className="field-error">{errors.username}</span>}
-            </label>
+              <p>{t('acct.signedInWith', { provider: user.provider === 'google' ? 'Google' : t('auth.email') })} · {t(user.emailVerified ? 'acct.verified' : 'acct.notVerified')}</p>
+            </div>
           </div>
 
-          <div className="form-row form-row--phone">
-            <label className="field" htmlFor="profile-dial">
-              {t('address.dialCode')}
-              <input
-                id="profile-dial"
-                value={form.phoneCountryCode}
-                onChange={(e) => setForm({ ...form, phoneCountryCode: e.target.value })}
-                aria-invalid={!!errors.phoneCountryCode}
-                inputMode="tel"
-              />
-              {errors.phoneCountryCode && <span className="field-error">{errors.phoneCountryCode}</span>}
-            </label>
-            <label className="field" htmlFor="profile-phone">
-              {t('address.phone')}
-              <input
-                id="profile-phone"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                aria-invalid={!!errors.phone}
-                inputMode="tel"
-              />
-              {errors.phone && <span className="field-error">{errors.phone}</span>}
-            </label>
+          <div className="acct-field">
+            <label htmlFor="profile-phone">{t('address.phone')}</label>
+            <div className="acct-form__phone">
+              <input id="profile-dial" value={form.phoneCountryCode} onChange={(e) => setForm({ ...form, phoneCountryCode: e.target.value })} aria-label={t('address.dialCode')} aria-invalid={!!errors.phoneCountryCode} inputMode="tel" maxLength={5} />
+              <input id="profile-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} aria-invalid={!!errors.phone} inputMode="tel" autoComplete="tel-national" placeholder="812 3456 7890" maxLength={20} />
+            </div>
+            {(errors.phoneCountryCode || errors.phone)
+              ? <p className="acct-field__error">{errors.phoneCountryCode || errors.phone}</p>
+              : <p>{t('acct.phoneHint')}</p>}
           </div>
 
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={form.newsletter}
-              onChange={(e) => setForm({ ...form, newsletter: e.target.checked })}
-            />
-            {t('account.newsletter')}
-          </label>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', justifyContent: 'flex-end' }}>
-            {saved && (
-              <span className="text-sm" style={{ color: 'var(--c-success)' }} role="status">
-                ✓ {t('account.profileSaved')}
-              </span>
-            )}
-            <button type="submit" className="btn btn--primary" id="profile-save">
-              {t('common.save')}
-            </button>
+          <div className="acct-form__foot">
+            {saved && <span role="status"><span aria-hidden="true">✓ </span>{t('account.profileSaved')}</span>}
+            <button type="submit" className="guide-btn" id="profile-save">{t('acct.saveChanges')}</button>
           </div>
         </form>
-      </div>
+      </section>
 
-      <div className="card account-panel">
-        <div className="account-panel__head">
-          <h2>{t('account.preferences')}</h2>
-        </div>
-        <div className="form-row">
-          <label className="field" htmlFor="pref-currency">
-            {t('account.currency')}
-            <select
-              id="pref-currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value as Currency)}
-            >
-              <option value="IDR">IDR — Rupiah</option>
-              <option value="USD" disabled={!isUsdAvailable()}>
-                USD — US Dollar
-              </option>
-            </select>
-          </label>
-        </div>
-      </div>
+      <section className="acct-card" aria-labelledby="profile-shopping-title">
+        <h3 id="profile-shopping-title" className="acct-label acct-label--ink">{t('acct.shopping')}</h3>
+        <fieldset className="acct-radios">
+          <legend>{t('acct.displayPrices')}</legend>
+          {currencies.map((c) => (
+            <label key={c.value} className={currency === c.value ? 'is-checked' : ''}>
+              <input id={`pref-currency-${c.value}`} type="radio" name="pref-currency" value={c.value} checked={currency === c.value} disabled={c.disabled} onChange={() => setCurrency(c.value)} />
+              {c.label}
+            </label>
+          ))}
+        </fieldset>
+        <p className="acct-hint">{usdReady ? t('acct.currencyHint') : t('acct.usdUnavailable')}</p>
+      </section>
+
+      <section className="acct-card" aria-labelledby="profile-email-title">
+        <h3 id="profile-email-title" className="acct-label acct-label--ink">{t('acct.emailPrefs')}</h3>
+        <label className="acct-check">
+          <input id="profile-newsletter" type="checkbox" checked={user.newsletter} onChange={(e) => updateProfile({ newsletter: e.target.checked })} />
+          <span>{t('acct.newsletterLong')}</span>
+        </label>
+      </section>
     </>
   );
 }

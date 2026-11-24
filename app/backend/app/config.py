@@ -26,6 +26,12 @@ def shop_origin() -> str:
     return app_origins()[0]
 
 
+def google_client_id() -> str | None:
+    """OAuth client ID for "Continue with Google" (Google Cloud Console > Credentials > Web
+    application). Not a secret. Unset means Google sign-in is switched off."""
+    return os.environ.get("GOOGLE_CLIENT_ID", "").strip() or None
+
+
 def db_settings() -> dict:
     """MySQL connection settings. The password has no default: it comes from the environment or .env."""
     return {

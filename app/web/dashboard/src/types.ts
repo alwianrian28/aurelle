@@ -11,7 +11,7 @@ export interface AdminOrder {
   status: OrderStatus;
   paymentStatus: string;
   createdAt: string;
-  items: { variantId: string; name: { id: string; en: string }; variantLabel?: { id?: string }; qty: number; unitPriceIdr: number }[];
+  items: { variantId: string; name: { id: string; en: string }; variantLabel?: { id?: string; en?: string }; qty: number; unitPriceIdr: number }[];
   costs: { subtotal: number; tax: number; shipping: number; duty: number; other: number; total: number };
   addressSnapshot: Record<string, string | undefined>;
   tracking: { courier: string | null; trackingNumber: string | null; points: TrackingPoint[] };

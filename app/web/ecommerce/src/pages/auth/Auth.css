@@ -23,6 +23,10 @@
 .auth-head__body strong { font-weight: 600; color: var(--svc-ink); }
 
 .auth-google { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 52px; border: 1px solid #c9cdd4; border-radius: 999px; background: #fff; font-size: 15px; font-weight: 500; color: var(--svc-ink); cursor: pointer; transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out); }
+/* Google draws its own button in the slot; it is centred and takes no clicks while a request runs. */
+.auth-google-slot { display: flex; justify-content: center; min-height: 44px; }
+.auth-google-slot[hidden] { display: none; }
+.auth-google-wrap.is-disabled .auth-google-slot { opacity: .5; pointer-events: none; }
 .auth-google:hover { border-color: var(--svc-ink); background: var(--svc-paper); }
 .auth-divider { display: flex; align-items: center; gap: 16px; margin: 22px 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--svc-muted); }
 .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--svc-line); }
@@ -47,9 +51,9 @@
 .auth-check input { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; accent-color: var(--svc-ink); }
 
 .auth-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; padding: 0 24px; border: 1px solid var(--svc-ink); border-radius: 999px; background: var(--svc-ink); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; cursor: pointer; transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
-.auth-btn:hover:not(:disabled) { background: #fff; color: var(--svc-ink); }
+.auth-btn:hover:not(:disabled) { border-color: #2c3340; background: #2c3340; color: #fff; }
 .auth-btn--outline { background: #fff; color: var(--svc-ink); }
-.auth-btn--outline:hover:not(:disabled) { background: var(--svc-ink); color: #fff; }
+.auth-btn--outline:hover:not(:disabled) { border-color: var(--svc-ink); background: var(--svc-stone); color: var(--svc-ink); }
 .auth-btn:disabled, .auth-google:disabled { opacity: .5; cursor: not-allowed; }
 .auth-btn:focus-visible, .auth-google:focus-visible, .auth-shell a:focus-visible, .auth-link:focus-visible, .auth-field__password button:focus-visible { outline: 1px solid var(--svc-ink); outline-offset: 3px; }
 .auth-shell__content > .auth-btn, .auth-shell__content > .auth-note { margin-top: 16px; }

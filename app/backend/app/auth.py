@@ -1,4 +1,4 @@
-"""Accounts and sessions (F-01): register, login, email verification, password reset."""
+"""Accounts and sessions (F-01): register, login, Google sign-in, email verification, password reset."""
 import re
 import time
 import uuid
@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
-from .config import is_prod, shop_origin
+from .config import google_client_id, is_prod, shop_origin
 from .db import Database, IntegrityError, Row, get_db
 from .security import Limiter, hash_password, hash_token, new_token, password_too_long, verify_password
 
@@ -35,10 +35,11 @@ def public_user(u: Row) -> dict:
     """Shape the web/mobile `User` type expects. Never includes the password hash."""
     return {
         "id": u["id"], "email": u["email"], "username": u["username"], "role": u["role"],
-        "emailVerified": bool(u["email_verified"]), "provider": "email",
+        "emailVerified": bool(u["email_verified"]), "provider": u["provider"],
         "phoneCountryCode": u["phone_country_code"], "phone": u["phone"],
         "preferredLocale": u["preferred_locale"], "preferredCurrency": u["preferred_currency"],
         "newsletter": bool(u["newsletter"]),
+        "createdAt": u["created_at"],
     }
 
 
@@ -136,6 +137,12 @@ class LoginIn(BaseModel):
     keep: bool = False
 
 
+class GoogleIn(BaseModel):
+    """`credential` is the ID token Google Identity Services hands to the page."""
+    credential: str = Field(min_length=20, max_length=4096)
+    keep: bool = False
+
+
 class EmailIn(BaseModel):
     email: str = Field(max_length=254)
 
@@ -188,6 +195,69 @@ def login(body: LoginIn, db: Db, request: Request, response: Response):
         login_limiter.fail(key)
         raise HTTPException(401, {"error": "invalid_credentials", "retryAfterMs": int(login_limiter.locked_for(key) * 1000)})
     login_limiter.reset(key)
+    _start_session(db, response, user["id"], body.keep)
+    return {"user": public_user(user)}
+
+
+def verify_google_credential(credential: str, client_id: str) -> dict | None:
+    """Claims of a Google ID token, or None when it is not a valid token for this app.
+
+    Google's library checks the signature against Google's published keys, the expiry, the
+    issuer and that the token was issued for our client ID. Raises TransportError when
+    Google's keys cannot be fetched."""
+    from google.auth.transport import requests as google_requests
+    from google.oauth2 import id_token
+
+    try:
+        return id_token.verify_oauth2_token(credential, google_requests.Request(), client_id)
+    except ValueError:
+        return None
+
+
+@router.get("/config")
+def auth_config():
+    """What the sign-in pages need before anyone is logged in."""
+    return {"googleClientId": google_client_id()}
+
+
+@router.post("/google")
+def google_login(body: GoogleIn, db: Db, response: Response):
+    """Sign in, or create the account, with a Google ID token (BR-03)."""
+    from google.auth.exceptions import TransportError
+
+    client_id = google_client_id()
+    if not client_id:
+        raise HTTPException(503, "google_not_configured")
+    try:
+        claims = verify_google_credential(body.credential, client_id)
+    except TransportError:
+        raise HTTPException(503, "google_unreachable") from None
+    email = str((claims or {}).get("email") or "").strip().lower()
+    # Only an address Google itself has verified may open or create an account.
+    if not claims or claims.get("email_verified") not in (True, "true") or not EMAIL_RE.match(email) or len(email) > 254:
+        raise HTTPException(401, "invalid_credentials")
+
+    user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    if user and not user["email_verified"]:
+        # A password account nobody proved they own. Google has now proved who owns the
+        # address, so the old password and any session opened with it stop working.
+        db.execute("UPDATE users SET email_verified = 1, password_hash = ? WHERE id = ?", (hash_password(new_token()), user["id"]))
+        db.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
+    if not user:
+        name = " ".join(str(claims.get("name") or "").split())[:80]
+        if len(name) < 3:
+            name = email.split("@")[0][:80].ljust(3, "_")
+        user_id = str(uuid.uuid4())
+        try:
+            # No password is set: the hash is of a random secret nobody holds. The customer can
+            # still add one later through "Forgot password".
+            db.execute(
+                "INSERT INTO users (id, email, username, password_hash, provider, email_verified, created_at) VALUES (?, ?, ?, ?, 'google', 1, ?)",
+                (user_id, email, name, hash_password(new_token()), now_iso()),
+            )
+        except IntegrityError:  # the same address signed up a moment ago
+            pass
+    user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
     _start_session(db, response, user["id"], body.keep)
     return {"user": public_user(user)}
 

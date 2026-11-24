@@ -95,12 +95,6 @@ export default function Shop() {
         <title>{`${title} — Aurelle`}</title>
         <meta name="description" content={t('shop.intro')} />
 
-        <nav className="shop__crumbs" aria-label={t('product.breadcrumb')}>
-          <ol>
-            <li><NavLink id="shop-crumb-home" to={path('/store')}>{t('product.home')}</NavLink></li>
-            <li aria-current="page">{t('nav.shop')}</li>
-          </ol>
-        </nav>
 
         <header className="shop__head">
           <h1>{title}</h1>

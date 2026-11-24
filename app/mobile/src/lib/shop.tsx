@@ -38,14 +38,17 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void reload();
+    void api<Catalog>('/catalog').then((res) => {
+      setOffline(!res.ok);
+      if (res.ok) setCatalog(res.data);
+    });
     void AsyncStorage.multiGet([CART_KEY, ADDRESS_KEY]).then(([savedCart, savedAddress]) => {
       try {
         if (savedCart[1]) setCart((JSON.parse(savedCart[1]) as CartLine[]).filter((l) => typeof l.variantId === 'string' && Number.isInteger(l.qty) && l.qty > 0));
         if (savedAddress[1]) setAddress({ ...EMPTY_ADDRESS, ...(JSON.parse(savedAddress[1]) as Partial<AddressForm>) });
       } catch { /* damaged storage: start empty */ }
     });
-  }, [reload]);
+  }, []);
 
   const find = useCallback((variantId: string) => {
     for (const product of catalog?.products ?? []) {

@@ -3,3 +3,6 @@ uvicorn[standard]>=0.30
 # MySQL driver; the rsa extra is needed for MySQL 8's default password authentication.
 pymysql[rsa]>=1.1
 bcrypt>=4.1
+# Verifies Google ID tokens for "Continue with Google" (requests is its HTTP transport).
+google-auth>=2.30
+requests>=2.31

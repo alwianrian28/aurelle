@@ -175,3 +175,18 @@ button.link:hover {
     grid-template-columns: 100px minmax(0, 1fr);
   }
 }
+
+/* Phones: the price / card-brand line drops under the option text instead of squeezing it. */
+@media (max-width: 640px) {
+  .option {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-4);
+  }
+  .option__aside,
+  .option > .checkout-brands {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

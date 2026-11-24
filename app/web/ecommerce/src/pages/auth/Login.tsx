@@ -17,6 +17,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const loginWithEmail = useAuthStore((s) => s.loginWithEmail);
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [keep, setKeep] = useState(false);
@@ -45,8 +46,18 @@ export default function Login() {
     navigate(from, { replace: true });
   };
 
-  // No OAuth client is configured yet, so the button explains instead of pretending.
-  const handleGoogle = () => setError(t('authPage.googleUnavailable'));
+  // Google hands over an ID token; the API verifies it and opens the session.
+  const handleGoogle = async (credential: string) => {
+    setLoading(true);
+    setError(null);
+    const res = await loginWithGoogle(credential, keep);
+    setLoading(false);
+    if (!res.ok) {
+      setError(t(res.reason === 'network' ? 'authPage.networkError' : 'authPage.googleFailed'));
+      return;
+    }
+    navigate(from, { replace: true });
+  };
 
   return (
     <AuthShell
@@ -57,7 +68,7 @@ export default function Login() {
     >
       <AuthHeading eyebrow={t('authPage.loginEyebrow')} title={t('authPage.loginTitle')}>{t('authPage.loginBody')}</AuthHeading>
 
-      <GoogleButton id="login-google" label={t('auth.continueGoogle')} disabled={loading} onClick={handleGoogle} />
+      <GoogleButton id="login-google" label={t('auth.continueGoogle')} text="continue_with" disabled={loading} onCredential={(credential) => void handleGoogle(credential)} onUnavailable={() => setError(t('authPage.googleUnavailable'))} />
       <div className="auth-divider"><span>{t('auth.or')}</span></div>
 
       <form onSubmit={handleEmail} className="auth-form" noValidate>

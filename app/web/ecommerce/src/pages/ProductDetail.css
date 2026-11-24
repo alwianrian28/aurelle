@@ -2,13 +2,9 @@
 /* White band edge to edge; the content sits in the shared `.container`. */
 .pdp { padding-bottom: var(--space-9); background: #fff; color: var(--svc-ink); }
 
-.pdp__crumbs ol { display: flex; flex-wrap: wrap; gap: 0 12px; margin: 0; padding: 22px 0; list-style: none; font-size: 13px; color: var(--svc-muted); }
-.pdp__crumbs li + li::before { content: '/'; margin-right: 12px; color: var(--svc-soft); }
-.pdp__crumbs a:hover { color: var(--svc-ink); text-decoration: underline; text-underline-offset: 3px; }
-.pdp__crumbs [aria-current] { color: var(--svc-ink); }
 
 /* The gallery flexes; the purchase panel is locked at 440px. */
-.pdp__main { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 64px; align-items: start; }
+.pdp__main { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 64px; align-items: start; padding-top: 40px; }
 
 /* Gallery */
 .pdp__gallery { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; align-items: start; }
@@ -49,7 +45,7 @@
 .pdp__qty button:disabled { color: var(--svc-soft); opacity: .5; cursor: default; }
 .pdp__qty span { min-width: 26px; text-align: center; font-size: 14px; font-variant-numeric: tabular-nums; }
 .pdp__add { flex: 1; min-width: 0; height: 54px; padding: 0 20px; border: 1px solid var(--svc-ink); border-radius: 999px; background: var(--svc-ink); color: #fff; font-size: 13px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
-.pdp__add:hover:not(:disabled) { background: #fff; color: var(--svc-ink); }
+.pdp__add:hover:not(:disabled) { border-color: #2c3340; background: #2c3340; color: #fff; }
 .pdp__add:disabled { border-color: var(--svc-line); background: var(--svc-stone); color: var(--svc-soft); cursor: not-allowed; }
 .pdp__wish { flex: none; width: 54px; height: 54px; padding: 0; border: 1px solid var(--svc-line); border-radius: 50%; background: #fff; color: var(--svc-ink); cursor: pointer; transition: border-color var(--dur-base) var(--ease-out); }
 .pdp__wish:hover { border-color: var(--svc-ink); }

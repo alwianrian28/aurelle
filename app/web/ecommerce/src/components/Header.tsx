@@ -15,7 +15,8 @@ export default function Header() {
   const path = useLocalePath();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-  const cartCount = useCartStore((s) => s.items.reduce((sum, i) => sum + i.qty, 0));
+  // Number of different pieces in the bag, not the total quantity.
+  const cartCount = useCartStore((s) => s.items.length);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navItems = [
@@ -24,6 +25,20 @@ export default function Header() {
     { to: path('/our-story'), label: t('nav.ourStory') },
     { to: path('/contact'), label: t('nav.contact') },
   ];
+
+  // Signed in: a plain icon like search and bag. Signed out: the labelled pill invites logging in.
+  const account = isAuthenticated ? (
+            <NavLink id="header-account" aria-label={t('common.account')} title={t('common.account')} to={path('/account')} className={({ isActive }) => `header__icon-btn${isActive ? ' is-active' : ''}`}>
+              <UserIcon />
+            </NavLink>
+          ) : (
+            <NavLink id="header-account" aria-label={t('common.account')} to={path('/auth/login')} className="header__account">
+              <UserIcon />
+              <span className="header__account-label">
+                {t('common.account')}
+              </span>
+            </NavLink>
+  );
 
   return (
     <header className="header">
@@ -67,12 +82,7 @@ export default function Header() {
             {cartCount > 0 && <span className="header__badge">{cartCount}</span>}
           </NavLink>
 
-          <NavLink id="header-account" aria-label={t('common.account')} to={isAuthenticated ? path('/account') : path('/auth/login')} className="header__account">
-            <UserIcon />
-            <span className="header__account-label">
-              {t('common.account')}
-            </span>
-          </NavLink>
+          {account}
         </div>
       </div>
     </header>

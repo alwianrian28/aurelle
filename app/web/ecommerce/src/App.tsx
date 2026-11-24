@@ -1,4 +1,7 @@
 const Information = lazy(() => import('./pages/Information'));
+const Help = lazy(() => import('./pages/Help'));
+const TrackOrder = lazy(() => import('./pages/TrackOrder'));
+const OurStory = lazy(() => import('./pages/OurStory'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Recovery = lazy(() => import('./pages/auth/Recovery'));
 const SystemPage = lazy(() => import('./pages/SystemPage'));
@@ -58,11 +61,12 @@ function App() {
         <Route path="product/:slug" element={<ProductDetail />} />
         <Route path="collections" element={<Collections />} />
         <Route path="collections/:slug" element={<CollectionDetail />} />
-        <Route path="our-story" element={<Information kind="story" />} />
+        <Route path="our-story" element={<OurStory />} />
         <Route path="contact" element={<Contact />} />
-        <Route path="faq" element={<Information kind="faq" />} />
-        <Route path="policies/:slug" element={<Information kind="policy" />} />
-        <Route path="guides/:slug" element={<Information kind="guide" />} />
+        <Route path="track-order" element={<TrackOrder />} />
+        <Route path="faq" element={<Help kind="faq" />} />
+        <Route path="policies/:slug" element={<Help kind="policy" />} />
+        <Route path="guides/:slug" element={<Information />} />
         <Route path="search" element={<Shop />} />
         <Route path="cart" element={<Cart />} />
         <Route

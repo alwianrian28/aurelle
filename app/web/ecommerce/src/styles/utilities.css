@@ -255,3 +255,14 @@
   color: var(--c-ink);
   font-weight: 700;
 }
+
+/* Small phones (320–400px): buttons give up padding and may wrap rather than overflow the page. */
+@media (max-width: 400px) {
+  .btn {
+    max-width: 100%;
+    padding-inline: 1.25rem;
+    letter-spacing: 0.12em;
+    white-space: normal;
+    text-align: center;
+  }
+}

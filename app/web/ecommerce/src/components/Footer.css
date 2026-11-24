@@ -20,7 +20,7 @@
 .newsletter__field input { flex: 1; min-width: 0; padding: 0 20px; border: 0; background: none; font-size: 16px; color: var(--svc-ink); outline: none; }
 .newsletter__field input::placeholder { color: var(--svc-soft); }
 .newsletter__field button { flex-shrink: 0; min-height: 50px; padding: 0 26px; border: 1px solid var(--svc-ink); border-radius: 999px; background: var(--svc-ink); color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; cursor: pointer; transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
-.newsletter__field button:hover { background: #fff; color: var(--svc-ink); }
+.newsletter__field button:hover { border-color: #2c3340; background: #2c3340; color: #fff; }
 .newsletter__consent { display: flex; align-items: flex-start; gap: 12px; margin-top: 18px; font-size: 14px; line-height: 1.6; color: #3b4250; }
 .newsletter__consent input { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; accent-color: var(--svc-ink); }
 .newsletter__consent a { color: var(--svc-ink); text-decoration: underline; text-underline-offset: 3px; }

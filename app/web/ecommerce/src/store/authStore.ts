@@ -17,6 +17,8 @@ interface AuthState {
   /** Samakan dengan sesi server (dipanggil sekali saat aplikasi dibuka). */
   refresh: () => Promise<void>;
   loginWithEmail: (email: string, password: string, keep?: boolean) => Promise<{ ok: true } | Failure>;
+  /** Sign in (or create the account) with the ID token from Google Identity Services. */
+  loginWithGoogle: (credential: string, keep?: boolean) => Promise<{ ok: true } | Failure>;
   register: (email: string, username: string, password: string, newsletter?: boolean) => Promise<{ ok: true; devToken?: string } | Failure>;
   logout: () => Promise<void>;
   verifyEmail: (token: string | null) => Promise<TokenResult>;
@@ -45,6 +47,13 @@ export const useAuthStore = create<AuthState>()(
 
       loginWithEmail: async (email, password, keep = false) => {
         const res = await api<{ user: User }>('/auth/login', { body: { email, password, keep } });
+        if (!res.ok) return failure(res.status, res.error, res.data);
+        set({ user: res.data.user, isAuthenticated: true });
+        return { ok: true };
+      },
+
+      loginWithGoogle: async (credential, keep = false) => {
+        const res = await api<{ user: User }>('/auth/google', { body: { credential, keep } });
         if (!res.ok) return failure(res.status, res.error, res.data);
         set({ user: res.data.user, isAuthenticated: true });
         return { ok: true };

@@ -12,10 +12,11 @@
 
 /* Pill buttons. */
 .guide-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 52px; padding: 0 30px; border: 1px solid var(--svc-ink); border-radius: 999px; background: var(--svc-ink); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
-.guide-btn:hover { background: #fff; color: var(--svc-ink); }
-/* Quiet variant: hairline pill that fills with ink on hover. */
+/* Hover keeps each variant's own look (filled stays filled, outline stays outline), so a pair never turns into twins. */
+.guide-btn:hover { border-color: #2c3340; background: #2c3340; color: #fff; }
+/* Quiet variant: hairline pill that tints on hover. */
 .guide-btn--outline { min-height: 46px; padding: 0 26px; background: transparent; color: var(--svc-ink); font-size: 11px; font-weight: 500; letter-spacing: .18em; }
-.guide-btn--outline:hover { background: var(--svc-ink); color: #fff; }
+.guide-btn--outline:hover { border-color: var(--svc-ink); background: var(--svc-stone); color: var(--svc-ink); }
 .guide-btn:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
 
 

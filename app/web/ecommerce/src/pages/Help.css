@@ -1,0 +1,92 @@
+/* F-19 Help center: side navigation + one reading column, shared by the FAQ and the policies. */
+.help { background: #fff; color: var(--svc-ink); }
+.help__inner { max-width: calc(1240px + 2 * var(--page-gutter)); margin-inline: auto; }
+.help :is(a, button, summary):focus-visible { outline: 2px solid var(--svc-ink); outline-offset: 3px; }
+
+
+.help__layout { display: grid; grid-template-columns: 240px minmax(0, 780px); gap: 80px; align-items: start; padding: 48px 0 112px; }
+.help__label { margin: 0; font: 500 11px/1.4 var(--font-sans); letter-spacing: .2em; text-transform: uppercase; color: var(--svc-muted); }
+
+/* ---- Side navigation ---- */
+.help__side { position: sticky; top: calc(var(--header-h) + 24px); display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+.help__nav { display: grid; gap: 2px; margin: 18px 0 0; padding: 0; list-style: none; }
+.help__nav a { display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; font-size: 15px; color: var(--svc-muted); transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
+.help__nav a:hover { color: var(--svc-ink); }
+.help__nav a.active { background: var(--svc-stone); color: var(--svc-ink); font-weight: 500; }
+
+.help__card { padding: 22px 20px; border: 1px solid var(--svc-line); border-radius: 8px; }
+.help__card h2 { margin: 0 0 10px; font: 500 15px/1.4 var(--font-sans); }
+.help__card dl, .help__card p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--svc-muted); }
+.help__card dl div { display: flex; gap: 6px; }
+.help__card dd { margin: 0; font-variant-numeric: tabular-nums; }
+.help__card a { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; font-size: 14px; font-weight: 500; }
+.help__card a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---- Heading ---- */
+.help__head h1 { margin: 14px 0 0; font: 400 clamp(36px, 3.8vw, 50px)/1.1 var(--font-serif); }
+.help__intro { max-width: 640px; margin: 18px 0 0; font-size: 16px; line-height: 1.65; color: var(--svc-muted); }
+.help__updated { margin: 10px 0 0; font-size: 13px; color: var(--svc-soft); }
+
+/* ---- Policy: at a glance + sections ---- */
+.help__glance { margin-top: 36px; padding: 28px; border: 1px solid var(--svc-line); border-radius: 8px; background: var(--svc-paper); }
+.help__glance ul { display: grid; gap: 12px; margin: 18px 0 0; padding: 0; list-style: none; }
+.help__glance li { display: flex; align-items: flex-start; gap: 14px; font-size: 15px; line-height: 1.4; }
+.help__glance svg { flex: none; margin-top: 2px; }
+
+.help__section { padding: 44px 0 36px; border-bottom: 1px solid var(--svc-line); scroll-margin-top: var(--header-h); }
+.help__glance + .help__section { padding-top: 52px; }
+.help__section h2 { margin: 0; font: 400 clamp(24px, 2.2vw, 28px)/1.2 var(--font-serif); }
+.help__section > p { max-width: 640px; margin: 14px 0 0; font-size: 16px; line-height: 1.7; color: var(--svc-muted); }
+/* A term that is not decided yet: says what is missing, never reads as a rule. */
+.help__section > .help__todo { display: flex; align-items: baseline; gap: 14px; max-width: none; margin-top: 16px; padding: 14px 16px; border: 1px dashed #d8d5cb; border-radius: 8px; background: var(--svc-stone); font-size: 14px; line-height: 1.5; color: var(--svc-muted); }
+.help__todo span { flex: none; font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: #6d6247; }
+
+/* ---- FAQ ---- */
+.help__faq { margin-top: 48px; }
+.help__faq + .help__faq { margin-top: 40px; }
+.help__faq > .help__label { padding-bottom: 12px; border-bottom: 1px solid var(--svc-line); font-weight: 600; color: var(--svc-ink); }
+.help__faq details { border-bottom: 1px solid var(--svc-line); }
+.help__faq summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 60px; padding: 14px 0; font-size: 16px; cursor: pointer; list-style: none; }
+.help__faq summary::-webkit-details-marker { display: none; }
+.help__faq summary::after { content: '+'; flex: none; width: 16px; font-size: 20px; font-weight: 300; line-height: 1; text-align: center; }
+.help__faq details[open] summary::after { content: '−'; }
+.help__faq details p { max-width: 640px; margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: var(--svc-muted); }
+
+/* ---- Contact call-out ---- */
+.help__cta { margin-top: 48px; padding: 32px; border-radius: 8px; background: var(--svc-ink); color: #fff; }
+.help__cta h2 { margin: 0; font: 400 26px/1.2 var(--font-serif); }
+.help__cta p { margin: 8px 0 0; font-size: 14px; color: rgb(255 255 255 / .72); }
+.help__cta div { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.help__cta .guide-btn { min-height: 48px; padding: 0 22px; font-size: 11px; letter-spacing: .16em; }
+.help__cta-primary { border-color: #fff; background: #fff; color: var(--svc-ink); }
+.help__cta-primary:hover { border-color: #e4e3de; background: #e4e3de; color: var(--svc-ink); }
+.help__cta-ghost { border-color: rgb(255 255 255 / .4); background: transparent; color: #fff; }
+/* Each button keeps its own look on hover, so the pair never reads as two identical buttons. */
+.help__cta-ghost:hover { border-color: #fff; background: rgb(255 255 255 / .12); color: #fff; }
+.help__cta .guide-btn:focus-visible { outline-color: #fff; }
+
+@media (max-width: 1100px) {
+  .help__layout { grid-template-columns: 220px minmax(0, 1fr); gap: 48px; }
+}
+/* Tablet and phone: the navigation becomes a row of chips that scrolls sideways. */
+@media (max-width: 860px) {
+  .help__layout { grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 28px 0 72px; }
+  .help__side { position: static; }
+  .help__nav { display: flex; gap: 8px; margin: 14px calc(-1 * var(--page-gutter)) 0; padding: 0 var(--page-gutter) 4px; overflow-x: auto; scrollbar-width: none; }
+  .help__nav::-webkit-scrollbar { display: none; }
+  .help__nav a { min-height: 40px; padding: 0 16px; border: 1px solid var(--svc-line); border-radius: 999px; font-size: 14px; white-space: nowrap; }
+  .help__nav a.active { border-color: var(--svc-ink); background: var(--svc-ink); color: #fff; }
+  /* The dark call-out at the end already offers the same contact. */
+  .help__card { display: none; }
+  .help__section { padding: 36px 0 30px; }
+}
+@media (max-width: 560px) {
+  .help__glance { padding: 22px 20px; }
+  .help__section > .help__todo { flex-direction: column; gap: 6px; }
+  .help__cta { padding: 26px 22px; }
+  .help__cta div { flex-direction: column; }
+  .help__cta .guide-btn { white-space: normal; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .help :is(a, button) { transition: none; }
+}

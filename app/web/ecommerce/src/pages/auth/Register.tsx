@@ -15,6 +15,7 @@ export default function Register() {
   const navigate = useNavigate();
   const location = useLocation();
   const register = useAuthStore((s) => s.register);
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const [formError, setFormError] = useState('');
   const [form, setForm] = useState({ email: '', username: '', password: '', newsletter: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -48,6 +49,17 @@ export default function Register() {
     setSubmitted(true);
   };
 
+  // Google has already verified the address, so there is no "check your inbox" step.
+  const handleGoogle = async (credential: string) => {
+    setFormError('');
+    const res = await loginWithGoogle(credential);
+    if (!res.ok) {
+      setFormError(t(res.reason === 'network' ? 'authPage.networkError' : 'authPage.googleFailed'));
+      return;
+    }
+    navigate(from, { replace: true });
+  };
+
   const side = (
     <ul className="auth-shell__benefits">
       {benefits.map((benefit) => (
@@ -79,7 +91,9 @@ export default function Register() {
       <GoogleButton
         id="register-google"
         label={t('auth.registerGoogle')}
-        onClick={() => setFormError(t('authPage.googleUnavailable'))}
+        text="signup_with"
+        onCredential={(credential) => void handleGoogle(credential)}
+        onUnavailable={() => setFormError(t('authPage.googleUnavailable'))}
       />
       <div className="auth-divider"><span>{t('auth.or')}</span></div>
 

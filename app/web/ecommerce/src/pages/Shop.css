@@ -1,12 +1,8 @@
-/* Shop: breadcrumb, title, category pills + filter/sort bar, then the grid (first view) or the grouped catalog. */
+/* Shop: title, category pills + filter/sort bar, then the grid (first view) or the grouped catalog. */
 .shop { padding-bottom: var(--space-9); background: #fff; color: var(--svc-ink); }
 
-.shop__crumbs ol { display: flex; flex-wrap: wrap; gap: 0 12px; margin: 0; padding: 22px 0 0; list-style: none; font-size: 13px; color: var(--svc-muted); }
-.shop__crumbs li + li::before { content: '/'; margin-right: 12px; color: var(--svc-soft); }
-.shop__crumbs a:hover { color: var(--svc-ink); text-decoration: underline; text-underline-offset: 3px; }
-.shop__crumbs [aria-current] { color: var(--svc-ink); }
 
-.shop__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px 48px; padding: 14px 0 34px; border-bottom: 1px solid var(--svc-line); }
+.shop__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px 48px; padding: 44px 0 34px; border-bottom: 1px solid var(--svc-line); }
 .shop__head h1 { margin: 0; font: 400 52px/1.05 var(--font-serif); }
 .shop__head p { max-width: 340px; margin: 0 0 6px; font-size: 14px; line-height: 1.7; color: var(--svc-muted); }
 

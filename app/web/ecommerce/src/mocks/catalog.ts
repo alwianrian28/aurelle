@@ -40,7 +40,8 @@ export const collections: Collection[] = [
       en: 'Classic silhouettes reimagined with a contemporary touch — clean lines, precise proportions, and a quiet silver glow.',
     },
     banner: '/media/collections/aurora.jpg',
-    productIds: ['ring-aria', 'necklace-lumen', 'earring-celeste'],
+    // Ids of the generated catalog below (`jewelryDesigns[].file`); the first four are the page preview.
+    productIds: ['cincin-oval', 'kalung-solitaire', 'anting-stud', 'gelang-tennis', 'cincin-solitaire', 'kalung-lingkar', 'anting-drop', 'cincin-eternity', 'kalung-hati', 'cincin-halo'],
   },
   {
     id: 'col-noir',
@@ -51,7 +52,7 @@ export const collections: Collection[] = [
       en: 'Mixed materials and dark-toned natural stones, designed for those who favor a bolder elegance.',
     },
     banner: '/media/collections/noir.jpg',
-    productIds: ['bracelet-mira', 'ring-ombra'],
+    productIds: ['cincin-pilin', 'gelang-cuff', 'kalung-bar', 'anting-climber', 'cincin-bypass-pave', 'gelang-bangle-pave', 'kalung-station', 'anting-huggie', 'cincin-terbuka', 'gelang-bola'],
   },
 ];
 

@@ -4,13 +4,14 @@ import random
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field, StrictInt
 
 from .auth import Admin, Db, User, now_iso
 from .catalog import RESERVATION_MINUTES, TERMS_VERSION, cost_breakdown, held_stock, served_countries, shipping_service, usd_to_idr
 from .config import is_prod
 from .db import Database, IntegrityError, Row
+from .security import Limiter
 
 # Mirrors ReadyStockOrderStatus in the web app's domain types.
 Status = Literal["awaiting_payment", "confirmed", "preparing", "ready_to_ship", "shipped", "delivered", "cancelled", "pending_decision"]
@@ -30,6 +31,9 @@ ADMIN_NEXT: dict[str, list[str]] = {
 NEEDS_PAID = {"preparing", "ready_to_ship", "shipped"}
 # What the demo payment simulator may report while an order awaits payment.
 DEMO_PAYMENT = {"pending": "awaiting_payment", "failed": "awaiting_payment", "paid": "confirmed"}
+
+# Public order lookup: 10 wrong guesses from one address lock it out for a minute.
+track_limiter = Limiter(10, 60)
 
 customer = APIRouter(prefix="/api/orders", tags=["orders"])
 admin = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -65,6 +69,11 @@ class OrderIn(BaseModel):
     shippingServiceId: str = Field(max_length=80)
     paymentMethod: Literal["card", "qris"]
     currency: Literal["IDR", "USD"]
+
+
+class TrackIn(BaseModel):
+    number: str = Field(min_length=6, max_length=30)
+    email: str = Field(min_length=5, max_length=254)
 
 
 class DemoPaymentIn(BaseModel):
@@ -237,6 +246,36 @@ def create_order(body: OrderIn, user: User, db: Db, response: Response):
     db.executemany("INSERT INTO order_items (order_id, variant_id, qty) VALUES (?, ?, ?)", [(body.id, l["variantId"], l["qty"]) for l in lines])
     _add_event(db, body.id, "awaiting_payment", "unpaid", "customer", now)
     return {"order": _to_order(db, _get(db, body.id))}
+
+
+@customer.post("/track")
+def track_order(body: TrackIn, request: Request, db: Db):
+    """Shipment status for whoever holds both the order number and the email it was placed with.
+
+    No login needed, so the answer leaves out everything private: no street address, phone,
+    prices or account ids. A wrong number and a wrong email get the same 404."""
+    key = request.client.host if request.client else "?"
+    locked = track_limiter.locked_for(key)
+    if locked > 0:
+        raise HTTPException(429, {"error": "too_many_attempts", "retryAfterMs": int(locked * 1000)})
+    expire_stale(db)
+    row = db.execute(
+        "SELECT o.* FROM orders o JOIN users u ON u.id = o.user_id WHERE o.number = ? AND u.email = ?",
+        (body.number.strip().upper(), body.email.strip().lower()),
+    ).fetchone()
+    if not row:
+        track_limiter.fail(key)
+        raise HTTPException(404, "not_found")
+    order = _to_order(db, row)
+    service, address = order["shippingService"], order["addressSnapshot"]
+    return {"order": {
+        "number": order["number"], "status": order["status"], "paymentStatus": order["paymentStatus"],
+        "createdAt": order["createdAt"], "updatedAt": order["updatedAt"], "cancelReason": order.get("cancelReason"),
+        "history": order["history"], "tracking": order["tracking"],
+        "items": [{"name": i["name"], "variantLabel": i["variantLabel"], "image": i["image"], "qty": i["qty"]} for i in order["items"]],
+        "shippingService": {"courier": service["courier"], "name": service["name"], "etaDays": service["etaDays"]},
+        "destination": {"city": address["city"], "country": address["country"]},
+    }}
 
 
 @customer.get("/{order_id}")

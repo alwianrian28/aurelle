@@ -224,3 +224,4 @@
  .header__account { padding: 8px; border: none; }
  .header__account-label { display: none; }
 }
+.header__icon-btn.is-active { background: var(--svc-stone); }

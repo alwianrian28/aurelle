@@ -17,11 +17,16 @@ export default function Pay() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    const res = await api<{ order: Order }>(`/orders/${encodeURIComponent(id)}`);
+  const fetchOrder = useCallback(() => api<{ order: Order }>(`/orders/${encodeURIComponent(id)}`), [id]);
+  const load = async () => {
+    const res = await fetchOrder();
     if (res.ok) setOrder(res.data.order);
-  }, [id]);
-  useEffect(() => { void load(); }, [load]);
+  };
+  useEffect(() => {
+    let live = true;
+    void fetchOrder().then((res) => { if (live && res.ok) setOrder(res.data.order); });
+    return () => { live = false; };
+  }, [fetchOrder]);
 
   const report = async (paymentStatus: 'pending' | 'paid' | 'failed') => {
     const res = await api<{ order: Order }>(`/orders/${encodeURIComponent(id)}/demo-payment`, { body: { paymentStatus } });

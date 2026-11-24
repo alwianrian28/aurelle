@@ -68,6 +68,9 @@ export default function OrderDetail() {
           <div className="order-row__pills">
             <WorkStatusPill status={order.status} />
             <PaymentStatusPill status={order.paymentStatus} />
+            <NavLink id="order-track" to={`${path('/track-order')}?order=${encodeURIComponent(order.number)}`} className="btn btn--outline btn--sm">
+              {t('nav.track')}
+            </NavLink>
           </div>
         </div>
 

@@ -9,6 +9,13 @@ export const BRAND_CONTACT = {
   whatsappDisplay: '0878-9303-6298',
   email: 'aurelle.jewellery28@gmail.com',
   hours: { id: 'Senin–Jumat 09.00–20.00 · Sabtu & Minggu 09.00–17.00', en: 'Mon–Fri 09:00–20:00 · Sat & Sun 09:00–17:00' },
+  /** The same hours as rows, for the Contact page. */
+  hoursRows: [
+    { days: { id: 'Sen – Jum', en: 'Mon – Fri' }, time: '09:00 – 20:00' },
+    { days: { id: 'Sab – Min', en: 'Sat – Sun' }, time: '09:00 – 17:00' },
+  ],
+  /** Time zone and usual reply time; null shows the pending marker until the owner confirms them. */
+  hoursNote: null as { id: string; en: string } | null,
   /** Social profile URLs; null hides the link (icon stays, not clickable). */
   instagramUrl: null as string | null,
   tiktokUrl: null as string | null,
@@ -25,6 +32,7 @@ export const BRAND_PENDING = {
   email: '[YOUR EMAIL]',
   whatsapp: '[WHATSAPP NUMBER]',
   hours: '[OPENING HOURS]',
+  hoursNote: '[Time zone, e.g. WIB] · [Usual reply time]',
   warranty: '[WARRANTY PERIOD]',
 } as const;
 

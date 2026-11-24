@@ -6,10 +6,11 @@ from fastapi.testclient import TestClient
 
 @pytest.fixture()
 def api():
-    from app import auth
+    from app import auth, orders
     from app.main import create_app
 
     auth.login_limiter._entries.clear()
+    orders.track_limiter._entries.clear()
     auth._last_sent.clear()
     with TestClient(create_app()) as client:
         yield client
@@ -256,3 +257,78 @@ def test_passwords_are_bcrypt_with_cost_12(api, monkeypatch):
     assert not security.verify_password("x", "00ff:00ff")  # old scrypt-style hashes no longer log in
     too_long = api.post("/api/auth/register", json={"email": "long@example.com", "username": "Long", "password": "p" * 73})
     assert too_long.status_code == 400
+
+
+def google(api, monkeypatch, claims):
+    """Sign in with a Google credential whose verified claims are `claims` (None = rejected by Google)."""
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client.apps.googleusercontent.com")
+    monkeypatch.setattr("app.auth.verify_google_credential", lambda credential, client_id: claims)
+    return api.post("/api/auth/google", json={"credential": "x" * 40})
+
+
+def test_google_sign_in_creates_then_reuses_the_account(api, monkeypatch):
+    monkeypatch.delenv("GOOGLE_CLIENT_ID", raising=False)
+    assert api.get("/api/auth/config").json() == {"googleClientId": None}
+    assert api.post("/api/auth/google", json={"credential": "x" * 40}).status_code == 503  # switched off
+
+    claims = {"email": "Maya@Gmail.com", "email_verified": True, "name": "Maya Putri"}
+    user = google(api, monkeypatch, claims).json()["user"]
+    assert (user["email"], user["username"], user["provider"], user["emailVerified"]) == ("maya@gmail.com", "Maya Putri", "google", True)
+    assert api.get("/api/auth/config").json() == {"googleClientId": "test-client.apps.googleusercontent.com"}
+    assert api.get("/api/auth/me").json()["user"]["id"] == user["id"]
+
+    api.post("/api/auth/logout")
+    assert google(api, monkeypatch, claims).json()["user"]["id"] == user["id"]  # same account, not a second one
+    # No password was ever set, so the password form cannot open the account.
+    assert api.post("/api/auth/login", json={"email": "maya@gmail.com", "password": "password123"}).status_code == 401
+
+
+def test_google_sign_in_rejects_bad_or_unverified_tokens(api, monkeypatch):
+    assert google(api, monkeypatch, None).status_code == 401
+    assert google(api, monkeypatch, {"email": "maya@gmail.com", "email_verified": False}).status_code == 401
+    assert google(api, monkeypatch, {"email_verified": True}).status_code == 401
+    assert api.get("/api/auth/me").json()["user"] is None
+
+
+def test_google_sign_in_links_a_verified_account_and_takes_over_an_unverified_one(api, monkeypatch):
+    verified = register(api, "owner@gmail.com")["user"]
+    api.post("/api/auth/logout")
+    linked = google(api, monkeypatch, {"email": "owner@gmail.com", "email_verified": True, "name": "Owner"}).json()["user"]
+    assert linked["id"] == verified["id"] and linked["provider"] == "email" and linked["username"] == "Tester"
+    api.post("/api/auth/logout")
+    assert api.post("/api/auth/login", json={"email": "owner@gmail.com", "password": "password123"}).status_code == 200  # password kept
+
+    # Someone registered the victim's address with their own password but never verified it.
+    squatter = TestClient(api.app)
+    register(squatter, "victim@gmail.com", "squatter-pass-1", verify=False)
+    taken = google(api, monkeypatch, {"email": "victim@gmail.com", "email_verified": True, "name": "Victim"}).json()["user"]
+    assert taken["emailVerified"] is True
+    assert squatter.get("/api/auth/me").json()["user"] is None  # their session is gone
+    assert squatter.post("/api/auth/login", json={"email": "victim@gmail.com", "password": "squatter-pass-1"}).status_code == 401
+
+
+def test_order_can_be_tracked_with_number_and_email_only(api):
+    register(api)
+    placed = api.post("/api/orders", json=order_body()).json()["order"]
+    admin = make_admin(api)
+    api.post("/api/orders/ord-12345678/demo-payment", json={"paymentStatus": "paid"})
+    for step in ("preparing", "ready_to_ship", "shipped"):
+        admin.patch("/api/admin/orders/ord-12345678", json={"status": step})
+    admin.put("/api/admin/orders/ord-12345678/shipment", json={"courier": "DHL", "trackingNumber": "JKT123456"})
+    admin.post("/api/admin/orders/ord-12345678/tracking", json={"label": "Jakarta hub", "lat": -6.2, "lng": 106.8})
+
+    guest = TestClient(api.app)  # not logged in
+    found = guest.post("/api/orders/track", json={"number": placed["number"].lower(), "email": " A@Example.com "})
+    assert found.status_code == 200, found.text
+    order = found.json()["order"]
+    assert (order["status"], order["tracking"]["trackingNumber"], order["destination"]) == ("shipped", "JKT123456", {"city": "Jakarta", "country": "Indonesia"})
+    assert [p["label"] for p in order["tracking"]["points"]] == ["Jakarta hub"] and order["items"][0]["qty"] == 2
+    # Nothing private travels with it.
+    text = found.text
+    assert all(secret not in text for secret in ("Jl. Uji 1", "8123456789", "a@example.com", "unitPriceIdr", "userId", "ord-12345678"))
+
+    # Wrong email and unknown number look the same, and guessing is throttled.
+    assert guest.post("/api/orders/track", json={"number": placed["number"], "email": "other@example.com"}).status_code == 404
+    for _ in range(9):
+        assert guest.post("/api/orders/track", json={"number": "AUR-RS-000000-0000", "email": "a@example.com"}).status_code == 404
+    assert guest.post("/api/orders/track", json={"number": placed["number"], "email": "a@example.com"}).status_code == 429

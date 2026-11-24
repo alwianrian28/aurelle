@@ -108,6 +108,12 @@
       color: rgba(26, 25, 21, 0.55);
       user-select: none;
     }
+    /* Narrow stages (phones): the hint would sit under the download buttons. */
+    @media (max-width: 520px) {
+      .note { display: none; }
+      .toolbar { left: 8px; right: 8px; bottom: 8px; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+      .toolbar button { padding: 8px 10px; font-size: 11.5px; }
+    }
     .err {
       position: absolute;
       inset: 0;

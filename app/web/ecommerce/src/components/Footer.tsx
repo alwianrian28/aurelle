@@ -62,6 +62,8 @@ export default function Footer() {
           <h2 id="footer-care" className="footer__heading">{t('footer.customerCare')}</h2>
           <button id="footer-size-guide" type="button" onClick={() => openSize('ring')}>{t('footer.sizeGuide')}</button>
           <button id="footer-care-guide" type="button" onClick={openCare}>{t('footer.care')}</button>
+          <NavLink to={path('/track-order')}>{t('nav.track')}</NavLink>
+          <NavLink to={path('/faq')}>{t('help.nav.faq')}</NavLink>
           <NavLink to={path('/policies/shipping')}>{t('footer.shippingPolicy')}</NavLink>
           <NavLink to={path('/policies/revision-return')}>{t('footer.revisionReturn')}</NavLink>
           <NavLink to={path('/policies/payment')}>{t('footer.paymentPolicy')}</NavLink>

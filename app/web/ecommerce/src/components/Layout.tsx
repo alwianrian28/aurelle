@@ -25,6 +25,8 @@ export default function Layout() {
 
   useEffect(() => { document.documentElement.lang = i18n.language.startsWith("id") ? "id" : "en"; }, [i18n.language]);
   const smoothEnabled = !NO_SMOOTH_PATTERN.test(location.pathname);
+  /** Checkout renders its own slim bar and footer: no site navigation mid-purchase. */
+  const bare = /^\/checkout\/?$/.test(location.pathname);
 
   useLayoutEffect(() => {
     if (!smoothEnabled || prefersReducedMotion() || !wrapperRef.current || !contentRef.current) {
@@ -69,15 +71,15 @@ export default function Layout() {
       <a className="skip-link" href="#main">
         {t('system.skip')}
       </a>
-      <Header />
+      {!bare && <Header />}
       <div id="smooth-wrapper" ref={wrapperRef}>
         <div id="smooth-content" ref={contentRef}>
-          <main id="main" tabIndex={-1} style={{ paddingTop: 'var(--header-h)', outline: 'none' }}>
+          <main id="main" tabIndex={-1} style={{ paddingTop: bare ? 0 : 'var(--header-h)', outline: 'none' }}>
             <ErrorBoundary key={location.pathname}>
               <Outlet />
             </ErrorBoundary>
           </main>
-          <Footer />
+          {!bare && <Footer />}
         </div>
       </div>
       <GuideDialogs />

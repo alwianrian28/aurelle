@@ -19,6 +19,7 @@ SCHEMA = [
       username VARCHAR(80) NOT NULL,
       password_hash VARCHAR(200) NOT NULL,
       role VARCHAR(20) NOT NULL DEFAULT 'customer',
+      provider VARCHAR(10) NOT NULL DEFAULT 'email',
       email_verified TINYINT NOT NULL DEFAULT 0,
       phone_country_code VARCHAR(5),
       phone VARCHAR(20),
@@ -185,6 +186,16 @@ def connect() -> Database:
     return Database(conn)
 
 
+def _migrate(db: Database) -> None:
+    """Columns added after a table first shipped; CREATE TABLE IF NOT EXISTS leaves old tables alone."""
+    has_provider = db.execute(
+        "SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'provider'"
+    ).fetchone()
+    if not has_provider:
+        # How the account was created: 'email' (password) or 'google' (Google sign-in).
+        db.execute("ALTER TABLE users ADD COLUMN provider VARCHAR(10) NOT NULL DEFAULT 'email'")
+
+
 def init_db(retries: int = 30) -> None:
     """Create tables and seed the catalog. Waits for MySQL, which may still be starting."""
     for attempt in range(retries):
@@ -198,6 +209,7 @@ def init_db(retries: int = 30) -> None:
     try:
         for statement in SCHEMA:
             db.execute(statement)
+        _migrate(db)
         from .catalog import seed_catalog  # late import: catalog depends on this module
 
         seed_catalog(db)

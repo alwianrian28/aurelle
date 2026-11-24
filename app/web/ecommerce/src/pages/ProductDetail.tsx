@@ -83,13 +83,6 @@ function ProductDetail({ slug }: { slug?: string }) {
     <div className="pdp">
       <div className="container">
       <title>{`${name} — Aurelle`}</title>
-      <nav className="pdp__crumbs" aria-label={t('product.breadcrumb')}>
-        <ol>
-          <li><NavLink id="pdp-crumb-home" to={path('/store')}>{t('product.home')}</NavLink></li>
-          <li><NavLink id="pdp-crumb-category" to={`${path('/shop')}?category=${product.category}`}>{t(`categories.${product.category}`)}</NavLink></li>
-          <li aria-current="page">{name}</li>
-        </ol>
-      </nav>
 
       <div className="pdp__main">
         <div className={`pdp__gallery${product.media.length > 1 ? '' : ' pdp__gallery--single'}`}>

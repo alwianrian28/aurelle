@@ -1,0 +1,8 @@
+docker compose up -d                                             # MySQL
+cd app/backend && uvicorn app.main:app --port 8000 --reload      # API
+cd app/web/ecommerce && npm run dev                              # toko, :5173
+cd app/web/dashboard && npm run dev                              # dashboard, :5174
+cd app/mobile && npx expo start                                  # mobile
+
+
+cd app/backend && venv\Scripts\uvicorn app.main:app --port 8000 --reload
