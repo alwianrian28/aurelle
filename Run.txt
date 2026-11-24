@@ -6,3 +6,8 @@ cd app/mobile && npx expo start                                  # mobile
 
 
 cd app/backend && venv\Scripts\uvicorn app.main:app --port 8000 --reload
+
+
+
+
+Emas putih: campuran emas dengan logam putih seperti paladium atau nikel, biasanya dilapisi rodium agar tampak putih mengilap. Populer untuk cincin tunangan karena membuat berlian terlihat lebih "putih" dan berkilau.
