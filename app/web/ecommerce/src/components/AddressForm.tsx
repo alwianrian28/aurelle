@@ -4,6 +4,7 @@ import type { Address } from '../types/domain';
 import { COUNTRIES, getCountry } from '../utils/countries';
 import { useLocale } from '../hooks/useLocale';
 import CountryPicker from './CountryPicker';
+import Required from './Required';
 import { countryName, dialChoices } from '../utils/countryChoices';
 import { validateAddress, type AddressDraft, type AddressErrors } from '../utils/address';
 
@@ -83,13 +84,15 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
   const fieldProps = (key: keyof AddressDraft) => ({
     id: `addr-${key}`,
     'aria-invalid': !!errors[key],
+    'aria-required': key !== 'postalCode' || !country?.postalOptional,
     'aria-describedby': errors[key] ? `addr-${key}-error` : undefined,
   });
 
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
+      <p className="field-required-note"><Required /> {t('common.requiredNote')}</p>
       <label className="field" htmlFor="addr-recipient">
-        {t('address.recipient')}
+        <span>{t('address.recipient')}<Required /></span>
         <input
           {...fieldProps('recipient')}
           value={draft.recipient}
@@ -101,7 +104,7 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
 
       {/* Not a <label>: a click on a row of the list would otherwise be passed on to the button. */}
       <div className="field">
-        <span id="addr-country-label">{t('address.country')}</span>
+        <span id="addr-country-label">{t('address.country')}<Required /></span>
         <CountryPicker
           id="addr-country" labelledBy="addr-country-label" describedBy={errors.country ? 'addr-country-error' : 'addr-country-hint'} invalid={!!errors.country}
           choices={countryChoices} value={draft.country} onChange={handleCountry}
@@ -113,7 +116,7 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
 
       <div className="form-row form-row--phone">
         <div className="field">
-          <span id="addr-phoneCountryCode-label">{t('address.dialCode')}</span>
+          <span id="addr-phoneCountryCode-label">{t('address.dialCode')}<Required /></span>
           <CountryPicker
             id="addr-phoneCountryCode" labelledBy="addr-phoneCountryCode-label" describedBy={errors.phoneCountryCode ? 'addr-phoneCountryCode-error' : undefined} invalid={!!errors.phoneCountryCode}
             choices={dialOptions} pinned={dialPinned} value={dialIso} onChange={handleDial} compact
@@ -122,7 +125,7 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
           {err('phoneCountryCode')}
         </div>
         <label className="field" htmlFor="addr-phone">
-          {t('address.phone')}
+          <span>{t('address.phone')}<Required /></span>
           <input
             {...fieldProps('phone')}
             value={draft.phone}
@@ -136,7 +139,7 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
 
       <div className="form-row">
         <label className="field" htmlFor="addr-state">
-          {t('address.state')}
+          <span>{t('address.state')}<Required /></span>
           <input
             {...fieldProps('state')}
             value={draft.state}
@@ -146,7 +149,7 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
           {err('state')}
         </label>
         <label className="field" htmlFor="addr-city">
-          {t('address.city')}
+          <span>{t('address.city')}<Required /></span>
           <input
             {...fieldProps('city')}
             value={draft.city}
@@ -158,7 +161,7 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
       </div>
 
       <label className="field" htmlFor="addr-postalCode">
-        {country?.postalOptional ? t('address.postalOptional') : t('address.postalCode')}
+        <span>{country?.postalOptional ? t('address.postalOptional') : <>{t('address.postalCode')}<Required /></>}</span>
         <input
           {...fieldProps('postalCode')}
           value={draft.postalCode}
@@ -169,7 +172,7 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
       </label>
 
       <label className="field" htmlFor="addr-line1">
-        {t('address.line1')}
+        <span>{t('address.line1')}<Required /></span>
         <input
           {...fieldProps('line1')}
           value={draft.line1}

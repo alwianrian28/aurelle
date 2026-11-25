@@ -69,7 +69,7 @@ export default function CountryPicker({ id, labelledBy, describedBy, invalid, ch
     <div className={`country-picker${compact ? ' country-picker--compact' : ''}${open ? ' is-open' : ''}`} ref={root}>
       <button
         ref={trigger} id={id} type="button" className="country-picker__button" aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? listId : undefined}
-        aria-labelledby={`${labelledBy} ${id}`} aria-describedby={describedBy} aria-invalid={invalid || undefined}
+        aria-labelledby={`${labelledBy} ${id}`} aria-describedby={describedBy} aria-invalid={invalid || undefined} aria-required="true"
         onClick={() => (open ? setOpen(false) : show())}
         onKeyDown={(e) => { if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); show(); } }}
       >

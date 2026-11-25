@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/authStore';
 import { usePreferenceStore } from '../../store/preferenceStore';
 import EmailVerifyNotice from '../../components/EmailVerifyNotice';
 import type { Currency } from '../../types/domain';
+import Required from '../../components/Required';
 
 /**
  * F-02 Profile & preferences (FR-02-01): name, email, phone with country code,
@@ -59,11 +60,12 @@ export default function AccountProfile() {
 
       <section className="acct-card" aria-labelledby="profile-personal-title">
         <h3 id="profile-personal-title" className="acct-label acct-label--ink">{t('acct.personal')}</h3>
+        <p className="field-required-note"><Required /> {t('common.requiredNote')}</p>
         <form className="acct-form" onSubmit={handleSubmit} noValidate>
           <div className="acct-form__row">
             <div className="acct-field">
-              <label htmlFor="profile-username">{t('acct.fullName')}</label>
-              <input id="profile-username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} aria-invalid={!!errors.username} autoComplete="name" maxLength={80} />
+              <label htmlFor="profile-username">{t('acct.fullName')}<Required /></label>
+              <input id="profile-username" aria-required="true" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} aria-invalid={!!errors.username} autoComplete="name" maxLength={80} />
               {errors.username && <p className="acct-field__error">{errors.username}</p>}
             </div>
             <div className="acct-field">

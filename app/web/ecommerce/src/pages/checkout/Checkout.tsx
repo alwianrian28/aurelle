@@ -227,7 +227,7 @@ export default function Checkout() {
                 <strong>{t('checkout.cardTitle')}</strong>
                 <span>{t('checkout.cardBody')}</span>
               </span>
-              <span className="co-brands" aria-hidden="true"><span>VISA</span><span>MC</span></span>
+              <span className="co-brands" aria-hidden="true"><img src="/media/icons/visa.png" alt="" width={40} height={26} /><img src="/media/icons/mastercard.png" alt="" width={40} height={26} /></span>
             </label>
             {qrisAvailable ? (
               <label className={`co-option${method === 'qris' ? ' is-selected' : ''}`}>
@@ -236,6 +236,7 @@ export default function Checkout() {
                   <strong>{t('checkout.qris')}</strong>
                   <span>{t('checkout.qrisBody')}</span>
                 </span>
+                <span className="co-brands" aria-hidden="true"><img className="co-brands__qr" src="/media/icons/qris-scan.png" alt="" width={26} height={26} /></span>
               </label>
             ) : <p className="co-note">{t('checkout.qrisIdrOnly')}</p>}
           </fieldset>

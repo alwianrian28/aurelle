@@ -4,6 +4,7 @@
  */
 export const id = {
   common: {
+    requiredNote: 'Wajib diisi',
     search: 'Cari',
     cart: 'Keranjang',
     wishlist: 'Wishlist',

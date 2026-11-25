@@ -4,6 +4,7 @@
  */
 export const en = {
   common: {
+    requiredNote: 'Required',
     search: 'Search',
     cart: 'Cart',
     wishlist: 'Wishlist',

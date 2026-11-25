@@ -44,8 +44,10 @@
 .co-option__body small { font-size: 13px; color: var(--svc-muted); }
 .co-option__aside { font-size: 15px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .co-tag { display: inline-block; margin-left: 10px; padding: 2px 8px; border-radius: 4px; background: var(--svc-stone); font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; vertical-align: 2px; color: var(--svc-muted); }
-.co-brands { display: inline-flex; gap: 6px; }
-.co-brands span { padding: 4px 8px; border: 1px solid #d7d8d4; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: .06em; }
+.co-brands { display: inline-flex; align-items: center; gap: 6px; }
+/* The logo files are square with empty bands above and below the card: `cover` trims those. */
+.co-brands img, .card-brands img { display: block; width: 40px; height: 26px; border-radius: 4px; object-fit: cover; }
+.co-brands img.co-brands__qr { width: 26px; height: 26px; border-radius: 0; object-fit: contain; }
 
 .co-add { display: inline-flex; align-items: center; gap: 12px; margin-top: 22px; padding: 6px 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 500; color: var(--svc-ink); cursor: pointer; }
 .co-add span { font-size: 20px; font-weight: 300; line-height: 1; }
@@ -169,8 +171,8 @@ span.card-input { gap: 12px; padding-right: 12px; }
 span.card-input input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: none; outline: none !important; font: inherit; color: inherit; }
 .card-input:disabled, .card-input input:disabled { color: var(--svc-muted); }
 .card-brands { display: inline-flex; gap: 6px; }
-.card-brands i { padding: 4px 8px; border: 1px solid #d7d8d4; border-radius: 5px; font-size: 10px; font-style: normal; font-weight: 700; letter-spacing: .06em; color: #9a9a94; }
-.card-brands i.is-on { border-color: var(--svc-ink); color: var(--svc-ink); }
+.card-brands img { transition: opacity var(--dur-base) var(--ease-out); }
+.card-brands.has-brand img:not(.is-on) { opacity: .25; filter: grayscale(1); }
 .card-form__pay { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 56px; margin-top: 4px; font-size: 12px; font-weight: 600; letter-spacing: .16em; }
 .card-form__pay:disabled { border-color: #e4e5e9; background: #e4e5e9; color: #555f6d; cursor: progress; }
 .card-form .pay-alert { margin: 0; }

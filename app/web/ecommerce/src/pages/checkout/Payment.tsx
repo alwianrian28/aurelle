@@ -338,7 +338,11 @@ function CardForm({ orderId, total, onOutcome }: { orderId: string; total: strin
         <span className={`card-input${tried && bad.number ? ' is-invalid' : ''}`}>
           <input id="card-number" inputMode="numeric" autoComplete="cc-number" placeholder="1234 1234 1234 1234" maxLength={23} value={number}
             onChange={(e) => setNumber(onlyDigits(e.target.value).slice(0, 19).replace(/(.{4})(?=.)/g, '$1 '))} aria-invalid={tried && bad.number} disabled={busy} />
-          <span className="card-brands" aria-hidden="true"><i className={brand === 'visa' ? 'is-on' : ''}>VISA</i><i className={brand === 'mc' ? 'is-on' : ''}>MC</i></span>
+          {/* Both logos until the number says which card it is; then the other one fades. */}
+          <span className={`card-brands${brand ? ' has-brand' : ''}`} aria-hidden="true">
+            <img className={brand === 'visa' ? 'is-on' : ''} src="/media/icons/visa.png" alt="" width={40} height={26} />
+            <img className={brand === 'mc' ? 'is-on' : ''} src="/media/icons/mastercard.png" alt="" width={40} height={26} />
+          </span>
         </span>
         {tried && bad.number && <small role="alert">{t('payment.card.numberError')}</small>}
       </label>

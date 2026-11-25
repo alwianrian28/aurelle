@@ -190,3 +190,8 @@ button.link:hover {
     justify-self: start;
   }
 }
+
+/* Required fields: a red asterisk after the label, and one line saying what it means. */
+.field-required { margin-left: 3px; color: var(--c-error, #b3261e); font-weight: 600; }
+.field-required-note { margin: 0; font-size: var(--fs-xs); color: var(--c-muted); }
+.field-required-note .field-required { margin-left: 0; }
