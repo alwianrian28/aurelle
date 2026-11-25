@@ -181,6 +181,21 @@ span.card-input input { flex: 1; min-width: 0; height: 100%; padding: 0; border:
 .bank-dialog__title { display: flex; align-items: center; gap: 10px; margin: 0; padding: 16px 20px; border-bottom: 1px solid var(--svc-line); font-size: 14px; font-weight: 600; }
 .bank-dialog iframe { flex: 1; width: 100%; border: 0; }
 
+/* The shop's own QRIS display: the code on the left, amount and steps on the right. */
+.qris { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: start; margin-top: 24px; }
+.qris__code { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 276px; padding: 24px 28px; border: 1px solid var(--svc-line); border-radius: 12px; background: #fff; }
+.qris__brand { margin: 0; font: 600 12px/1 var(--font-sans); letter-spacing: .22em; }
+.qris__code img { display: block; width: 220px; height: 220px; image-rendering: pixelated; }
+.qris__loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 220px; height: 220px; font-size: 13px; text-align: center; color: var(--svc-muted); }
+.qris__merchant { margin: 0; font-size: 13px; text-align: center; color: var(--svc-muted); overflow-wrap: anywhere; }
+.qris__label { margin: 8px 0 0; font-size: 13px; color: var(--svc-muted); }
+.qris__amount { margin: 6px 0 0; font-size: 30px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.qris__how ol { display: grid; gap: 16px; margin: 24px 0 0; padding: 0; list-style: none; font-size: 15px; line-height: 1.5; color: var(--svc-muted); }
+.qris__how li { display: flex; align-items: flex-start; gap: 14px; }
+.qris__how li span { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: var(--svc-stone); color: var(--svc-ink); }
+.qris__download { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; margin-top: 24px; padding: 0 24px; font-size: 12px; font-weight: 600; letter-spacing: .16em; }
+.qris__download:disabled { opacity: .5; cursor: progress; }
+
 .pay-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--svc-line); }
 .pay-waiting { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 14px; color: var(--svc-muted); }
 .pay-waiting i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #e9a23b; box-shadow: 0 0 0 4px #fbecd2; animation: pay-pulse 1.6s ease-in-out infinite; }
@@ -227,6 +242,9 @@ span.card-input input { flex: 1; min-width: 0; height: 100%; padding: 0; border:
   .pay-actions .guide-btn { width: 100%; white-space: normal; text-align: center; }
   .pay-foot { flex-direction: column; align-items: flex-start; }
   .card-row { grid-template-columns: minmax(0, 1fr); }
+  .qris { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .qris__code { width: 100%; }
+  .qris__download { width: 100%; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   .pay-waiting i { animation: none; }

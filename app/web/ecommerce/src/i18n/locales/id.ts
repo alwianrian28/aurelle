@@ -546,6 +546,14 @@ export const id = {
       note: 'Data kartu diproses dengan aman oleh Midtrans. Aurelle tidak pernah melihat atau menyimpan nomor kartu lengkap Anda. Bank Anda mungkin meminta konfirmasi OTP.',
       bankTitle: 'Konfirmasi dengan bank Anda',
     },
+    qris: {
+      loading: 'Menyiapkan kode QR Anda…',
+      alt: 'Kode QRIS untuk membayar {{total}}',
+      open: 'Buka aplikasi bank atau e-wallet yang mendukung QRIS.',
+      scan: 'Pindai kodenya, atau unggah gambar yang sudah diunduh di aplikasi Anda.',
+      check: 'Pastikan nominalnya {{total}}, lalu konfirmasi.',
+      download: 'Unduh kode QR',
+    },
     next: {
       title: 'Langkah selanjutnya',
       paid: 'Pembayaran diterima',

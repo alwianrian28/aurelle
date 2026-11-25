@@ -18,6 +18,7 @@
     "i18next": "^26.4.2",
     "leaflet": "^1.9.4",
     "libphonenumber-js": "^1.13.17",
+    "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-i18next": "^17.0.16",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@types/leaflet": "^1.9.22",
     "@types/node": "^24.13.3",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",

@@ -33,9 +33,11 @@ export interface PaymentConfig {
   snapUrl: string | null;
   /** "own": the shop's card form (Midtrans Core API). "midtrans": Midtrans' form (Snap). */
   cardForm: 'own' | 'midtrans';
+  /** "own": the shop draws the QRIS code. "midtrans": Midtrans' form (Snap) shows it. */
+  qrisForm: 'own' | 'midtrans';
   environment: 'sandbox' | 'production';
 }
-const OFF: PaymentConfig = { midtransClientKey: null, snapUrl: null, cardForm: 'midtrans', environment: 'sandbox' };
+const OFF: PaymentConfig = { midtransClientKey: null, snapUrl: null, cardForm: 'midtrans', qrisForm: 'midtrans', environment: 'sandbox' };
 
 let config: Promise<PaymentConfig> | null = null;
 /** Whether card/QRIS payments are switched on, and what the page needs to show Snap. */
@@ -182,4 +184,29 @@ export function confirmWithBank(redirectUrl: string, show: (url: string) => void
     const done = () => resolve();
     midtrans.authenticate(redirectUrl, { performAuthentication: show, onSuccess: done, onFailure: done, onPending: done });
   });
+}
+
+/* ---------------------------------------------------------------- own QRIS */
+
+export interface QrisCode { qrString: string; merchant: string | null; nmid: string | null }
+export type QrisResult = { ok: true; code: QrisCode } | { ok: false; reason: PayProblem };
+
+/**
+ * The QRIS code for an order, to draw on the payment page. Each attempt has its own code;
+ * asking again while it is still open returns the same one.
+ */
+export async function loadQrisCode(orderId: string): Promise<QrisResult> {
+  const res = await api<QrisCode & { order: Order }>(`/payments/${orderId}/qris`, { method: 'POST' });
+  if (res.ok) {
+    applyServerOrder(res.data.order);
+    return { ok: true, code: { qrString: res.data.qrString, merchant: res.data.merchant, nmid: res.data.nmid } };
+  }
+  if (res.status === 409) await syncPayment(orderId); // already paid, cancelled or expired
+  return { ok: false, reason: res.status === 0 ? 'network' : res.status === 409 ? 'not_allowed' : 'unavailable' };
+}
+
+/** A QRIS string as a PNG picture (a data URL), `size` pixels wide. */
+export async function qrPicture(qrString: string, size: number, margin = 0): Promise<string> {
+  const { toDataURL } = await import('qrcode'); // only needed on this page
+  return toDataURL(qrString, { width: size, margin, errorCorrectionLevel: 'M', color: { dark: '#151922', light: '#ffffff' } });
 }

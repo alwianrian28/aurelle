@@ -7,7 +7,7 @@ import { useMyOrders } from '../../hooks/useMyOrders';
 import { useCountdown, formatDuration } from '../../hooks/useCountdown';
 import { useLocale, useLocalePath, useLocalized } from '../../hooks/useLocale';
 import { formatOrderMoney } from '../../utils/currency';
-import { confirmWithBank, hidePaymentForm, loadPaymentConfig, payWithCard, showPaymentForm, syncPayment, type PayProblem, type SnapOutcome } from '../../lib/payments';
+import { confirmWithBank, hidePaymentForm, loadPaymentConfig, loadQrisCode, payWithCard, qrPicture, showPaymentForm, syncPayment, type PayProblem, type QrisCode, type SnapOutcome } from '../../lib/payments';
 import { BRAND_CONTACT, buildWhatsAppLink } from '../../config/brand';
 import SmartImage from '../../components/SmartImage';
 import type { Order, PaymentMethod } from '../../types/domain';
@@ -41,6 +41,7 @@ export default function Payment() {
   const [gateway, setGateway] = useState<'loading' | 'midtrans' | 'demo'>('loading');
   // Whether cards are paid in the shop's own form (Midtrans Core API) or in Midtrans' form.
   const [ownCardForm, setOwnCardForm] = useState(false);
+  const [ownQris, setOwnQris] = useState(false);
   // The method the customer switched to on this page, if any; otherwise the order's own.
   const [chosen, setChosen] = useState<PaymentMethod | null>(null);
   // Set when the form says the customer is done, until the API has told us the outcome.
@@ -52,7 +53,7 @@ export default function Payment() {
 
   useEffect(() => {
     let alive = true;
-    void loadPaymentConfig().then((c) => { if (alive) { setGateway(c.midtransClientKey ? 'midtrans' : 'demo'); setOwnCardForm(c.cardForm === 'own'); } });
+    void loadPaymentConfig().then((c) => { if (alive) { setGateway(c.midtransClientKey ? 'midtrans' : 'demo'); setOwnCardForm(c.cardForm === 'own'); setOwnQris(c.qrisForm === 'own'); } });
     return () => { alive = false; };
   }, []);
 
@@ -142,7 +143,10 @@ export default function Payment() {
               {gateway === 'midtrans' && method === 'card' && ownCardForm && (
                 <CardForm key={attempt} orderId={order.id} total={money(order.costs.total)} onOutcome={onOutcome} />
               )}
-              {gateway === 'midtrans' && !(method === 'card' && ownCardForm) && (
+              {gateway === 'midtrans' && method === 'qris' && ownQris && (
+                <QrisPanel key={attempt} orderId={order.id} number={order.number} total={money(order.costs.total)} />
+              )}
+              {gateway === 'midtrans' && !(method === 'card' && ownCardForm) && !(method === 'qris' && ownQris) && (
                 <>
                   <PaymentForm key={`${method}-${attempt}`} orderId={order.id} method={method} onOutcome={onOutcome} onProblem={setProblem} loading={t('payment.loadingForm')} />
                   {problem && (
@@ -368,6 +372,77 @@ function CardForm({ orderId, total, onOutcome }: { orderId: string; total: strin
   );
 }
 
+/**
+ * The shop's own QRIS display: the code for this attempt, the amount, and how to pay it. The
+ * page around it keeps asking the API whether the payment arrived, so nothing here needs
+ * pressing after the scan.
+ */
+function QrisPanel({ orderId, number, total }: { orderId: string; number: string; total: string }) {
+  const { t } = useTranslation();
+  const [code, setCode] = useState<QrisCode | null>(null);
+  const [picture, setPicture] = useState('');
+  const [problem, setProblem] = useState<PayProblem | null>(null);
+  const [round, setRound] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    void loadQrisCode(orderId).then(async (result) => {
+      if (!alive) return;
+      if (!result.ok) { setProblem(result.reason); return; }
+      const image = await qrPicture(result.code.qrString, 440).catch(() => '');
+      if (!alive) return;
+      setProblem(image ? null : 'unavailable');
+      setCode(result.code);
+      setPicture(image);
+    });
+    return () => { alive = false; };
+  }, [orderId, round]);
+
+  const download = async () => {
+    if (!code) return;
+    // Larger, and with the white border scanners need around a code that is shown on its own.
+    const link = document.createElement('a');
+    link.href = await qrPicture(code.qrString, 900, 3);
+    link.download = `aurelle-qris-${number}.png`;
+    link.click();
+  };
+
+  const steps: [React.ReactNode, string][] = [
+    [<PhoneIcon key="a" />, t('payment.qris.open')],
+    [<ScanIcon key="b" />, t('payment.qris.scan')],
+    [<CheckIcon key="c" small />, t('payment.qris.check', { total })],
+  ];
+
+  if (problem && problem !== 'not_allowed') {
+    return (
+      <div className="pay-alert" role="alert">
+        <p>{problem === 'network' ? t('authPage.networkError') : t('payment.unavailable')}</p>
+        <button id="qris-reload" type="button" className="pay-link" onClick={() => { setProblem(null); setRound((n) => n + 1); }}>{t('payment.tryAgain')}</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="qris">
+      <div className="qris__code">
+        <p className="qris__brand">QRIS</p>
+        {picture
+          ? <img id="qris-image" src={picture} width={220} height={220} alt={t('payment.qris.alt', { total })} />
+          : <span className="qris__loading"><span className="pay-spinner pay-spinner--small" aria-hidden="true" />{t('payment.qris.loading')}</span>}
+        {code && (code.merchant || code.nmid) && <p className="qris__merchant">{[code.merchant, code.nmid].filter(Boolean).join(' · ')}</p>}
+      </div>
+      <div className="qris__how">
+        <p className="qris__label">{t('payment.amount')}</p>
+        <p className="qris__amount" id="qris-amount">{total}</p>
+        <ol>
+          {steps.map(([icon, text]) => <li key={text}><span aria-hidden="true">{icon}</span>{text}</li>)}
+        </ol>
+        <button id="qris-download" type="button" className="guide-btn guide-btn--outline qris__download" disabled={!picture} onClick={() => void download()}><DownloadIcon />{t('payment.qris.download')}</button>
+      </div>
+    </div>
+  );
+}
+
 /** Midtrans' form for one attempt. A new method or a retry mounts a new one (see `key`). */
 function PaymentForm({ orderId, method, onOutcome, onProblem, loading }: {
   orderId: string; method: PaymentMethod; onOutcome: (outcome: SnapOutcome) => void; onProblem: (problem: PayProblem | null) => void; loading: string;
@@ -423,4 +498,7 @@ function LockIcon() { return <svg {...SVG}><rect x="5" y="10.5" width="14" heigh
 function ClockIcon({ large }: { large?: boolean }) { return <svg {...SVG} width={large ? 24 : 18} height={large ? 24 : 18}><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>; }
 function CheckIcon({ small }: { small?: boolean }) { return <svg {...SVG} width={small ? 12 : 22} height={small ? 12 : 22} strokeWidth={small ? 2.4 : 1.8}><path d="M4.5 12.5l5 5 10-11" /></svg>; }
 function CrossIcon() { return <svg {...SVG} width={22} height={22} strokeWidth={1.8}><path d="M6 6l12 12M18 6L6 18" /></svg>; }
+function PhoneIcon() { return <svg {...SVG} width={18} height={18}><rect x="7" y="3" width="10" height="18" rx="2" /><path d="M11 17.5h2" /></svg>; }
+function ScanIcon() { return <svg {...SVG} width={18} height={18}><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M7 12h10" /></svg>; }
+function DownloadIcon() { return <svg {...SVG}><path d="M12 4v11M7 11l5 5 5-5M5 20h14" /></svg>; }
 function ChatIcon() { return <svg {...SVG} width={18} height={18}><path d="M4 20l1.3-4.2A8 8 0 1 1 8.4 19z" /><path d="M9.5 9.2c0 3 2.3 5.300 5.300 5.300l.7-1.500-1.800-.9-.7.8c-1-.4-1.800-1.200-2.200-2.200l.8-.7-.9-1.800z" /></svg>; }

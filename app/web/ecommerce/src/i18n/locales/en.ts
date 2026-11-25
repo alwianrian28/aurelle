@@ -551,6 +551,14 @@ export const en = {
       note: 'Card details are processed securely by Midtrans. Aurelle never sees or stores your full card number. Your bank may ask you to confirm with an OTP.',
       bankTitle: 'Confirm with your bank',
     },
+    qris: {
+      loading: 'Preparing your QR code…',
+      alt: 'QRIS code to pay {{total}}',
+      open: 'Open any banking or e-wallet app that supports QRIS.',
+      scan: 'Scan the code, or upload the downloaded image in your app.',
+      check: 'Check the amount is {{total}}, then confirm.',
+      download: 'Download QR code',
+    },
     next: {
       title: 'What happens next',
       paid: 'Payment received',

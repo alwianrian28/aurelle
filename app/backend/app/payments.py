@@ -4,7 +4,11 @@ Cards are paid in the shop's own card form: the browser hands the card to Midtra
 one-time token, and POST /api/payments/{order_id}/card pays a Snap transaction with that token
 (the route Midtrans' own mobile SDK takes; the Core API's /v2/charge is not open to every
 merchant account). With MIDTRANS_CARD_FORM=midtrans, cards use Midtrans' form (Snap) instead.
-Card numbers never reach this server either way. QRIS always uses Midtrans' form.
+Card numbers never reach this server either way.
+
+QRIS works the same way: POST /api/payments/{order_id}/qris creates a Snap transaction for
+QRIS only, starts it, and hands the shop the code to draw (MIDTRANS_QRIS_FORM=midtrans shows
+Midtrans' form instead). Every attempt has a code of its own.
 
 The pieces:
 - POST /api/payments/{order_id}/snap: creates the Snap transaction and returns its token; the shop
@@ -29,7 +33,7 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
 from .auth import Db, User
-from .config import midtrans_client_key, midtrans_is_production, midtrans_own_card_form, midtrans_notification_url, midtrans_server_key, shop_origin
+from .config import midtrans_client_key, midtrans_is_production, midtrans_own_card_form, midtrans_own_qris, midtrans_notification_url, midtrans_server_key, shop_origin
 from .db import Database, Row
 from .orders import _add_event, _get, _own, _to_order, expire_stale
 
@@ -202,6 +206,7 @@ def payment_config():
         "snapUrl": f"{_hosts()[0]}/snap/snap.js" if key else None,
         # "own": the shop's card form. "midtrans": Midtrans' form (Snap).
         "cardForm": "own" if key and midtrans_own_card_form() else "midtrans",
+        "qrisForm": "own" if key and midtrans_own_qris() else "midtrans",
         "environment": "production" if midtrans_is_production() else "sandbox",
     }
 
@@ -353,6 +358,85 @@ def charge_card(order_id: str, body: CardIn, user: User, db: Db):
         raise HTTPException(502, "payment_provider_error")
     _apply(db, _get(db, order_id), {**res, "order_id": midtrans_order_id})
     return {"order": _to_order(db, _get(db, order_id)), "redirectUrl": res.get("redirect_url")}
+
+
+def _qris_answer(db: Database, order_id: str, attempt: dict) -> dict:
+    return {"order": _to_order(db, _get(db, order_id)), "qrString": attempt["qrString"], "merchant": attempt.get("merchant"), "nmid": attempt.get("nmid")}
+
+
+def _qris_fields(code: str) -> dict[str, str]:
+    """The top-level fields of a QRIS string (EMV: two digits of tag, two of length, the value)."""
+    fields, i = {}, 0
+    while i + 4 <= len(code) and code[i:i + 4].isdigit():
+        size = int(code[i + 2:i + 4])
+        fields[code[i:i + 2]] = code[i + 4:i + 4 + size]
+        i += 4 + size
+    return fields
+
+
+@router.post("/{order_id}/qris")
+def create_qris(order_id: str, user: User, db: Db):
+    """The QRIS code for paying this order, for the shop to draw. Asking again returns the same
+    code while that attempt is still open; a new attempt (after a failure, or after trying a
+    card) gets a new code. Scanning it is all the customer does: whether it was paid is learned
+    from Midtrans, never from the browser."""
+    _server_key()
+    if not midtrans_own_qris():
+        raise HTTPException(409, "qris_form_off")
+    expire_stale(db)
+    _own(db, order_id, user)
+    row = db.execute("SELECT * FROM orders WHERE id = ? FOR UPDATE", (order_id,)).fetchone()
+    if row["status"] != "awaiting_payment":
+        raise HTTPException(409, "not_allowed")
+    data = json.loads(row["data"])
+    # FR-03-07: QRIS is offered for IDR only (the same rule checkout applies).
+    if data["currency"] != "IDR":
+        raise HTTPException(400, "invalid_order")
+    minutes_left = _minutes_left(data)
+    if minutes_left < 1:
+        raise HTTPException(409, "not_allowed")
+
+    previous = data.get("midtrans") or {}
+    if previous.get("qrString") and previous.get("method") == "qris" and row["payment_status"] in ("unpaid", "pending"):
+        return _qris_answer(db, order_id, previous)  # the code on screen stays the code
+    if previous.get("orderId"):
+        _midtrans("POST", f"{_hosts()[1]}/v2/{previous['orderId']}/cancel")  # nothing older stays payable
+    attempt = int(previous.get("attempt", 0)) + 1
+    midtrans_order_id = f"{row['number']}-{attempt}"
+    items, customer = _details(row, data, user)
+    create = {
+        "transaction_details": {"order_id": midtrans_order_id, "gross_amount": int(row["total_idr"])},
+        "item_details": items,
+        "customer_details": customer,
+        "enabled_payments": ["other_qris"],
+        # The code stops working when the stock reservation does.
+        "expiry": {"unit": "minute", "duration": minutes_left},
+    }
+    headers = {"X-Override-Notification": midtrans_notification_url()} if midtrans_notification_url() else None
+    status, snap = _midtrans("POST", f"{_hosts()[0]}/snap/v1/transactions", create, headers)
+    if status not in (200, 201) or not snap.get("token"):
+        print(f"[midtrans] snap create failed for {row['number']}: {status} {snap.get('error_messages')}", flush=True)
+        raise HTTPException(502, "payment_provider_error")
+    status, res = _midtrans("POST", f"{_hosts()[0]}/snap/v1/transactions/{snap['token']}/pay", {"payment_type": "other_qris"})
+    code = res.get("qr_string")
+    if not code or not res.get("transaction_status"):
+        print(f"[midtrans] qris not created for {row['number']}: {status} {res.get('status_code')} {res.get('status_message') or res.get('error_messages')}", flush=True)
+        raise HTTPException(502, "payment_provider_error")
+
+    fields = _qris_fields(code)
+    current = {
+        "orderId": midtrans_order_id, "attempt": attempt, "method": "qris", "mode": "own", "qrString": code,
+        # Shown under the code, as on every QRIS display: who is being paid.
+        "merchant": fields.get("59") or None, "nmid": _qris_fields(fields.get("51", "")).get("02") or None,
+        "qrUrl": res.get("qris_url"),  # Midtrans' own picture of the code; kept for support, not sent to the browser
+    }
+    data["midtrans"] = current
+    data["paymentMethod"] = "qris"
+    db.execute("UPDATE orders SET data = ? WHERE id = ?", (json.dumps(data), row["id"]))
+    if row["payment_status"] in ("failed", "pending"):
+        _add_event(db, row["id"], "awaiting_payment", "unpaid", "customer")  # a fresh attempt starts unpaid
+    _apply(db, _get(db, order_id), {**res, "order_id": midtrans_order_id})
+    return _qris_answer(db, order_id, current)
 
 
 @router.post("/{order_id}/sync")

@@ -629,11 +629,11 @@ def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypa
     register(api)
     order = api.post("/api/orders", json=order_body()).json()["order"]
     monkeypatch.delenv("MIDTRANS_SERVER_KEY", raising=False)
-    assert api.get("/api/payments/config").json() == {"midtransClientKey": None, "snapUrl": None, "cardForm": "midtrans", "environment": "sandbox"}
+    assert api.get("/api/payments/config").json() == {"midtransClientKey": None, "snapUrl": None, "cardForm": "midtrans", "qrisForm": "midtrans", "environment": "sandbox"}
     assert api.post("/api/payments/ord-12345678/snap").status_code == 503  # switched off
 
     fake = midtrans(monkeypatch)
-    assert api.get("/api/payments/config").json() == {"midtransClientKey": "SB-Mid-client-test", "snapUrl": "https://app.sandbox.midtrans.com/snap/snap.js", "cardForm": "own", "environment": "sandbox"}
+    assert api.get("/api/payments/config").json() == {"midtransClientKey": "SB-Mid-client-test", "snapUrl": "https://app.sandbox.midtrans.com/snap/snap.js", "cardForm": "own", "qrisForm": "own", "environment": "sandbox"}
     assert api.post("/api/payments/ord-12345678/snap").json() == {"token": "snap-token-1", "redirectUrl": "https://snap.test/1", "method": "qris"}
     assert api.post("/api/payments/ord-12345678/snap").json()["token"] == "snap-token-1"  # reused, not created twice
     creates = [c for c in fake.calls if c[1].endswith("/snap/v1/transactions")]
@@ -728,6 +728,57 @@ def test_own_card_form_pays_a_snap_transaction_with_a_card_token(api, monkeypatc
     # Switching to QRIS afterwards starts Midtrans' form on a new attempt, not on the card one.
     qris = api.post("/api/payments/ord-wrongamt/snap", json={"method": "qris"}).json()
     assert qris["method"] == "qris" and creates()[-1]["enabled_payments"] == ["other_qris", "gopay"]
+
+
+def test_own_qris_code_is_one_per_attempt(api, monkeypatch):
+    register(api)
+    order = api.post("/api/orders", json=order_body()).json()["order"]
+    fake = midtrans(monkeypatch)
+    total = order["costs"]["total"]
+    # A QRIS string as Midtrans sends it: merchant name in field 59, NMID in field 51 / 02.
+    qr = lambda n: f"00020101021251370014ID.CO.QRIS.WWW0215AID43864334164{n}5204605153033605405100005802ID5917Aurelle Jewellery6304ABCD"  # noqa: E731
+    real = fake.__call__
+    made = []
+
+    def with_pay(method, url, body=None, headers=None):
+        if url.endswith("/pay"):
+            fake.calls.append((method, url, body, headers))
+            made.append(qr(len(made) + 1))
+            return 200, {"status_code": "201", "transaction_status": "pending", "gross_amount": str(total), "payment_type": "qris", "qr_string": made[-1]}
+        return real(method, url, body, headers)
+
+    monkeypatch.setattr("app.payments._midtrans", with_pay)
+    assert TestClient(api.app).post("/api/payments/ord-12345678/qris").status_code == 401
+    monkeypatch.setenv("MIDTRANS_QRIS_FORM", "midtrans")
+    assert api.post("/api/payments/ord-12345678/qris").json() == {"error": "qris_form_off"}
+    monkeypatch.delenv("MIDTRANS_QRIS_FORM")
+
+    first = api.post("/api/payments/ord-12345678/qris").json()
+    assert (first["qrString"], first["merchant"], first["nmid"]) == (qr(1), "Aurelle Jewellery", "AID438643341641")
+    assert (first["order"]["paymentStatus"], first["order"]["paymentMethod"]) == ("pending", "qris")
+    assert "midtrans" not in first["order"] and "qrString" not in first["order"]
+    created = [c[2] for c in fake.calls if c[1].endswith("/snap/v1/transactions")][-1]
+    assert created["transaction_details"] == {"order_id": f"{order['number']}-1", "gross_amount": total}
+    assert created["enabled_payments"] == ["other_qris"] and created["expiry"]["unit"] == "minute" and 28 <= created["expiry"]["duration"] <= 30
+    assert [c[2] for c in fake.calls if c[1].endswith("/pay")] == [{"payment_type": "other_qris"}]
+
+    # Reloading the page shows the same code; it is not a new transaction.
+    assert api.post("/api/payments/ord-12345678/qris").json()["qrString"] == qr(1) and len(made) == 1
+    # After a failed attempt the customer gets a new code, and the old transaction is cancelled.
+    api.post("/api/payments/midtrans/notification", json=notification(f"{order['number']}-1", "deny", gross=f"{total}.00"))
+    again = api.post("/api/payments/ord-12345678/qris").json()
+    assert again["qrString"] == qr(2) and again["order"]["paymentStatus"] == "pending"
+    assert ("POST", f"https://api.sandbox.midtrans.com/v2/{order['number']}-1/cancel") in [(c[0], c[1]) for c in fake.calls]
+    # Another order, the same amount: a different code.
+    api.post("/api/orders", json=order_body("ord-qrother0"))
+    assert api.post("/api/payments/ord-qrother0/qris").json()["qrString"] == qr(3)
+    # Paid: Midtrans says so, and the code is no longer handed out.
+    api.post("/api/payments/midtrans/notification", json=notification(f"{order['number']}-2", "settlement", gross=f"{total}.00"))
+    assert api.get("/api/orders/ord-12345678").json()["order"]["paymentStatus"] == "paid"
+    assert api.post("/api/payments/ord-12345678/qris").status_code == 409
+    # QRIS stays an IDR-only method.
+    api.post("/api/orders", json={**order_body("ord-usdqris0", qty=1), "paymentMethod": "card", "currency": "USD"})
+    assert api.post("/api/payments/ord-usdqris0/qris").status_code == 400
 
 
 def test_payment_under_way_is_closed_at_midtrans_when_the_hold_runs_out(api, monkeypatch):

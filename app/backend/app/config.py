@@ -40,8 +40,10 @@ def midtrans_server_key() -> str | None:
 
 
 def midtrans_client_key() -> str | None:
-    """Midtrans client key: public, handed to the shop to load the Snap popup."""
-    return os.environ.get("MIDTRANS_CLIENT_KEY", "").strip() or None
+    """Midtrans client key: public, handed to the shop for the card form and Midtrans' own form.
+    NEXT_PUBLIC_MIDTRANS_CLIENT_KEY is read too: the name Midtrans' guides use, and an easy one
+    to end up with in .env. Without either, payments fall back to the development simulator."""
+    return (os.environ.get("MIDTRANS_CLIENT_KEY") or os.environ.get("NEXT_PUBLIC_MIDTRANS_CLIENT_KEY") or "").strip() or None
 
 
 def midtrans_is_production() -> bool:
@@ -51,8 +53,14 @@ def midtrans_is_production() -> bool:
 
 def midtrans_own_card_form() -> bool:
     """Whether cards are paid in the shop's own card form (the default) or in Midtrans' form
-    (MIDTRANS_CARD_FORM=midtrans). QRIS always uses Midtrans' form."""
+    (MIDTRANS_CARD_FORM=midtrans)."""
     return os.environ.get("MIDTRANS_CARD_FORM", "own").strip().lower() != "midtrans"
+
+
+def midtrans_own_qris() -> bool:
+    """Whether the QRIS code is drawn by the shop itself (the default) or shown in Midtrans'
+    form (MIDTRANS_QRIS_FORM=midtrans)."""
+    return os.environ.get("MIDTRANS_QRIS_FORM", "own").strip().lower() != "midtrans"
 
 
 def midtrans_notification_url() -> str | None:
