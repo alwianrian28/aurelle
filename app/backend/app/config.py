@@ -49,6 +49,14 @@ def midtrans_is_production() -> bool:
     return os.environ.get("MIDTRANS_IS_PRODUCTION", "").strip().lower() == "true"
 
 
+def midtrans_core_api() -> bool:
+    """Whether the shop shows its own card form and charges through Midtrans' Core API
+    (MIDTRANS_CORE_API=true). Midtrans switches the Core API on per merchant account: until
+    it has, a charge is refused with "Access denied", so this stays off and cards are paid in
+    Midtrans' own form (Snap) instead. QRIS always uses Midtrans' form."""
+    return os.environ.get("MIDTRANS_CORE_API", "").strip().lower() == "true"
+
+
 def midtrans_notification_url() -> str | None:
     """Where Midtrans sends payment notifications for transactions created here. Sent with
     every transaction, so it wins over the URL saved in the Midtrans dashboard: payments started

@@ -629,11 +629,11 @@ def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypa
     register(api)
     order = api.post("/api/orders", json=order_body()).json()["order"]
     monkeypatch.delenv("MIDTRANS_SERVER_KEY", raising=False)
-    assert api.get("/api/payments/config").json() == {"midtransClientKey": None, "snapUrl": None}
+    assert api.get("/api/payments/config").json() == {"midtransClientKey": None, "snapUrl": None, "cardForm": "midtrans", "environment": "sandbox"}
     assert api.post("/api/payments/ord-12345678/snap").status_code == 503  # switched off
 
     fake = midtrans(monkeypatch)
-    assert api.get("/api/payments/config").json() == {"midtransClientKey": "SB-Mid-client-test", "snapUrl": "https://app.sandbox.midtrans.com/snap/snap.js"}
+    assert api.get("/api/payments/config").json() == {"midtransClientKey": "SB-Mid-client-test", "snapUrl": "https://app.sandbox.midtrans.com/snap/snap.js", "cardForm": "midtrans", "environment": "sandbox"}
     assert api.post("/api/payments/ord-12345678/snap").json() == {"token": "snap-token-1", "redirectUrl": "https://snap.test/1", "method": "qris"}
     assert api.post("/api/payments/ord-12345678/snap").json()["token"] == "snap-token-1"  # reused, not created twice
     creates = [c for c in fake.calls if c[1].endswith("/snap/v1/transactions")]
@@ -665,6 +665,63 @@ def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypa
     usd = api.post("/api/orders", json={**order_body("ord-usd00000", qty=1), "paymentMethod": "card", "currency": "USD"})
     assert usd.status_code == 201 and api.post("/api/payments/ord-usd00000/snap", json={"method": "qris"}).status_code == 400
     assert TestClient(api.app).post("/api/payments/ord-12345678/snap").status_code == 401
+
+
+def test_own_card_form_charges_a_token_through_the_core_api(api, monkeypatch):
+    register(api)
+    order = api.post("/api/orders", json={**order_body(), "paymentMethod": "card"}).json()["order"]
+    fake = midtrans(monkeypatch)
+    total = order["costs"]["total"]
+    card = {"tokenId": "481111-1114-token-abc"}
+    assert api.post("/api/payments/ord-12345678/card", json=card).json() == {"error": "card_form_off"}  # off until switched on
+    monkeypatch.setenv("MIDTRANS_CORE_API", "true")
+    assert api.get("/api/payments/config").json()["cardForm"] == "own"
+    assert TestClient(api.app).post("/api/payments/ord-12345678/card", json=card).status_code == 401
+    assert api.post("/api/payments/ord-12345678/card", json={"tokenId": "4811 1111 1111 1114"}).status_code == 400  # a card number is not a token
+
+    replies = []
+    real = fake.__call__
+
+    def charge(method, url, body=None, headers=None):
+        if url.endswith("/v2/charge"):
+            fake.calls.append((method, url, body, headers))
+            return replies.pop(0)
+        return real(method, url, body, headers)
+
+    monkeypatch.setattr("app.payments._midtrans", charge)
+
+    # The account may not use the Core API: nothing changes on the order.
+    replies.append((403, {"error": "Access denied"}))
+    assert api.post("/api/payments/ord-12345678/card", json=card).json() == {"error": "card_form_denied"}
+    # Midtrans does not accept the token: the customer is told to check the card.
+    replies.append((200, {"status_code": "411", "status_message": "Token id is missing, invalid, or timed out"}))
+    assert api.post("/api/payments/ord-12345678/card", json=card).json() == {"error": "card_rejected"}
+    assert api.get("/api/orders/ord-12345678").json()["order"]["paymentStatus"] == "unpaid"
+
+    # The bank wants an OTP: pending, with the page to show.
+    replies.append((200, {"status_code": "201", "transaction_status": "pending", "gross_amount": f"{total}.00", "redirect_url": "https://api.sandbox.midtrans.com/v2/3ds/redirect/x"}))
+    pending = api.post("/api/payments/ord-12345678/card", json=card).json()
+    assert (pending["redirectUrl"], pending["order"]["paymentStatus"], pending["order"]["paymentMethod"]) == ("https://api.sandbox.midtrans.com/v2/3ds/redirect/x", "pending", "card")
+    _, url, body, _headers = [c for c in fake.calls if c[1].endswith("/v2/charge")][-1]
+    assert url == "https://api.sandbox.midtrans.com/v2/charge"
+    assert body["transaction_details"] == {"order_id": f"{order['number']}-1", "gross_amount": total}
+    assert body["credit_card"] == {"token_id": "481111-1114-token-abc", "authentication": True}
+    assert sum(i["price"] * i["quantity"] for i in body["item_details"]) == total
+
+    # The bank refuses: failed, and the next try is a new attempt that cancels the old one.
+    replies.append((200, {"status_code": "202", "transaction_status": "deny", "gross_amount": f"{total}.00"}))
+    assert api.post("/api/payments/ord-12345678/card", json=card).json()["order"]["paymentStatus"] == "failed"
+    replies.append((200, {"status_code": "200", "transaction_status": "capture", "fraud_status": "accept", "gross_amount": f"{total}.00"}))
+    paid = api.post("/api/payments/ord-12345678/card", json=card).json()["order"]
+    assert (paid["status"], paid["paymentStatus"]) == ("confirmed", "paid")
+    assert ("POST", f"https://api.sandbox.midtrans.com/v2/{order['number']}-2/cancel") in [(c[0], c[1]) for c in fake.calls]
+    assert [c[2]["transaction_details"]["order_id"] for c in fake.calls if c[1].endswith("/v2/charge")][-1] == f"{order['number']}-3"
+    assert api.post("/api/payments/ord-12345678/card", json=card).status_code == 409  # already paid
+
+    # A charge that claims another amount is never taken as payment.
+    other = api.post("/api/orders", json={**order_body("ord-wrongamt", qty=1), "paymentMethod": "card"}).json()["order"]
+    replies.append((200, {"status_code": "200", "transaction_status": "capture", "fraud_status": "accept", "gross_amount": "1000.00"}))
+    assert api.post("/api/payments/ord-wrongamt/card", json=card).json()["order"]["paymentStatus"] == "unpaid" and other["paymentStatus"] == "unpaid"
 
 
 def test_midtrans_notification_is_the_only_way_to_paid(api, monkeypatch):

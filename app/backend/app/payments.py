@@ -1,6 +1,11 @@
-"""Payments through Midtrans Snap (PRD §9).
+"""Payments through Midtrans (PRD §9).
 
-Three pieces:
+Cards can be paid in two ways. By default in Midtrans' own form (Snap). With
+MIDTRANS_CORE_API=true, in the shop's own card form: the browser hands the card to Midtrans
+and gets a one-time token, and POST /api/payments/{order_id}/card charges that token. Card
+numbers never reach this server either way. QRIS always uses Midtrans' form.
+
+The pieces:
 - POST /api/payments/{order_id}/snap: creates the Snap transaction and returns its token; the shop
   shows Midtrans' payment form with it, inside its own payment page. The customer may switch
   between card and QRIS there: each switch is a new Snap transaction for the same order.
@@ -20,10 +25,10 @@ from typing import Literal
 import requests
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .auth import Db, User
-from .config import midtrans_client_key, midtrans_is_production, midtrans_notification_url, midtrans_server_key, shop_origin
+from .config import midtrans_client_key, midtrans_core_api, midtrans_is_production, midtrans_notification_url, midtrans_server_key, shop_origin
 from .db import Database, Row
 from .orders import _add_event, _get, _own, _to_order, expire_stale
 
@@ -110,6 +115,35 @@ def _apply(db: Database, row: Row, payload: dict) -> None:
         _add_event(db, row["id"], "cancelled", "expired", actor)
 
 
+class CardIn(BaseModel):
+    """The one-time token Midtrans gave the browser for the card. Never the card itself."""
+
+    tokenId: str = Field(min_length=8, max_length=200, pattern=r"^[A-Za-z0-9._-]+$")
+
+
+def _details(row: Row, data: dict, user: Row) -> tuple[list[dict], dict]:
+    """(item lines, customer) as Midtrans wants them. The lines add up to the order total exactly."""
+    costs, address = data["costs"], data["addressSnapshot"]
+    items = [
+        {"id": line["variantId"][:50], "name": f"{line['name']['en']} ({line['variantLabel']['en']})"[:50], "price": int(line["unitPriceIdr"]), "quantity": int(line["qty"])}
+        for line in data["items"]
+    ]
+    for key, label in (("shipping", "Shipping"), ("tax", "Tax"), ("duty", "Import duty (estimate)"), ("other", "Other fees")):
+        if costs.get(key):
+            items.append({"id": key, "name": label, "price": int(costs[key]), "quantity": 1})
+    phone = f"{address.get('phoneCountryCode', '')}{address.get('phone', '')}".replace(" ", "")
+    shipping = {
+        "first_name": address["recipient"][:255], "phone": phone, "address": " ".join(filter(None, [address["line1"], address.get("line2")]))[:200],
+        "city": address["city"][:100], "postal_code": (address.get("postalCode") or "")[:10],
+    }
+    return items, {"first_name": user["username"][:255], "email": user["email"], "phone": phone, "shipping_address": shipping}
+
+
+def _minutes_left(data: dict) -> int:
+    expires = datetime.fromisoformat(data["reservationExpiresAt"].replace("Z", "+00:00"))
+    return int((expires - datetime.now(timezone.utc)).total_seconds() // 60)
+
+
 class SnapIn(BaseModel):
     """Which method the form should offer. Left out, it is the one chosen at checkout."""
 
@@ -124,9 +158,15 @@ def _order_for(db: Database, midtrans_order_id: str) -> Row | None:
 
 @router.get("/config")
 def payment_config():
-    """What the payment page needs to open Snap. The client key is public by design."""
+    """What the payment page needs to take a payment. The client key is public by design."""
     key = midtrans_client_key() if midtrans_server_key() else None
-    return {"midtransClientKey": key, "snapUrl": f"{_hosts()[0]}/snap/snap.js" if key else None}
+    return {
+        "midtransClientKey": key,
+        "snapUrl": f"{_hosts()[0]}/snap/snap.js" if key else None,
+        # "own": the shop's card form (Core API). "midtrans": Midtrans' form (Snap).
+        "cardForm": "own" if key and midtrans_core_api() else "midtrans",
+        "environment": "production" if midtrans_is_production() else "sandbox",
+    }
 
 
 @router.post("/midtrans/notification")
@@ -171,8 +211,7 @@ def create_snap_transaction(order_id: str, user: User, db: Db, body: SnapIn | No
     if row["status"] != "awaiting_payment":
         raise HTTPException(409, "not_allowed")
     data = json.loads(row["data"])
-    expires = datetime.fromisoformat(data["reservationExpiresAt"].replace("Z", "+00:00"))
-    minutes_left = int((expires - datetime.now(timezone.utc)).total_seconds() // 60)
+    minutes_left = _minutes_left(data)
     if minutes_left < 1:
         raise HTTPException(409, "not_allowed")
 
@@ -193,24 +232,11 @@ def create_snap_transaction(order_id: str, user: User, db: Db, body: SnapIn | No
 
     attempt = int(previous.get("attempt", 0)) + 1
     midtrans_order_id = f"{row['number']}-{attempt}"
-    costs, address = data["costs"], data["addressSnapshot"]
-    items = [
-        {"id": line["variantId"][:50], "name": f"{line['name']['en']} ({line['variantLabel']['en']})"[:50], "price": int(line["unitPriceIdr"]), "quantity": int(line["qty"])}
-        for line in data["items"]
-    ]
-    # Midtrans requires the lines to add up to gross_amount exactly.
-    for key, label in (("shipping", "Shipping"), ("tax", "Tax"), ("duty", "Import duty (estimate)"), ("other", "Other fees")):
-        if costs.get(key):
-            items.append({"id": key, "name": label, "price": int(costs[key]), "quantity": 1})
-    phone = f"{address.get('phoneCountryCode', '')}{address.get('phone', '')}".replace(" ", "")
-    shipping = {
-        "first_name": address["recipient"][:255], "phone": phone, "address": " ".join(filter(None, [address["line1"], address.get("line2")]))[:200],
-        "city": address["city"][:100], "postal_code": (address.get("postalCode") or "")[:10],
-    }
+    items, customer = _details(row, data, user)
     body = {
         "transaction_details": {"order_id": midtrans_order_id, "gross_amount": int(row["total_idr"])},
         "item_details": items,
-        "customer_details": {"first_name": user["username"][:255], "email": user["email"], "phone": phone, "shipping_address": shipping},
+        "customer_details": customer,
         "enabled_payments": ENABLED_PAYMENTS[method],
         "credit_card": {"secure": True},
         # The payment page closes when the stock reservation does.
@@ -230,6 +256,57 @@ def create_snap_transaction(order_id: str, user: User, db: Db, body: SnapIn | No
         # A fresh attempt starts unpaid: the failure, or the abandoned method's pending state, is history.
         _add_event(db, row["id"], "awaiting_payment", "unpaid", "customer")
     return {"token": res["token"], "redirectUrl": res.get("redirect_url"), "method": method}
+
+
+@router.post("/{order_id}/card")
+def charge_card(order_id: str, body: CardIn, user: User, db: Db):
+    """Charge the card behind a one-time token (the shop's own card form). Every call is a new
+    attempt. The answer says what Midtrans decided so far, and where to send the customer when
+    the bank wants an OTP (3-D Secure); "paid" still only ever comes from Midtrans."""
+    _server_key()
+    if not midtrans_core_api():
+        raise HTTPException(409, "card_form_off")
+    expire_stale(db)
+    _own(db, order_id, user)
+    row = db.execute("SELECT * FROM orders WHERE id = ? FOR UPDATE", (order_id,)).fetchone()
+    if row["status"] != "awaiting_payment":
+        raise HTTPException(409, "not_allowed")
+    data = json.loads(row["data"])
+    if _minutes_left(data) < 1:
+        raise HTTPException(409, "not_allowed")
+
+    previous = data.get("midtrans") or {}
+    if previous.get("orderId"):
+        # Whatever was started before (a QRIS code, an unfinished OTP) must not stay payable.
+        _midtrans("POST", f"{_hosts()[1]}/v2/{previous['orderId']}/cancel")
+    attempt = int(previous.get("attempt", 0)) + 1
+    midtrans_order_id = f"{row['number']}-{attempt}"
+    items, customer = _details(row, data, user)
+    charge = {
+        "payment_type": "credit_card",
+        "transaction_details": {"order_id": midtrans_order_id, "gross_amount": int(row["total_idr"])},
+        "credit_card": {"token_id": body.tokenId, "authentication": True},
+        "item_details": items,
+        "customer_details": customer,
+    }
+    headers = {"X-Override-Notification": midtrans_notification_url()} if midtrans_notification_url() else None
+    status, res = _midtrans("POST", f"{_hosts()[1]}/v2/charge", charge, headers)
+    if status == 403:
+        # The merchant account is not allowed to use the Core API (yet).
+        print(f"[midtrans] card charge refused for {row['number']}: Core API access denied", flush=True)
+        raise HTTPException(502, "card_form_denied")
+    if not res.get("transaction_status"):
+        print(f"[midtrans] card charge failed for {row['number']}: {status} {res.get('status_code')} {res.get('status_message')}", flush=True)
+        # 4xx: Midtrans did not accept the token (expired, already used, wrong card data).
+        raise HTTPException(400 if str(res.get("status_code", status)).startswith("4") else 502, "card_rejected" if str(res.get("status_code", status)).startswith("4") else "payment_provider_error")
+
+    data["midtrans"] = {"orderId": midtrans_order_id, "attempt": attempt, "method": "card", "mode": "core"}
+    data["paymentMethod"] = "card"
+    db.execute("UPDATE orders SET data = ? WHERE id = ?", (json.dumps(data), row["id"]))
+    if row["payment_status"] in ("failed", "pending"):
+        _add_event(db, row["id"], "awaiting_payment", "unpaid", "customer")  # a fresh attempt starts unpaid
+    _apply(db, _get(db, order_id), {**res, "order_id": midtrans_order_id})
+    return {"order": _to_order(db, _get(db, order_id)), "redirectUrl": res.get("redirect_url")}
 
 
 @router.post("/{order_id}/sync")

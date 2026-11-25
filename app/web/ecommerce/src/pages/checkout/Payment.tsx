@@ -7,7 +7,7 @@ import { useMyOrders } from '../../hooks/useMyOrders';
 import { useCountdown, formatDuration } from '../../hooks/useCountdown';
 import { useLocale, useLocalePath, useLocalized } from '../../hooks/useLocale';
 import { formatOrderMoney } from '../../utils/currency';
-import { hidePaymentForm, loadPaymentConfig, showPaymentForm, syncPayment, type PayProblem, type SnapOutcome } from '../../lib/payments';
+import { confirmWithBank, hidePaymentForm, loadPaymentConfig, payWithCard, showPaymentForm, syncPayment, type PayProblem, type SnapOutcome } from '../../lib/payments';
 import { BRAND_CONTACT, buildWhatsAppLink } from '../../config/brand';
 import SmartImage from '../../components/SmartImage';
 import type { Order, PaymentMethod } from '../../types/domain';
@@ -39,6 +39,8 @@ export default function Payment() {
   const remaining = useCountdown(order?.status === 'awaiting_payment' ? order.reservationExpiresAt : undefined);
 
   const [gateway, setGateway] = useState<'loading' | 'midtrans' | 'demo'>('loading');
+  // Whether cards are paid in the shop's own form (Midtrans Core API) or in Midtrans' form.
+  const [ownCardForm, setOwnCardForm] = useState(false);
   // The method the customer switched to on this page, if any; otherwise the order's own.
   const [chosen, setChosen] = useState<PaymentMethod | null>(null);
   // Set when the form says the customer is done, until the API has told us the outcome.
@@ -50,7 +52,7 @@ export default function Payment() {
 
   useEffect(() => {
     let alive = true;
-    void loadPaymentConfig().then((c) => { if (alive) setGateway(c.midtransClientKey ? 'midtrans' : 'demo'); });
+    void loadPaymentConfig().then((c) => { if (alive) { setGateway(c.midtransClientKey ? 'midtrans' : 'demo'); setOwnCardForm(c.cardForm === 'own'); } });
     return () => { alive = false; };
   }, []);
 
@@ -137,7 +139,10 @@ export default function Payment() {
               <p className="pay-eyebrow">{t('payment.step')}</p>
               <h1 id="payment-title">{t(method === 'qris' ? 'payment.qrisTitle' : 'payment.cardTitle')}</h1>
               {held}
-              {gateway === 'midtrans' && (
+              {gateway === 'midtrans' && method === 'card' && ownCardForm && (
+                <CardForm key={attempt} orderId={order.id} total={money(order.costs.total)} onOutcome={onOutcome} />
+              )}
+              {gateway === 'midtrans' && !(method === 'card' && ownCardForm) && (
                 <>
                   <PaymentForm key={`${method}-${attempt}`} orderId={order.id} method={method} onOutcome={onOutcome} onProblem={setProblem} loading={t('payment.loadingForm')} />
                   {problem && (
@@ -257,6 +262,115 @@ export default function Payment() {
         </aside>
       </div>
     </Chrome>
+  );
+}
+
+const onlyDigits = (text: string) => text.replace(/\D/g, '');
+/** Luhn check: catches a mistyped card number before it is sent anywhere. */
+function luhn(number: string): boolean {
+  let sum = 0;
+  for (let i = 0; i < number.length; i++) {
+    let d = Number(number[number.length - 1 - i]);
+    if (i % 2 === 1) { d *= 2; if (d > 9) d -= 9; }
+    sum += d;
+  }
+  return number.length >= 13 && number.length <= 19 && sum % 10 === 0;
+}
+/** A card is good through the last day of its expiry month. */
+function stillValid(month: string, year: string): boolean {
+  if (!/^(0[1-9]|1[0-2])$/.test(month) || !/^\d{2}$/.test(year)) return false;
+  const now = new Date();
+  return 2000 + Number(year) > now.getFullYear() || (2000 + Number(year) === now.getFullYear() && Number(month) >= now.getMonth() + 1);
+}
+const brandOf = (number: string) => (/^4/.test(number) ? 'visa' : /^(5[1-5]|2[2-7])/.test(number) ? 'mc' : '');
+
+/**
+ * The shop's own card form. What is typed here goes to Midtrans from this browser and comes
+ * back as a one-time token; Aurelle's server only ever sees that token. When the bank wants
+ * an OTP, its page opens in a dialog over the form.
+ */
+function CardForm({ orderId, total, onOutcome }: { orderId: string; total: string; onOutcome: (outcome: SnapOutcome) => void }) {
+  const { t } = useTranslation();
+  const [number, setNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [name, setName] = useState('');
+  const [tried, setTried] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [bankUrl, setBankUrl] = useState('');
+
+  const digits = onlyDigits(number);
+  const [month = '', year = ''] = expiry.split('/').map((part) => part.trim());
+  const bad = {
+    number: !luhn(digits),
+    expiry: !stillValid(month, year),
+    cvv: !/^\d{3,4}$/.test(cvv),
+    name: name.trim().length < 2,
+  };
+  const valid = !Object.values(bad).some(Boolean);
+  const brand = brandOf(digits);
+
+  const pay = async () => {
+    setTried(true);
+    if (!valid || busy) return;
+    setBusy(true);
+    setError('');
+    const result = await payWithCard(orderId, { number: digits, month, year: `20${year}`, cvv });
+    if (!result.ok) {
+      setBusy(false);
+      // "not_allowed": the order was paid or closed meanwhile; the page already shows that.
+      if (result.reason !== 'not_allowed') setError(t(result.reason === 'card' ? 'payment.card.rejected' : result.reason === 'network' ? 'authPage.networkError' : 'payment.unavailable'));
+      return;
+    }
+    if (result.redirectUrl) await confirmWithBank(result.redirectUrl, setBankUrl);
+    setBankUrl('');
+    onOutcome('success'); // "the customer is done": the page now asks the API what happened
+  };
+
+  return (
+    <form className="card-form" onSubmit={(e) => { e.preventDefault(); void pay(); }} noValidate>
+      <label className="card-field">
+        <span>{t('payment.card.number')}</span>
+        <span className={`card-input${tried && bad.number ? ' is-invalid' : ''}`}>
+          <input id="card-number" inputMode="numeric" autoComplete="cc-number" placeholder="1234 1234 1234 1234" maxLength={23} value={number}
+            onChange={(e) => setNumber(onlyDigits(e.target.value).slice(0, 19).replace(/(.{4})(?=.)/g, '$1 '))} aria-invalid={tried && bad.number} disabled={busy} />
+          <span className="card-brands" aria-hidden="true"><i className={brand === 'visa' ? 'is-on' : ''}>VISA</i><i className={brand === 'mc' ? 'is-on' : ''}>MC</i></span>
+        </span>
+        {tried && bad.number && <small role="alert">{t('payment.card.numberError')}</small>}
+      </label>
+      <div className="card-row">
+        <label className="card-field">
+          <span>{t('payment.card.expiry')}</span>
+          <input id="card-expiry" className={`card-input${tried && bad.expiry ? ' is-invalid' : ''}`} inputMode="numeric" autoComplete="cc-exp" placeholder="MM / YY" maxLength={7} value={expiry}
+            onChange={(e) => { const d = onlyDigits(e.target.value).slice(0, 4); setExpiry(d.length > 2 ? `${d.slice(0, 2)} / ${d.slice(2)}` : d); }} aria-invalid={tried && bad.expiry} disabled={busy} />
+          {tried && bad.expiry && <small role="alert">{t('payment.card.expiryError')}</small>}
+        </label>
+        <label className="card-field">
+          <span>{t('payment.card.cvv')}</span>
+          <input id="card-cvv" className={`card-input${tried && bad.cvv ? ' is-invalid' : ''}`} type="password" inputMode="numeric" autoComplete="cc-csc" placeholder={t('payment.card.cvvHint')} maxLength={4} value={cvv}
+            onChange={(e) => setCvv(onlyDigits(e.target.value).slice(0, 4))} aria-invalid={tried && bad.cvv} disabled={busy} />
+          {tried && bad.cvv && <small role="alert">{t('payment.card.cvvError')}</small>}
+        </label>
+      </div>
+      <label className="card-field">
+        <span>{t('payment.card.name')}</span>
+        <input id="card-name" className={`card-input${tried && bad.name ? ' is-invalid' : ''}`} autoComplete="cc-name" placeholder={t('payment.card.nameHint')} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} aria-invalid={tried && bad.name} disabled={busy} />
+        {tried && bad.name && <small role="alert">{t('payment.card.nameError')}</small>}
+      </label>
+      {error && <p className="pay-alert" role="alert">{error}</p>}
+      <button id="card-pay" type="submit" className="guide-btn card-form__pay" disabled={busy}><LockIcon />{busy ? t('payment.card.processing') : t('payment.payNow', { total })}</button>
+      <p className="pay-note pay-note--plain">{t('payment.card.note')}</p>
+
+      {bankUrl && (
+        <div className="bank-dialog" role="dialog" aria-modal="true" aria-label={t('payment.card.bankTitle')}>
+          <div className="bank-dialog__box">
+            <p className="bank-dialog__title"><LockIcon />{t('payment.card.bankTitle')}</p>
+            <iframe id="card-bank-frame" title={t('payment.card.bankTitle')} src={bankUrl} />
+          </div>
+        </div>
+      )}
+    </form>
   );
 }
 
