@@ -633,7 +633,7 @@ def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypa
     assert api.post("/api/payments/ord-12345678/snap").status_code == 503  # switched off
 
     fake = midtrans(monkeypatch)
-    assert api.get("/api/payments/config").json() == {"midtransClientKey": "SB-Mid-client-test", "snapUrl": "https://app.sandbox.midtrans.com/snap/snap.js", "cardForm": "midtrans", "environment": "sandbox"}
+    assert api.get("/api/payments/config").json() == {"midtransClientKey": "SB-Mid-client-test", "snapUrl": "https://app.sandbox.midtrans.com/snap/snap.js", "cardForm": "own", "environment": "sandbox"}
     assert api.post("/api/payments/ord-12345678/snap").json() == {"token": "snap-token-1", "redirectUrl": "https://snap.test/1", "method": "qris"}
     assert api.post("/api/payments/ord-12345678/snap").json()["token"] == "snap-token-1"  # reused, not created twice
     creates = [c for c in fake.calls if c[1].endswith("/snap/v1/transactions")]
@@ -667,61 +667,138 @@ def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypa
     assert TestClient(api.app).post("/api/payments/ord-12345678/snap").status_code == 401
 
 
-def test_own_card_form_charges_a_token_through_the_core_api(api, monkeypatch):
+def test_own_card_form_pays_a_snap_transaction_with_a_card_token(api, monkeypatch):
     register(api)
     order = api.post("/api/orders", json={**order_body(), "paymentMethod": "card"}).json()["order"]
     fake = midtrans(monkeypatch)
     total = order["costs"]["total"]
     card = {"tokenId": "481111-1114-token-abc"}
-    assert api.post("/api/payments/ord-12345678/card", json=card).json() == {"error": "card_form_off"}  # off until switched on
-    monkeypatch.setenv("MIDTRANS_CORE_API", "true")
     assert api.get("/api/payments/config").json()["cardForm"] == "own"
+    monkeypatch.setenv("MIDTRANS_CARD_FORM", "midtrans")  # switched back to Midtrans' form
+    assert api.get("/api/payments/config").json()["cardForm"] == "midtrans"
+    assert api.post("/api/payments/ord-12345678/card", json=card).json() == {"error": "card_form_off"}
+    monkeypatch.delenv("MIDTRANS_CARD_FORM")
     assert TestClient(api.app).post("/api/payments/ord-12345678/card", json=card).status_code == 401
     assert api.post("/api/payments/ord-12345678/card", json={"tokenId": "4811 1111 1111 1114"}).status_code == 400  # a card number is not a token
 
     replies = []
     real = fake.__call__
 
-    def charge(method, url, body=None, headers=None):
-        if url.endswith("/v2/charge"):
+    def with_pay(method, url, body=None, headers=None):
+        if url.endswith("/pay"):
             fake.calls.append((method, url, body, headers))
             return replies.pop(0)
         return real(method, url, body, headers)
 
-    monkeypatch.setattr("app.payments._midtrans", charge)
+    monkeypatch.setattr("app.payments._midtrans", with_pay)
+    pays = lambda: [c for c in fake.calls if c[1].endswith("/pay")]  # noqa: E731
+    creates = lambda: [c[2] for c in fake.calls if c[1].endswith("/snap/v1/transactions")]  # noqa: E731
 
-    # The account may not use the Core API: nothing changes on the order.
-    replies.append((403, {"error": "Access denied"}))
-    assert api.post("/api/payments/ord-12345678/card", json=card).json() == {"error": "card_form_denied"}
-    # Midtrans does not accept the token: the customer is told to check the card.
-    replies.append((200, {"status_code": "411", "status_message": "Token id is missing, invalid, or timed out"}))
+    # Midtrans turns the card down before charging anything: the customer is told to check the card.
+    replies.append((200, {"status_code": "402", "status_message": "Your transaction is denied.", "gross_amount": str(total)}))
     assert api.post("/api/payments/ord-12345678/card", json=card).json() == {"error": "card_rejected"}
     assert api.get("/api/orders/ord-12345678").json()["order"]["paymentStatus"] == "unpaid"
 
     # The bank wants an OTP: pending, with the page to show.
-    replies.append((200, {"status_code": "201", "transaction_status": "pending", "gross_amount": f"{total}.00", "redirect_url": "https://api.sandbox.midtrans.com/v2/3ds/redirect/x"}))
+    replies.append((200, {"status_code": "201", "transaction_status": "pending", "fraud_status": "accept", "gross_amount": str(total), "redirect_url": "https://api.sandbox.midtrans.com/v2/3ds/redirect/x"}))
     pending = api.post("/api/payments/ord-12345678/card", json=card).json()
     assert (pending["redirectUrl"], pending["order"]["paymentStatus"], pending["order"]["paymentMethod"]) == ("https://api.sandbox.midtrans.com/v2/3ds/redirect/x", "pending", "card")
-    _, url, body, _headers = [c for c in fake.calls if c[1].endswith("/v2/charge")][-1]
-    assert url == "https://api.sandbox.midtrans.com/v2/charge"
-    assert body["transaction_details"] == {"order_id": f"{order['number']}-1", "gross_amount": total}
-    assert body["credit_card"] == {"token_id": "481111-1114-token-abc", "authentication": True}
-    assert sum(i["price"] * i["quantity"] for i in body["item_details"]) == total
+    created = creates()[-1]
+    assert created["transaction_details"] == {"order_id": f"{order['number']}-2", "gross_amount": total}  # attempt 1 was the refused card
+    assert created["enabled_payments"] == ["credit_card"] and created["credit_card"] == {"secure": True}
+    assert sum(i["price"] * i["quantity"] for i in created["item_details"]) == total
+    _, url, body, _headers = pays()[-1]
+    assert url == "https://app.sandbox.midtrans.com/snap/v1/transactions/snap-token-2/pay"
+    assert body == {"payment_type": "credit_card", "payment_params": {"card_token": "481111-1114-token-abc", "save_card": False}}
 
     # The bank refuses: failed, and the next try is a new attempt that cancels the old one.
-    replies.append((200, {"status_code": "202", "transaction_status": "deny", "gross_amount": f"{total}.00"}))
+    replies.append((200, {"status_code": "202", "transaction_status": "deny", "gross_amount": str(total)}))
     assert api.post("/api/payments/ord-12345678/card", json=card).json()["order"]["paymentStatus"] == "failed"
-    replies.append((200, {"status_code": "200", "transaction_status": "capture", "fraud_status": "accept", "gross_amount": f"{total}.00"}))
+    replies.append((200, {"status_code": "200", "transaction_status": "capture", "fraud_status": "accept", "gross_amount": str(total)}))
     paid = api.post("/api/payments/ord-12345678/card", json=card).json()["order"]
     assert (paid["status"], paid["paymentStatus"]) == ("confirmed", "paid")
-    assert ("POST", f"https://api.sandbox.midtrans.com/v2/{order['number']}-2/cancel") in [(c[0], c[1]) for c in fake.calls]
-    assert [c[2]["transaction_details"]["order_id"] for c in fake.calls if c[1].endswith("/v2/charge")][-1] == f"{order['number']}-3"
+    assert ("POST", f"https://api.sandbox.midtrans.com/v2/{order['number']}-3/cancel") in [(c[0], c[1]) for c in fake.calls]
+    assert creates()[-1]["transaction_details"]["order_id"] == f"{order['number']}-4"
     assert api.post("/api/payments/ord-12345678/card", json=card).status_code == 409  # already paid
 
-    # A charge that claims another amount is never taken as payment.
-    other = api.post("/api/orders", json={**order_body("ord-wrongamt", qty=1), "paymentMethod": "card"}).json()["order"]
-    replies.append((200, {"status_code": "200", "transaction_status": "capture", "fraud_status": "accept", "gross_amount": "1000.00"}))
-    assert api.post("/api/payments/ord-wrongamt/card", json=card).json()["order"]["paymentStatus"] == "unpaid" and other["paymentStatus"] == "unpaid"
+    # A payment that claims another amount is never taken as payment.
+    api.post("/api/orders", json={**order_body("ord-wrongamt", qty=1), "paymentMethod": "card"})
+    replies.append((200, {"status_code": "200", "transaction_status": "capture", "fraud_status": "accept", "gross_amount": "1000"}))
+    assert api.post("/api/payments/ord-wrongamt/card", json=card).json()["order"]["paymentStatus"] == "unpaid"
+    # Switching to QRIS afterwards starts Midtrans' form on a new attempt, not on the card one.
+    qris = api.post("/api/payments/ord-wrongamt/snap", json={"method": "qris"}).json()
+    assert qris["method"] == "qris" and creates()[-1]["enabled_payments"] == ["other_qris", "gopay"]
+
+
+def test_payment_under_way_is_closed_at_midtrans_when_the_hold_runs_out(api, monkeypatch):
+    import json
+
+    from app.db import connect
+
+    register(api)
+    fake = midtrans(monkeypatch)
+
+    def overdue(order_id, minutes):
+        db = connect()
+        data = json.loads(db.execute("SELECT data FROM orders WHERE id = ?", (order_id,)).fetchone()[0])
+        data["reservationExpiresAt"] = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
+        db.execute("UPDATE orders SET data = ? WHERE id = ?", (json.dumps(data), order_id))
+        db.commit()
+        db.close()
+
+    def pending(order_id):
+        order = api.post("/api/orders", json=order_body(order_id, qty=1)).json()["order"]
+        api.post(f"/api/payments/{order_id}/snap")
+        api.post("/api/payments/midtrans/notification", json=notification(f"{order['number']}-1", "pending", gross=f"{order['costs']['total']}.00"))
+        return order
+
+    mine = lambda order_id: next(o for o in api.get("/api/orders").json()["orders"] if o["id"] == order_id)  # noqa: E731
+    expires = lambda: [c[1] for c in fake.calls if c[1].endswith("/expire")]  # noqa: E731
+
+    # The customer name goes to Midtrans as first and last name, not as one long first name.
+    first = pending("ord-overdue1")
+    customer = [c[2] for c in fake.calls if c[1].endswith("/snap/v1/transactions")][-1]["customer_details"]
+    assert customer["first_name"] == "Tester" and "last_name" not in customer and customer["shipping_address"]["first_name"] == "Tester"
+    from app.payments import _names
+    assert _names("Alwian Rianto") == {"first_name": "Alwian", "last_name": "Rianto"} and _names("Siti Nur Haliza") == {"first_name": "Siti Nur", "last_name": "Haliza"}
+
+    assert stock_of(api) == 5 and mine("ord-overdue1")["paymentStatus"] == "pending"
+    overdue("ord-overdue1", 2)  # past the hold, inside the grace period: an OTP may still be on screen
+    assert mine("ord-overdue1")["status"] == "awaiting_payment" and expires() == []
+    overdue("ord-overdue1", 6)
+    fake.status = {"status_code": "201", "transaction_status": "pending", "gross_amount": f"{first['costs']['total']}.00"}
+    real = fake.__call__
+
+    def closes(method, url, body=None, headers=None):
+        if url.endswith("/expire"):
+            fake.calls.append((method, url, body, headers))
+            return 200, {"status_code": "407", "transaction_status": "expire"}
+        return real(method, url, body, headers)
+
+    monkeypatch.setattr("app.payments._midtrans", closes)
+    closed = mine("ord-overdue1")
+    assert (closed["status"], closed["paymentStatus"]) == ("cancelled", "expired")
+    assert expires() == [f"https://api.sandbox.midtrans.com/v2/{first['number']}-1/expire"]  # closed at Midtrans first
+    assert stock_of(api) == 6
+
+    # Paid at the last moment: the order is taken as paid, nothing is expired or released.
+    second = pending("ord-overdue2")
+    overdue("ord-overdue2", 6)
+    fake.status = {"status_code": "200", "transaction_status": "settlement", "gross_amount": f"{second['costs']['total']}.00"}
+    paid = mine("ord-overdue2")
+    assert (paid["status"], paid["paymentStatus"]) == ("confirmed", "paid") and len(expires()) == 1 and stock_of(api) == 5
+
+    # Midtrans cannot be reached: the order waits rather than release stock on a guess.
+    pending("ord-overdue3")
+    overdue("ord-overdue3", 6)
+
+    def down(method, url, body=None, headers=None):
+        from fastapi import HTTPException
+
+        raise HTTPException(502, "payment_provider_unreachable")
+
+    monkeypatch.setattr("app.payments._midtrans", down)
+    assert mine("ord-overdue3")["status"] == "awaiting_payment" and stock_of(api) == 4
 
 
 def test_midtrans_notification_is_the_only_way_to_paid(api, monkeypatch):

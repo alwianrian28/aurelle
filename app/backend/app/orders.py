@@ -32,6 +32,9 @@ NEEDS_PAID = {"preparing", "ready_to_ship", "shipped"}
 # What the demo payment simulator may report while an order awaits payment.
 DEMO_PAYMENT = {"pending": "awaiting_payment", "failed": "awaiting_payment", "paid": "confirmed"}
 
+# How long past the reservation a payment that is under way may still finish (a bank's OTP page runs 5 minutes).
+PENDING_GRACE = timedelta(minutes=5)
+
 # Public order lookup: 10 wrong guesses from one address lock it out for a minute.
 track_limiter = Limiter(10, 60)
 
@@ -103,13 +106,22 @@ def _add_event(db: Database, order_id: str, status: str, payment_status: str, ac
 
 
 def expire_stale(db: Database) -> None:
-    """Unpaid orders past their reservation window are cancelled when next read (AC-08-04)."""
-    rows = db.execute("SELECT id, data FROM orders WHERE status = 'awaiting_payment' AND payment_status != 'pending'").fetchall()
+    """Unpaid orders past their reservation window are cancelled when next read (AC-08-04).
+
+    An order whose payment is under way ("pending": a QRIS code on screen, a bank's OTP page)
+    gets a short grace period, and is then closed at the payment provider first, so nothing can
+    be paid for stock that has gone back on sale."""
+    rows = db.execute("SELECT id, data, payment_status FROM orders WHERE status = 'awaiting_payment'").fetchall()
     now = datetime.now(timezone.utc)
     for row in rows:
         expires = datetime.fromisoformat(json.loads(row["data"])["reservationExpiresAt"].replace("Z", "+00:00"))
-        if expires <= now:
-            _add_event(db, row["id"], "cancelled", "expired", "system")
+        if row["payment_status"] != "pending":
+            if expires <= now:
+                _add_event(db, row["id"], "cancelled", "expired", "system")
+        elif expires + PENDING_GRACE <= now:
+            from .payments import close_overdue  # late import: payments builds on this module
+
+            close_overdue(db, row["id"])
 
 
 def _trails(db: Database, order_ids: list[str]) -> tuple[dict[str, list[Row]], dict[str, list[Row]]]:

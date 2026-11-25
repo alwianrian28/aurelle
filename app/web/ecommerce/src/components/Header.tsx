@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useLocalePath } from '../hooks/useLocale';
+import { useLocale, useLocalePath } from '../hooks/useLocale';
+import { LANGUAGES, setLanguage } from '../i18n';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { useWishlistStore } from '../store/wishlistStore';
@@ -74,6 +75,7 @@ export default function Header() {
         </nav>
 
         <div className="header__actions">
+          <LanguageMenu />
           <button id="header-search" className="header__icon-btn" aria-label={t('common.search')} onClick={() => navigate(path('/search'))}>
             <SearchIcon />
           </button>
@@ -185,7 +187,65 @@ function AccountMenu() {
   );
 }
 
+/**
+ * Language switch: a small menu with the two languages the storefront speaks. Open to
+ * everyone, signed in or not. Changing it also changes how prices are shown (US dollars in
+ * English, rupiah in Indonesian). Closes on Escape, on a click outside, and on a choice.
+ */
+function LanguageMenu() {
+  const { t } = useTranslation();
+  const locale = useLocale();
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const current = LANGUAGES.find((l) => l.code === locale) ?? LANGUAGES[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setOpen(false);
+      trigger.current?.focus();
+    };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="account-menu lang-menu" ref={root}>
+      <button id="header-language" ref={trigger} type="button" className={`header__lang${open ? ' is-active' : ''}`} aria-label={`${t('common.language')}: ${current.label}`} aria-haspopup="true" aria-expanded={open} aria-controls="language-menu" onClick={() => setOpen((v) => !v)}>
+        <GlobeIcon /><span>{current.short}</span><ChevronIcon />
+      </button>
+      <div id="language-menu" className={`account-menu__panel${open ? ' is-open' : ''}`} inert={!open}>
+        <ul role="menu" aria-label={t('common.language')}>
+          {LANGUAGES.map((language) => (
+            <li key={language.code} role="none">
+              <button id={`language-${language.code}`} type="button" role="menuitemradio" aria-checked={language.code === locale} lang={language.code} onClick={() => { setLanguage(language.code); setOpen(false); trigger.current?.focus(); }}>
+                <span>{language.label}</span>{language.code === locale && <CheckIcon />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 const LINE = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const;
+function GlobeIcon() {
+  return <svg {...LINE}><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.4 2.3 3.6 5.100 3.600 8.500s-1.200 6.200-3.600 8.500c-2.400-2.300-3.600-5.100-3.600-8.500s1.200-6.200 3.600-8.500z" /></svg>;
+}
+function ChevronIcon() {
+  return <svg {...LINE} width={12} height={12}><path d="m6 9 6 6 6-6" /></svg>;
+}
+function CheckIcon() {
+  return <svg {...LINE} width={16} height={16}><path d="M4.5 12.5l5 5 10-11" /></svg>;
+}
 function HeartIcon() {
   return <svg {...LINE}><path d="M12 20.5S3.5 15.3 3.5 9.3A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 8.5 1.7c0 6-8.5 11.2-8.5 11.2z" /></svg>;
 }

@@ -285,7 +285,8 @@ function stillValid(month: string, year: string): boolean {
 const brandOf = (number: string) => (/^4/.test(number) ? 'visa' : /^(5[1-5]|2[2-7])/.test(number) ? 'mc' : '');
 
 /**
- * The shop's own card form. What is typed here goes to Midtrans from this browser and comes
+ * The shop's own card form: only what Midtrans needs to charge a card (it does not ask for the
+ * name on it). What is typed here goes to Midtrans from this browser and comes
  * back as a one-time token; Aurelle's server only ever sees that token. When the bank wants
  * an OTP, its page opens in a dialog over the form.
  */
@@ -294,7 +295,6 @@ function CardForm({ orderId, total, onOutcome }: { orderId: string; total: strin
   const [number, setNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
-  const [name, setName] = useState('');
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -306,7 +306,6 @@ function CardForm({ orderId, total, onOutcome }: { orderId: string; total: strin
     number: !luhn(digits),
     expiry: !stillValid(month, year),
     cvv: !/^\d{3,4}$/.test(cvv),
-    name: name.trim().length < 2,
   };
   const valid = !Object.values(bad).some(Boolean);
   const brand = brandOf(digits);
@@ -353,11 +352,6 @@ function CardForm({ orderId, total, onOutcome }: { orderId: string; total: strin
           {tried && bad.cvv && <small role="alert">{t('payment.card.cvvError')}</small>}
         </label>
       </div>
-      <label className="card-field">
-        <span>{t('payment.card.name')}</span>
-        <input id="card-name" className={`card-input${tried && bad.name ? ' is-invalid' : ''}`} autoComplete="cc-name" placeholder={t('payment.card.nameHint')} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} aria-invalid={tried && bad.name} disabled={busy} />
-        {tried && bad.name && <small role="alert">{t('payment.card.nameError')}</small>}
-      </label>
       {error && <p className="pay-alert" role="alert">{error}</p>}
       <button id="card-pay" type="submit" className="guide-btn card-form__pay" disabled={busy}><LockIcon />{busy ? t('payment.card.processing') : t('payment.payNow', { total })}</button>
       <p className="pay-note pay-note--plain">{t('payment.card.note')}</p>

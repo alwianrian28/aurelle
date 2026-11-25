@@ -248,3 +248,18 @@
 @media (prefers-reduced-motion: reduce) {
   .account-menu__panel { transform: none; transition: none; }
 }
+
+/* Language switch: the current language as a pill, the choices in a small menu. */
+.header__lang { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 10px; border: 0; border-radius: 999px; background: none; font: 500 13px/1 var(--font-sans); letter-spacing: .08em; color: inherit; cursor: pointer; transition: background var(--dur-base) var(--ease-out); }
+.header__lang:hover, .header__lang.is-active { background: var(--svc-stone); }
+.header__lang:focus-visible { outline: 2px solid var(--svc-ink); outline-offset: 2px; }
+.lang-menu .account-menu__panel { right: 0; width: 220px; }
+.lang-menu .account-menu__panel ul { padding: 0; border-bottom: 0; }
+.lang-menu li button { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; min-height: 42px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 15px; color: var(--svc-ink); text-align: left; cursor: pointer; transition: background var(--dur-base) var(--ease-out); }
+.lang-menu li button:hover { background: var(--svc-stone); }
+.lang-menu li button:focus-visible { outline: 2px solid var(--svc-ink); outline-offset: -2px; }
+.lang-menu li button[aria-checked=true] { font-weight: 600; }
+@media (max-width: 560px) {
+  .header__lang { gap: 4px; padding: 0 6px; }
+  .header__lang svg:first-child { display: none; }
+}

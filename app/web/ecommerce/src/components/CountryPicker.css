@@ -1,0 +1,37 @@
+/* Country dropdown with flags and search (address form: country, and the phone's country code). */
+.country-picker { position: relative; font-weight: 400; }
+.country-picker__button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0.75rem 1rem; border: 1px solid var(--c-line-strong); border-radius: var(--radius-md); background: var(--c-white); font: inherit; font-weight: 400; color: inherit; text-align: left; cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+.country-picker__button:hover { border-color: var(--c-slate); }
+.country-picker__button:focus-visible, .country-picker.is-open .country-picker__button { outline: none; border-color: var(--c-slate); box-shadow: 0 0 0 3px rgba(184, 193, 204, 0.18); }
+.country-picker__button[aria-invalid='true'] { border-color: var(--c-error); }
+.country-picker__value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.country-picker__value.is-empty { color: var(--c-muted); }
+.country-picker__chevron { flex: none; transition: transform var(--dur-fast) var(--ease-out); }
+.country-picker.is-open .country-picker__chevron { transform: rotate(180deg); }
+.country-picker--compact .country-picker__button { gap: 8px; padding-inline: 0.75rem; }
+.country-picker--compact .country-picker__value { font-variant-numeric: tabular-nums; }
+
+.country-flag { flex: none; width: 22px; height: 15px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgb(21 25 34 / .1); }
+.country-flag--none { display: inline-block; background: var(--c-pearl-deep, #eee); }
+
+.country-picker__panel { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: 100%; min-width: 300px; max-width: calc(100vw - 32px); overflow: hidden; border: 1px solid var(--c-line-strong); border-radius: 12px; background: var(--c-white); box-shadow: 0 18px 44px -18px rgb(21 25 34 / .32); }
+.country-picker__search { display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--c-line, #e7e8eb); color: var(--c-muted); }
+/* The form's own input styling (border, padding, focus ring) does not belong inside the panel. */
+.field .country-picker__search input { flex: 1; min-width: 0; height: 46px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; font: inherit; font-weight: 400; color: var(--svc-ink, inherit); outline: none; }
+.country-picker__panel ul { max-height: 280px; margin: 0; padding: 6px; overflow-y: auto; list-style: none; overscroll-behavior: contain; }
+.country-picker__panel li { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px; border-radius: 8px; font-size: 15px; cursor: pointer; }
+.country-picker__panel li[data-active='true'] { background: var(--svc-stone, #f1f1ee); }
+.country-picker__panel li[aria-selected='true'] .country-picker__name { font-weight: 600; }
+/* A line between the pinned countries and the full list. */
+.country-picker__panel li.has-divider + li { position: relative; margin-top: 13px; }
+.country-picker__panel li.has-divider + li::before { content: ''; position: absolute; top: -7px; left: 4px; right: 4px; border-top: 1px solid var(--c-line, #e7e8eb); }
+.country-picker__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.country-picker__hint { flex: none; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.country-picker__panel li.country-picker__empty { justify-content: center; color: var(--c-muted); cursor: default; }
+
+@media (max-width: 560px) {
+  .country-picker__panel { min-width: 0; width: max(100%, min(300px, calc(100vw - 32px))); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .country-picker__button, .country-picker__chevron { transition: none; }
+}

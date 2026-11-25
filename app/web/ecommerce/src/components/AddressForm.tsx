@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Address } from '../types/domain';
 import { COUNTRIES, getCountry } from '../utils/countries';
+import { useLocale } from '../hooks/useLocale';
+import CountryPicker from './CountryPicker';
+import { countryName, dialChoices } from '../utils/countryChoices';
 import { validateAddress, type AddressDraft, type AddressErrors } from '../utils/address';
 
 const EMPTY: AddressDraft = {
@@ -35,8 +38,15 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
     return { ...EMPTY, ...rest };
   });
   const [errors, setErrors] = useState<AddressErrors>({});
+  const locale = useLocale();
 
   const country = getCountry(draft.country);
+  const countryChoices = useMemo(() => COUNTRIES.map((c) => ({ value: c.name, iso: c.iso, label: countryName(c.iso, locale, c.name) })), [locale]);
+  const dialOptions = useMemo(() => dialChoices(locale), [locale]);
+  // Several countries share a calling code (+1), so the code alone cannot say which flag to show.
+  const [dialIso, setDialIso] = useState(() => (country && country.dialCode === draft.phoneCountryCode ? country.iso : dialOptions.find((c) => c.hint === draft.phoneCountryCode)?.iso ?? ''));
+  // The country being shipped to, then the ones the store serves, lead the list.
+  const dialPinned = [...new Set([...(country ? [country.iso] : []), 'ID', 'SG', 'MY', 'US', 'AU'])];
 
   const update = <K extends keyof AddressDraft>(key: K, value: AddressDraft[K]) => {
     setDraft((d) => ({ ...d, [key]: value }));
@@ -46,7 +56,13 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
   const handleCountry = (name: string) => {
     const c = getCountry(name);
     setDraft((d) => ({ ...d, country: name, phoneCountryCode: c?.dialCode ?? d.phoneCountryCode }));
+    if (c) setDialIso(c.iso); // most people's phone is from the country they live in; it can still be changed
     setErrors((e) => ({ ...e, country: undefined, phoneCountryCode: undefined, postalCode: undefined }));
+  };
+
+  const handleDial = (iso: string) => {
+    setDialIso(iso);
+    update('phoneCountryCode', dialOptions.find((c) => c.iso === iso)?.hint ?? draft.phoneCountryCode);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -83,32 +99,28 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
         {err('recipient')}
       </label>
 
-      <label className="field" htmlFor="addr-country">
-        {t('address.country')}
-        <select {...fieldProps('country')} value={draft.country} onChange={(e) => handleCountry(e.target.value)}>
-          <option value="">{t('address.selectCountry')}</option>
-          {COUNTRIES.map((c) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <span className="field-hint">{t('address.countryNote')}</span>
+      {/* Not a <label>: a click on a row of the list would otherwise be passed on to the button. */}
+      <div className="field">
+        <span id="addr-country-label">{t('address.country')}</span>
+        <CountryPicker
+          id="addr-country" labelledBy="addr-country-label" describedBy={errors.country ? 'addr-country-error' : 'addr-country-hint'} invalid={!!errors.country}
+          choices={countryChoices} value={draft.country} onChange={handleCountry}
+          placeholder={t('address.selectCountry')} searchLabel={t('address.searchCountry')} emptyLabel={t('address.noCountry')}
+        />
+        <span className="field-hint" id="addr-country-hint">{t('address.countryNote')}</span>
         {err('country')}
-      </label>
+      </div>
 
       <div className="form-row form-row--phone">
-        <label className="field" htmlFor="addr-phoneCountryCode">
-          {t('address.dialCode')}
-          <input
-            {...fieldProps('phoneCountryCode')}
-            value={draft.phoneCountryCode}
-            onChange={(e) => update('phoneCountryCode', e.target.value)}
-            inputMode="tel"
-            placeholder="+62"
+        <div className="field">
+          <span id="addr-phoneCountryCode-label">{t('address.dialCode')}</span>
+          <CountryPicker
+            id="addr-phoneCountryCode" labelledBy="addr-phoneCountryCode-label" describedBy={errors.phoneCountryCode ? 'addr-phoneCountryCode-error' : undefined} invalid={!!errors.phoneCountryCode}
+            choices={dialOptions} pinned={dialPinned} value={dialIso} onChange={handleDial} compact
+            placeholder={draft.phoneCountryCode || '+62'} searchLabel={t('address.searchCode')} emptyLabel={t('address.noCountry')}
           />
           {err('phoneCountryCode')}
-        </label>
+        </div>
         <label className="field" htmlFor="addr-phone">
           {t('address.phone')}
           <input
