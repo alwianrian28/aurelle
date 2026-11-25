@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
-import { FulfillmentPill, Icon, PaymentPill, Select, Thumb } from './ui';
-import { downloadCsv, idr, idrShort, plural, todayLong } from './lib';
+import { ExportMenu, FulfillmentPill, Icon, PaymentPill, Select, Thumb } from './ui';
+import { idr, idrShort, plural, todayLong } from './lib';
+import type { Report } from './export';
 import type { IconName } from './ui';
 import type { Go, OverviewData, Route } from './types';
 
@@ -43,7 +44,14 @@ export default function Overview({ go }: { go: Go }) {
     ...(low > 0 ? [{ icon: 'box' as const, tone: 'amber', title: `${plural(low, 'variant')} low on stock`, text: '2 or fewer left to sell.', action: 'Review stock', to: { view: 'products' as const } }] : []),
   ];
 
-  const exportCsv = () => downloadCsv(`aurelle-overview-${n}d`, [['Date', 'Orders received', 'Paid revenue (IDR)'], ...data.daily.map((d) => [d.date, d.orders, d.paidIdr])]);
+  const report = (): Report => ({
+    file: `aurelle-revenue-${n}d`,
+    title: 'Paid revenue by day',
+    subtitle: `Last ${n} days: ${plural(data.period.orders, 'order')} received, ${plural(data.period.paidOrders, 'paid order')}`,
+    columns: [{ header: 'Date', kind: 'date', width: 16 }, { header: 'Orders received', kind: 'int', width: 17 }, { header: 'Paid revenue', kind: 'money', width: 20 }],
+    rows: data.daily.map((d) => [d.date, d.orders, d.paidIdr]),
+    totals: ['Total', data.period.orders, data.period.paidIdr],
+  });
 
   return (
     <>
@@ -51,7 +59,7 @@ export default function Overview({ go }: { go: Go }) {
         <div><h1>Overview</h1><p>{todayLong()}</p></div>
         <div className="page-head__actions">
           <Select id="overview-period" label="Period" value={days} onChange={setDays} options={[['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days']]} />
-          <button type="button" id="overview-export" className="btn" onClick={exportCsv}><Icon name="download" />Export</button>
+          <ExportMenu id="overview-export" report={report} />
         </div>
       </div>
 

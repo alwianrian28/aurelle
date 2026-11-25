@@ -1,8 +1,9 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { api } from './api';
-import { FulfillmentPill, Icon, MenuItem, Pager, PaymentPill, Popover, Select, Tabs, Thumb } from './ui';
-import { ACTION, PAGE, PAYMENT, STATUS, dateTime, downloadCsv, idr, plural, printPackingSlip, rangeStart, stageOf } from './lib';
+import { ExportMenu, FulfillmentPill, Icon, MenuItem, Pager, PaymentPill, Popover, Select, Tabs, Thumb } from './ui';
+import { ACTION, PAGE, PAYMENT, STATUS, dateTime, fulfillment, idr, plural, dateOnly, dayBounds, dayOf, printPackingSlip, rangeStart, stageOf } from './lib';
 import type { Stage } from './lib';
+import type { Report } from './export';
 import type { AdminOrder, Go, Route } from './types';
 
 // The map library is large and only needed once an order is opened.
@@ -10,9 +11,9 @@ const TrackingMap = lazy(() => import('./TrackingMap'));
 
 type Tab = 'all' | Stage;
 type Pay = 'all' | 'paid' | 'awaiting' | 'failed';
-type Range = 'today' | '7' | '30' | 'all';
+type Range = 'today' | '7' | '30' | 'all' | 'custom';
 const TABS: [Tab, string][] = [['all', 'All'], ['awaiting', 'Awaiting payment'], ['toship', 'To ship'], ['shipped', 'Shipped'], ['delivered', 'Delivered'], ['cancelled', 'Cancelled']];
-const RANGE: Record<Range, string> = { today: 'today', 7: 'in the last 7 days', 30: 'in the last 30 days', all: 'in total' };
+const RANGE: Record<Exclude<Range, 'custom'>, string> = { today: 'today', 7: 'in the last 7 days', 30: 'in the last 30 days', all: 'in total' };
 const actor = (a?: string) => (!a ? '' : a.startsWith('admin:') ? 'Admin' : a === 'customer' ? 'Customer' : a === 'system' ? 'System' : 'Payment gateway');
 const place = (o: AdminOrder) => [o.addressSnapshot.city, o.addressSnapshot.country].filter(Boolean).join(', ');
 
@@ -28,7 +29,11 @@ export default function Orders({ orders, setOrders, reload, route, go }: {
   const [pay, setPay] = useState<Pay>('all');
   // Arriving from a link ("to ship", a customer's orders) must not hide older matches.
   const [range, setRange] = useState<Range>(route.q || route.tab ? 'all' : '30');
+  // The two ends of a custom period, as calendar days. Both are included.
+  const [from, setFrom] = useState(() => dayOf(30));
+  const [to, setTo] = useState(() => dayOf());
   const [page, setPage] = useState(0);
+  const [size, setSize] = useState(PAGE);
   const [picked, setPicked] = useState<string[]>([]);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
 
@@ -46,23 +51,40 @@ export default function Orders({ orders, setOrders, reload, route, go }: {
   };
 
   const q = query.trim().toLowerCase();
-  const since = rangeStart(range);
-  const inRange = orders.filter((o) => new Date(o.createdAt).getTime() >= since);
+  // A period typed backwards (from after to) is read the way it was meant.
+  const [first, last] = from <= to ? [from, to] : [to, from];
+  const [since, until] = range === 'custom' ? [dayBounds(first)[0], dayBounds(last)[1]] : [rangeStart(range), Infinity];
+  const inRange = orders.filter((o) => { const at = new Date(o.createdAt).getTime(); return at >= since && at <= until; });
+  const period = range === 'custom' ? (first === last ? `on ${dateOnly(`${first}T00:00:00`)}` : `from ${dateOnly(`${first}T00:00:00`)} to ${dateOnly(`${last}T00:00:00`)}`) : RANGE[range];
   const base = inRange.filter((o) => (
     (!q || [o.number, o.customer?.name, o.customer?.email].some((t) => t?.toLowerCase().includes(q)))
     && (pay === 'all' || (pay === 'paid' ? o.paymentStatus === 'paid' : pay === 'awaiting' ? ['unpaid', 'pending'].includes(o.paymentStatus) : ['failed', 'expired'].includes(o.paymentStatus)))
   ));
   const shown = tab === 'all' ? base : base.filter((o) => stageOf(o.status) === tab);
-  const rows = shown.slice(page * PAGE, (page + 1) * PAGE);
+  const rows = shown.slice(page * size, (page + 1) * size);
   const reset = <T,>(set: (v: T) => void) => (v: T) => { set(v); setPage(0); setPicked([]); };
   const allPicked = rows.length > 0 && rows.every((o) => picked.includes(o.id));
 
-  const exportCsv = () => {
+  /** The orders on screen (all pages of the current filters), or only the ticked ones. */
+  const report = (): Report => {
     const list = picked.length ? shown.filter((o) => picked.includes(o.id)) : shown;
-    downloadCsv('aurelle-orders', [
-      ['Order', 'Placed', 'Customer', 'Email', 'City', 'Country', 'Items', 'Total (IDR)', 'Payment', 'Status', 'Courier', 'Tracking no.'],
-      ...list.map((o) => [o.number, o.createdAt, o.customer?.name ?? '', o.customer?.email ?? '', o.addressSnapshot.city ?? '', o.addressSnapshot.country ?? '', o.items.map((i) => `${i.qty} x ${i.name.en} (${i.variantLabel?.en ?? ''})`).join('; '), o.costs.total, PAYMENT[o.paymentStatus] ?? o.paymentStatus, STATUS[o.status], o.tracking.courier ?? '', o.tracking.trackingNumber ?? '']),
-    ]);
+    const filters = [tab !== 'all' && TABS.find(([key]) => key === tab)?.[1], pay !== 'all' && { paid: 'paid', awaiting: 'awaiting payment', failed: 'failed or expired' }[pay], q && `matching "${query.trim()}"`].filter(Boolean);
+    return {
+      file: 'aurelle-orders',
+      title: 'Orders',
+      subtitle: `${picked.length ? `${plural(list.length, 'selected order')}` : `${plural(list.length, 'order')} ${period}`}${filters.length ? ` (${filters.join(', ')})` : ''}`,
+      columns: [
+        { header: 'Order', width: 21 }, { header: 'Date', kind: 'datetime', width: 19 }, { header: 'Customer', width: 22 }, { header: 'Email', width: 30, wide: true },
+        { header: 'Destination', width: 24 }, { header: 'Items', width: 44, flex: true }, { header: 'Pieces', kind: 'int', width: 9, wide: true }, { header: 'Total', kind: 'money', width: 16 },
+        { header: 'Payment', width: 18 }, { header: 'Fulfillment', width: 16 }, { header: 'Courier', width: 14, wide: true }, { header: 'Tracking no.', width: 20, wide: true },
+      ],
+      rows: list.map((o) => [
+        o.number, o.createdAt, o.customer?.name ?? '', o.customer?.email ?? '', place(o),
+        o.items.map((i) => `${i.qty} x ${i.name.en}${i.variantLabel?.en ? ` (${i.variantLabel.en})` : ''}`).join(', '), o.items.reduce((n, i) => n + i.qty, 0), o.costs.total,
+        PAYMENT[o.paymentStatus] ?? o.paymentStatus, fulfillment(o.status), o.tracking.courier ?? '', o.tracking.trackingNumber ?? '',
+      ]),
+      totals: ['Total', null, plural(list.length, 'order'), null, null, null, list.reduce((n, o) => n + o.items.reduce((m, i) => m + i.qty, 0), 0), list.reduce((n, o) => n + o.costs.total, 0), null, null, null, null],
+    };
   };
   const copy = async (o: AdminOrder) => {
     try { await navigator.clipboard.writeText(o.number); setNotice({ tone: 'ok', text: `${o.number} copied.` }); } catch { setNotice({ tone: 'error', text: 'Could not copy. Select the number and copy it by hand.' }); }
@@ -75,8 +97,8 @@ export default function Orders({ orders, setOrders, reload, route, go }: {
   return (
     <>
       <div className="page-head">
-        <div><h1>Orders</h1><p>{plural(inRange.length, 'order')} {RANGE[range]}</p></div>
-        <div className="page-head__actions"><button type="button" id="orders-export" className="btn" disabled={shown.length === 0} onClick={exportCsv}><Icon name="download" />{picked.length ? `Export ${picked.length} selected` : 'Export CSV'}</button></div>
+        <div><h1>Orders</h1><p id="orders-period">{plural(inRange.length, 'order')} {period}</p></div>
+        <div className="page-head__actions"><ExportMenu id="orders-export" report={report} disabled={shown.length === 0} /></div>
       </div>
       {notice && !selected && <p className={`notice notice--${notice.tone}`} role={notice.tone === 'error' ? 'alert' : 'status'}>{notice.text}</p>}
 
@@ -85,7 +107,13 @@ export default function Orders({ orders, setOrders, reload, route, go }: {
         <div className="toolbar">
           <label className="search"><Icon name="search" /><input id="orders-search" type="search" value={query} onChange={(e) => reset(setQuery)(e.target.value)} placeholder="Search by order no., customer or email" aria-label="Search orders" /></label>
           <Select id="orders-payment" label="Payment" value={pay} onChange={reset(setPay)} options={[['all', 'All'], ['paid', 'Paid'], ['awaiting', 'Awaiting payment'], ['failed', 'Failed or expired']]} />
-          <Select id="orders-date" label="Date" value={range} onChange={reset(setRange)} options={[['today', 'Today'], ['7', 'Last 7 days'], ['30', 'Last 30 days'], ['all', 'All time']]} />
+          <Select id="orders-date" label="Date" value={range} onChange={reset(setRange)} options={[['today', 'Today'], ['7', 'Last 7 days'], ['30', 'Last 30 days'], ['all', 'All time'], ['custom', 'Custom period']]} />
+          {range === 'custom' && (
+            <div className="dates" role="group" aria-label="Custom period">
+              <label>From<input id="orders-from" type="date" value={from} max={dayOf()} onChange={(e) => { if (e.target.value) reset(setFrom)(e.target.value); }} /></label>
+              <label>To<input id="orders-to" type="date" value={to} max={dayOf()} onChange={(e) => { if (e.target.value) reset(setTo)(e.target.value); }} /></label>
+            </div>
+          )}
         </div>
 
         <div className="table-wrap">
@@ -126,7 +154,7 @@ export default function Orders({ orders, setOrders, reload, route, go }: {
           </table>
           {shown.length === 0 && <p className="empty">{orders.length === 0 ? 'No orders yet. New checkouts appear here on their own.' : 'No orders match these filters.'}</p>}
         </div>
-        <Pager page={page} total={shown.length} onPage={setPage} />
+        <Pager id="orders" page={page} total={shown.length} size={size} onPage={setPage} onSize={(n) => { setSize(n); setPage(0); setPicked([]); }} />
       </section>
 
       {selected && <OrderPanel key={selected.id} order={selected} notice={notice?.tone === 'error' ? notice.text : ''} act={act} step={step} onClose={() => open(undefined)} />}

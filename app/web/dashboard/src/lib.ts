@@ -55,6 +55,8 @@ export const PAYMENT: Record<string, string> = {
   expired: 'Expired', review_finance: 'Finance review', refund_pending: 'Refund in progress', refunded: 'Refunded',
 };
 /** What an admin's next step is called on a button. */
+/** Where the parcel is, in the dashboard's words. Empty while the order still waits for payment. */
+export const fulfillment = (status: OrderStatus) => (status === 'awaiting_payment' ? '' : status === 'confirmed' ? 'To ship' : status === 'preparing' ? 'Packing' : STATUS[status]);
 export const ACTION: Partial<Record<OrderStatus, string>> = {
   confirmed: 'Confirm order', preparing: 'Start packing', ready_to_ship: 'Mark ready to ship', shipped: 'Mark as shipped', delivered: 'Mark as delivered', cancelled: 'Cancel order',
 };
@@ -86,23 +88,11 @@ export function variantSummary(p: AdminProduct): string {
   return p.variants.map((v) => v.label.en).join(', ');
 }
 
+/** Rows per page: 10 to start with, and what the list footer lets the admin choose. */
 export const PAGE = 10;
+export const PAGE_SIZES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
 /* ---------------------------------------------------------------- exports */
-
-/** Saves rows as a CSV file. Cells that a spreadsheet could run as a formula are neutralised. */
-export function downloadCsv(name: string, rows: (string | number)[][]) {
-  const cell = (v: string | number) => {
-    const text = typeof v === 'string' && /^[=+\-@\t\r]/.test(v) ? `'${v}` : String(v);
-    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-  };
-  const url = URL.createObjectURL(new Blob([`﻿${rows.map((r) => r.map(cell).join(',')).join('\r\n')}`], { type: 'text/csv;charset=utf-8' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${name}-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 const esc = (text: string) => text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
@@ -131,6 +121,13 @@ export function printPackingSlip(o: AdminOrder) {
 
 export const todayLong = () => new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 /** Start of a date filter, in epoch milliseconds: today's midnight, N days back, or the beginning. */
+/** A calendar day (YYYY-MM-DD) in the admin's own time zone, as date inputs read and write it. */
+export const dayOf = (daysAgo = 0) => {
+  const d = new Date(Date.now() - daysAgo * 86_400_000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+/** First and last millisecond of a calendar day, local time. */
+export const dayBounds = (day: string): [number, number] => [new Date(`${day}T00:00:00`).getTime(), new Date(`${day}T23:59:59.999`).getTime()];
 export const rangeStart = (range: string) => (range === 'all' ? 0 : range === 'today' ? new Date().setHours(0, 0, 0, 0) : Date.now() - Number(range) * 86_400_000);
 
 /* --------------------------------------------------------------- variants */

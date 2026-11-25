@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { api } from './api';
-import { Icon, Pager, Pill, Popover, Select, Tabs, Thumb, Toggle } from './ui';
-import { CATEGORY, CATEGORY_PLURAL, PAGE, downloadCsv, idr, plural, stockState, variantSummary } from './lib';
+import { ExportMenu, Icon, Pager, Pill, Popover, Select, Tabs, Thumb, Toggle } from './ui';
+import { CATEGORY, CATEGORY_PLURAL, PAGE, idr, plural, stockState, variantSummary } from './lib';
+import type { Report } from './export';
 import type { AdminProduct, Catalog, Category, Go, Route, SetCatalog } from './types';
 
 type Tab = 'all' | 'visible' | 'hidden' | 'restock';
@@ -29,6 +30,7 @@ export default function Products({ products, loaded, setCatalog, route, go }: {
   const [cats, setCats] = useState<Category[]>([]);
   const [sort, setSort] = useState<Sort>('name');
   const [page, setPage] = useState(0);
+  const [size, setSize] = useState(PAGE);
   const [picked, setPicked] = useState<string[]>([]);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
 
@@ -52,21 +54,34 @@ export default function Products({ products, loaded, setCatalog, route, go }: {
   ));
   const inTab = (p: AdminProduct, t: Tab) => t === 'all' || (t === 'visible' ? p.active : t === 'hidden' ? !p.active : stockState(p).restock);
   const shown = base.filter((p) => inTab(p, tab)).sort(SORT[sort]);
-  const rows = shown.slice(page * PAGE, (page + 1) * PAGE);
+  const rows = shown.slice(page * size, (page + 1) * size);
   const reset = <T,>(set: (v: T) => void) => (v: T) => { set(v); setPage(0); setPicked([]); };
   const allPicked = rows.length > 0 && rows.every((p) => picked.includes(p.id));
   const restock = products.filter((p) => stockState(p).restock).length;
 
-  const exportCsv = () => downloadCsv('aurelle-products', [
-    ['Product', 'Category', 'Variant', 'SKU', 'Price (IDR)', 'Available', 'Held', 'Sold', 'Visible'],
-    ...shown.flatMap((p) => p.variants.map((v) => [p.name.en, CATEGORY[p.category], v.label.en, v.sku, v.priceIdr, v.available, v.held, v.sold, p.active ? 'yes' : 'no'])),
-  ]);
+  /** One row per variant: that is the unit that has a SKU, a price and stock. */
+  const report = (): Report => {
+    const variants = shown.flatMap((p) => p.variants.map((v) => ({ p, v })));
+    const sum = (key: 'available' | 'held' | 'sold') => variants.reduce((n, { v }) => n + v[key], 0);
+    const filters = [tab !== 'all' && { visible: 'visible in store', hidden: 'hidden from store', restock: 'needing restock' }[tab], cats.length > 0 && cats.map((c) => CATEGORY_PLURAL[c]).join(' and '), q && `matching "${query.trim()}"`].filter(Boolean);
+    return {
+      file: 'aurelle-products',
+      title: 'Products, prices & stock',
+      subtitle: `${plural(shown.length, 'product')}, ${plural(variants.length, 'variant')}${filters.length ? ` (${filters.join(', ')})` : ''}`,
+      columns: [
+        { header: 'Product', width: 28, flex: true }, { header: 'Category', width: 13 }, { header: 'Variant', width: 16 }, { header: 'SKU', width: 26 }, { header: 'Price', kind: 'money', width: 16 },
+        { header: 'Available', kind: 'int', width: 11 }, { header: 'Held', kind: 'int', width: 8 }, { header: 'Sold', kind: 'int', width: 8 }, { header: 'In store', width: 11 },
+      ],
+      rows: variants.map(({ p, v }) => [p.name.en, CATEGORY[p.category], v.label.en, v.sku, v.priceIdr, v.available, v.held, v.sold, p.active ? 'Visible' : 'Hidden']),
+      totals: ['Total', null, plural(variants.length, 'variant'), null, null, sum('available'), sum('held'), sum('sold'), null],
+    };
+  };
 
   return (
     <>
       <div className="page-head">
         <div><h1>Products, prices & stock</h1><p>{plural(products.length, 'product')}{restock > 0 ? ` · ${restock} need restock` : ''}</p></div>
-        <div className="page-head__actions"><button type="button" id="products-export" className="btn" disabled={shown.length === 0} onClick={exportCsv}><Icon name="download" />Export</button><button type="button" id="products-add" className="btn btn--primary" onClick={() => go({ view: 'products', id: 'new' })}><Icon name="plus" />Add product</button></div>
+        <div className="page-head__actions"><ExportMenu id="products-export" report={report} disabled={shown.length === 0} /><button type="button" id="products-add" className="btn btn--primary" onClick={() => go({ view: 'products', id: 'new' })}><Icon name="plus" />Add product</button></div>
       </div>
       {notice && <p className={`notice notice--${notice.tone}`} id="admin-product-notice" role={notice.tone === 'error' ? 'alert' : 'status'}>{notice.text}</p>}
 
@@ -117,7 +132,7 @@ export default function Products({ products, loaded, setCatalog, route, go }: {
           </table>
           {shown.length === 0 && <p className="empty">{!loaded ? 'Loading…' : products.length === 0 ? 'No products yet. Add the first one.' : 'No products match these filters.'}</p>}
         </div>
-        <Pager page={page} total={shown.length} onPage={setPage} />
+        <Pager id="products" page={page} total={shown.length} size={size} onPage={setPage} onSize={(n) => { setSize(n); setPage(0); setPicked([]); }} />
       </section>
     </>
   );

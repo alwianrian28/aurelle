@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { upload } from './api';
-import { PAGE, PAYMENT, STATUS, isMediaSrc, media, prepareImage, saveError } from './lib';
+import { exportReport } from './export';
+import type { Format, Report } from './export';
+import { PAGE_SIZES, PAYMENT, fulfillment, isMediaSrc, media, prepareImage, saveError } from './lib';
 import type { Tone } from './lib';
 import type { OrderStatus } from './types';
 
@@ -34,6 +36,9 @@ const ICONS = {
   check: <path d="m20 6-11 11-5-5" />,
   layers: <path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5" />,
   plus: <path d="M12 5v14M5 12h14" />,
+  file: <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6" />,
+  sheet: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 10h18M3 15h18M9 4v16" /></>,
+  rows: <path d="M4 6h16M4 12h16M4 18h16" />,
   edit: <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />,
   upload: <path d="M12 16V4M7 9l5-5 5 5M5 20h14" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
@@ -57,9 +62,8 @@ export function PaymentPill({ status }: { status: string }) {
 /** Where the parcel is. Nothing to show while the order still waits for payment. */
 export function FulfillmentPill({ status }: { status: OrderStatus }) {
   if (status === 'awaiting_payment') return <span className="dash" aria-label="Not started">—</span>;
-  const label = status === 'confirmed' ? 'To ship' : status === 'preparing' ? 'Packing' : STATUS[status];
   const tone: Tone = status === 'shipped' ? 'blue' : status === 'delivered' ? 'green' : status === 'cancelled' ? 'red' : 'amber';
-  return <Pill tone={tone}>{label}</Pill>;
+  return <Pill tone={tone}>{fulfillment(status)}</Pill>;
 }
 
 /* ------------------------------------------------------------- components */
@@ -93,8 +97,8 @@ export function Select<T extends string>({ id, label, value, onChange, options }
  * A button that opens a floating panel. The panel is fixed to the viewport so a scrolling
  * table cannot clip it; it closes on Escape, on a click outside, and when the page scrolls.
  */
-export function Popover({ id, label, className = '', panelClass = '', trigger, children }: {
-  id: string; label: string; className?: string; panelClass?: string; trigger: React.ReactNode;
+export function Popover({ id, label, className = '', panelClass = '', disabled = false, trigger, children }: {
+  id: string; label: string; className?: string; panelClass?: string; disabled?: boolean; trigger: React.ReactNode;
   children: (close: () => void) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -130,7 +134,7 @@ export function Popover({ id, label, className = '', panelClass = '', trigger, c
 
   return (
     <>
-      <button ref={button} type="button" id={id} className={className} aria-label={label} aria-haspopup="true" aria-expanded={open} onClick={() => { setPlace({ visibility: 'hidden' }); setOpen((v) => !v); }}>{trigger}</button>
+      <button ref={button} type="button" id={id} className={className} disabled={disabled} aria-label={label} aria-haspopup="true" aria-expanded={open} onClick={() => { setPlace({ visibility: 'hidden' }); setOpen((v) => !v); }}>{trigger}</button>
       {open && <div ref={panel} className={`popover ${panelClass}`} style={place}>{children(() => setOpen(false))}</div>}
     </>
   );
@@ -153,14 +157,21 @@ export function Tabs<T extends string>({ label, value, onChange, tabs }: { label
   );
 }
 
-export function Pager({ page, total, onPage }: { page: number; total: number; onPage: (p: number) => void }) {
-  const from = total === 0 ? 0 : page * PAGE + 1;
+/** List footer: how many rows a page shows (10 to 100), which rows are on screen, and the page buttons. */
+export function Pager({ id, page, total, size, onPage, onSize }: { id: string; page: number; total: number; size: number; onPage: (p: number) => void; onSize: (size: number) => void }) {
+  const from = total === 0 ? 0 : page * size + 1;
+  const pages = Math.max(1, Math.ceil(total / size));
   return (
     <div className="pager">
-      <span>Showing {from}–{Math.min(total, (page + 1) * PAGE)} of {total}</span>
+      <label className="pager__size" htmlFor={`${id}-size`}>Show
+        <span><select id={`${id}-size`} value={size} onChange={(e) => onSize(Number(e.target.value))}>{PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}</select><Icon name="chevron" size={13} /></span>
+        per page
+      </label>
+      <span className="pager__count">Showing {from}–{Math.min(total, (page + 1) * size)} of {total}</span>
       <div>
         <button type="button" className="btn" disabled={page === 0} onClick={() => onPage(page - 1)}>Previous</button>
-        <button type="button" className="btn" disabled={(page + 1) * PAGE >= total} onClick={() => onPage(page + 1)}>Next</button>
+        <span className="pager__page">Page {Math.min(page + 1, pages)} of {pages}</span>
+        <button type="button" className="btn" disabled={(page + 1) * size >= total} onClick={() => onPage(page + 1)}>Next</button>
       </div>
     </div>
   );
@@ -245,5 +256,37 @@ export function MediaEditor({ value, onChange, max = 12 }: { value: string[]; on
       {byLink && problem && <small className="field__error">{problem}</small>}
       <p className="muted media__hint">{room <= 0 ? `A product can have up to ${max} photos.` : 'JPEG, PNG or WebP. Large photos are shrunk to 1600 px before they are sent.'}</p>
     </>
+  );
+}
+
+const FORMATS: { format: Format; icon: IconName; name: string; hint: string }[] = [
+  { format: 'pdf', icon: 'file', name: 'PDF', hint: 'A report to read or print' },
+  { format: 'xlsx', icon: 'sheet', name: 'Excel', hint: 'A formatted sheet to work in' },
+  { format: 'csv', icon: 'rows', name: 'CSV', hint: 'Plain data for other programs' },
+];
+
+/**
+ * "Export" with a choice of file type. `report` is called only when a type is picked, so it
+ * describes the list exactly as it is filtered (or selected) at that moment.
+ */
+export function ExportMenu({ id, report, disabled = false }: { id: string; report: () => Report; disabled?: boolean }) {
+  const [state, setState] = useState<'idle' | 'busy' | 'failed'>('idle');
+  const run = async (format: Format) => {
+    setState('busy');
+    try { await exportReport(report(), format); setState('idle'); } catch { setState('failed'); }
+  };
+  return (
+    <Popover id={id} label="Export" className="btn" panelClass="menu menu--export" disabled={disabled || state === 'busy'} trigger={<><Icon name="download" />{state === 'busy' ? 'Preparing…' : 'Export'}<Icon name="chevron" size={14} /></>}>
+      {(close) => (
+        <>
+          {state === 'failed' && <p className="menu__error" role="alert">The file could not be made. Try again.</p>}
+          {FORMATS.map((f) => (
+            <button key={f.format} type="button" id={`${id}-${f.format}`} className="menu__item" onClick={() => { close(); void run(f.format); }}>
+              <Icon name={f.icon} size={18} /><span><strong>{f.name}</strong><small>{f.hint}</small></span>
+            </button>
+          ))}
+        </>
+      )}
+    </Popover>
   );
 }
