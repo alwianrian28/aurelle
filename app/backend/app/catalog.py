@@ -247,6 +247,14 @@ class ShippingPatch(BaseModel):
     costIdr: int | None = Field(default=None, ge=0, le=10**9)
 
 
+class ShippingIn(BaseModel):
+    courier: str = Field(min_length=2, max_length=60)
+    nameEn: str = Field(min_length=2, max_length=80)
+    nameId: str | None = Field(default=None, max_length=80)
+    etaDays: str = Field(pattern=r"^\d{1,2}([-–]\d{1,2})?$")
+    costIdr: int = Field(ge=0, le=10**9)
+
+
 class ProductPatch(BaseModel):
     nameId: str | None = Field(default=None, min_length=2, max_length=120)
     nameEn: str | None = Field(default=None, min_length=2, max_length=120)
@@ -416,6 +424,47 @@ def update_settings(body: SettingsPatch, user: Admin, db: Db):
     return _store_settings(db)
 
 
+def _eta_in_order(eta: str) -> None:
+    days = [int(n) for n in re.split("[-–]", eta)]
+    if days != sorted(days):
+        raise HTTPException(400, "invalid_input")
+
+
+@admin.post("/shipping", status_code=201)
+def create_shipping(body: ShippingIn, user: Admin, db: Db):
+    """A new service is offered at checkout as soon as it is saved, after the existing ones."""
+    _eta_in_order(body.etaDays)
+    if db.execute("SELECT COUNT(*) FROM shipping_services").fetchone()[0] >= 12:
+        raise HTTPException(400, "invalid_input")
+    name = {"id": (body.nameId or body.nameEn).strip(), "en": body.nameEn.strip()}
+    base, n = f"ship-{_slug(name['en']) or 'service'}", 1
+    sid = base
+    while db.execute("SELECT 1 FROM shipping_services WHERE id = ?", (sid,)).fetchone():
+        n += 1
+        sid = f"{base}-{n}"
+    sort = db.execute("SELECT COALESCE(MAX(sort), -1) FROM shipping_services").fetchone()[0] + 1
+    db.execute(
+        "INSERT INTO shipping_services (id, courier, name, eta_days, cost_idr, sort) VALUES (?, ?, ?, ?, ?, ?)",
+        (sid, body.courier.strip(), json.dumps(name), body.etaDays, body.costIdr, sort),
+    )
+    _audit(db, user, "shipping", sid, "created", "", name["en"])
+    return {"id": sid, **_store_settings(db)}
+
+
+@admin.delete("/shipping/{service_id}")
+def delete_shipping(service_id: str, user: Admin, db: Db):
+    """Orders carry their own copy of the service they chose, so removing one changes no order.
+    The last one stays: without a shipping service nobody can check out."""
+    row = db.execute("SELECT name FROM shipping_services WHERE id = ? FOR UPDATE", (service_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "not_found")
+    if db.execute("SELECT COUNT(*) FROM shipping_services").fetchone()[0] <= 1:
+        raise HTTPException(409, "last_service")
+    db.execute("DELETE FROM shipping_services WHERE id = ?", (service_id,))
+    _audit(db, user, "shipping", service_id, "deleted", json.loads(row["name"])["en"], "")
+    return _store_settings(db)
+
+
 @admin.patch("/shipping/{service_id}")
 def update_shipping(service_id: str, body: ShippingPatch, user: Admin, db: Db):
     """Orders keep the shipping service they were placed with; this changes what new checkouts are offered."""
@@ -428,9 +477,7 @@ def update_shipping(service_id: str, body: ShippingPatch, user: Admin, db: Db):
         "courier": (body.courier or row["courier"]).strip(), "name": json.dumps(new_name),
         "eta_days": body.etaDays or row["eta_days"], "cost_idr": row["cost_idr"] if body.costIdr is None else body.costIdr,
     }
-    days = [int(n) for n in re.split("[-–]", wanted["eta_days"])]
-    if days != sorted(days):
-        raise HTTPException(400, "invalid_input")
+    _eta_in_order(wanted["eta_days"])
     for column, value in wanted.items():
         if value != row[column]:
             _audit(db, user, "shipping", service_id, column, row[column], value)

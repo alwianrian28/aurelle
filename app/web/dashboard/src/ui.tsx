@@ -34,6 +34,7 @@ const ICONS = {
   check: <path d="m20 6-11 11-5-5" />,
   layers: <path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5" />,
   plus: <path d="M12 5v14M5 12h14" />,
+  edit: <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />,
   upload: <path d="M12 16V4M7 9l5-5 5 5M5 20h14" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   trash: <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,

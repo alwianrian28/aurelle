@@ -305,6 +305,23 @@ def test_admin_edits_store_settings_and_shipping(api):
     assert api.post("/api/catalog/quote", json={"items": [{"variantId": RING, "qty": 1}], "shippingServiceId": "ship-standard"}).json()["costs"]["shipping"] == 250_000
     assert order["costs"]["shipping"] == 285_000  # the order placed before the change keeps its price
 
+    # Adding and removing services.
+    same_day = {"courier": "GoSend", "nameEn": "Same Day", "etaDays": "1", "costIdr": 45_000}
+    assert api.post("/api/admin/shipping", json=same_day).status_code == 401
+    assert admin.post("/api/admin/shipping", json={**same_day, "etaDays": "3-1"}).status_code == 400
+    made = admin.post("/api/admin/shipping", json=same_day)
+    assert made.status_code == 201 and made.json()["id"] == "ship-same-day"
+    assert [s["id"] for s in made.json()["shippingServices"]] == ["ship-standard", "ship-express", "ship-same-day"]
+    assert admin.post("/api/admin/shipping", json=same_day).json()["id"] == "ship-same-day-2"
+    placed = api.post("/api/orders", json={**order_body("ord-sameday0", qty=1), "shippingServiceId": "ship-same-day"})
+    assert placed.status_code == 201 and placed.json()["order"]["costs"]["shipping"] == 45_000
+    for sid in ("ship-same-day", "ship-same-day-2", "ship-express"):
+        assert admin.delete(f"/api/admin/shipping/{sid}").status_code == 200
+    assert admin.delete("/api/admin/shipping/ship-standard").json() == {"error": "last_service"}
+    assert admin.delete("/api/admin/shipping/ship-express").status_code == 404
+    kept = api.get("/api/orders/ord-sameday0").json()["order"]
+    assert kept["shippingService"]["courier"] == "GoSend"  # the order keeps the service it was placed with
+
     from app.db import connect
 
     db = connect()

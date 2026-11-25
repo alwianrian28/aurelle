@@ -29,6 +29,7 @@ export const SAVE_ERROR: Record<string, string> = {
   sku_taken: 'That SKU is already used by another variant.',
   variant_in_orders: 'This variant is on existing orders, so it cannot be removed. Set its stock to 0 instead.',
   last_variant: 'A product needs at least one variant.',
+  last_service: 'The store needs at least one shipping service.',
   invalid_input: 'Some values are missing or not valid. Check the form and try again.',
   conflict: 'That name was just taken. Try again.',
   network: 'Could not reach the server.',
