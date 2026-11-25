@@ -25,7 +25,7 @@ export default function CollectionDetail() {
 
   return (
     <div className="collections collection-detail">
-      <title>{`${name} — Aurelle`}</title>
+      <title>{`${name} | Aurelle`}</title>
       <meta name="description" content={localized(collection.story)} />
       <div className="container">
         <NavLink id="collection-back" to={path('/collections')} className="collection-detail__back">

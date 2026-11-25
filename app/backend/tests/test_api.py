@@ -45,6 +45,8 @@ def make_admin(api, email="admin@example.com", password="admin-password-1"):
     db.execute("UPDATE users SET role = 'admin' WHERE email = ?", (email,))
     db.commit()
     db.close()
+    # The dashboard has its own sign-in; the shop session above does not open staff endpoints.
+    assert other.post("/api/admin/auth/login", json={"email": email, "password": password}).status_code == 200
     return other
 
 
@@ -148,7 +150,7 @@ def test_orders_are_private_to_their_owner(api):
     register(stranger, "c@example.com")
     assert stranger.get("/api/orders/ord-12345678").status_code == 404
     assert stranger.post("/api/orders/ord-12345678/demo-payment", json={"paymentStatus": "paid"}).status_code == 404
-    assert stranger.get("/api/admin/orders").status_code == 403
+    assert stranger.get("/api/admin/orders").status_code == 401  # a shop session opens no staff endpoint
     assert TestClient(api.app).get("/api/admin/orders").status_code == 401
 
 
@@ -173,7 +175,7 @@ def test_admin_flow_with_payment_gate_and_tracking(api):
     assert mine["status"] == "shipped" and mine["tracking"]["trackingNumber"] == "JKT123456"
     assert [p["label"] for p in mine["tracking"]["points"]] == ["Jakarta hub"]
     assert all("actor" not in e for e in mine["history"])  # staff identity is not shown to customers
-    assert api.post("/api/admin/orders/ord-12345678/tracking", json={"label": "Hack", "lat": 0, "lng": 0}).status_code == 403
+    assert api.post("/api/admin/orders/ord-12345678/tracking", json={"label": "Hack", "lat": 0, "lng": 0}).status_code == 401
 
 
 def test_unpaid_order_expires_and_releases_stock(api):
@@ -197,8 +199,8 @@ def test_unpaid_order_expires_and_releases_stock(api):
 
 def test_admin_manages_products_prices_and_stock(api):
     register(api)
-    assert api.get("/api/admin/products").status_code == 403
-    assert api.patch(f"/api/admin/variants/{RING}", json={"priceIdr": 1}).status_code == 403
+    assert api.get("/api/admin/products").status_code == 401
+    assert api.patch(f"/api/admin/variants/{RING}", json={"priceIdr": 1}).status_code == 401
     admin = make_admin(api)
     api.post("/api/orders", json=order_body("ord-oldprice", qty=2))  # holds 2 of 6 at the old price
 
@@ -228,7 +230,7 @@ def test_admin_manages_products_prices_and_stock(api):
 
 def test_overview_counts_paid_revenue_and_low_stock(api):
     register(api)
-    assert api.get("/api/admin/overview").status_code == 403
+    assert api.get("/api/admin/overview").status_code == 401
     api.post("/api/orders", json=order_body("ord-paid0000", qty=5))
     api.post("/api/orders/ord-paid0000/demo-payment", json={"paymentStatus": "paid"})
     api.post("/api/orders", json=order_body("ord-unpaid00", qty=1))
@@ -332,3 +334,155 @@ def test_order_can_be_tracked_with_number_and_email_only(api):
     for _ in range(9):
         assert guest.post("/api/orders/track", json={"number": "AUR-RS-000000-0000", "email": "a@example.com"}).status_code == 404
     assert guest.post("/api/orders/track", json={"number": placed["number"], "email": "a@example.com"}).status_code == 429
+
+
+def test_shop_and_dashboard_sessions_are_separate(api):
+    register(api, "buyer@example.com")
+    staff = make_admin(api, "boss@example.com")
+
+    # A customer cannot sign in to the dashboard, and a shop session opens no staff endpoint.
+    assert api.post("/api/admin/auth/login", json={"email": "buyer@example.com", "password": "password123"}).status_code == 401
+    assert api.get("/api/admin/auth/me").json() == {"user": None}
+    assert api.get("/api/admin/orders").status_code == 401
+
+    # One browser, two accounts: the shop shows the customer while the dashboard shows the admin.
+    browser = TestClient(api.app)
+    assert browser.post("/api/auth/login", json={"email": "buyer@example.com", "password": "password123"}).status_code == 200
+    assert browser.post("/api/admin/auth/login", json={"email": "boss@example.com", "password": "admin-password-1"}).status_code == 200
+    assert browser.get("/api/auth/me").json()["user"]["email"] == "buyer@example.com"
+    assert browser.get("/api/admin/auth/me").json()["user"]["email"] == "boss@example.com"
+    assert browser.get("/api/admin/orders").status_code == 200
+
+    # Signing out of one leaves the other signed in.
+    browser.post("/api/auth/logout")
+    assert browser.get("/api/auth/me").json() == {"user": None}
+    assert browser.get("/api/admin/auth/me").json()["user"]["email"] == "boss@example.com"
+    browser.post("/api/admin/auth/logout")
+    assert browser.get("/api/admin/orders").status_code == 401
+
+    # An admin who signed in to the shop only is still a visitor to the dashboard.
+    shop_only = TestClient(api.app)
+    shop_only.post("/api/auth/login", json={"email": "boss@example.com", "password": "admin-password-1"})
+    assert shop_only.get("/api/admin/orders").status_code == 401
+    # A shop cookie's value does not work as a dashboard cookie.
+    shop_only.cookies.set("aurelle_admin_sid", shop_only.cookies.get("aurelle_sid"))
+    assert shop_only.get("/api/admin/orders").status_code == 401
+
+    # Losing the role ends dashboard access immediately.
+    from app.db import connect
+
+    db = connect()
+    db.execute("UPDATE users SET role = 'customer' WHERE email = ?", ("boss@example.com",))
+    db.commit()
+    db.close()
+    assert staff.get("/api/admin/orders").status_code == 401
+
+
+class FakeMidtrans:
+    """Stands in for Midtrans: records what we send and answers like the Snap and status APIs."""
+
+    def __init__(self):
+        self.calls, self.status = [], None
+
+    def __call__(self, method, url, body=None, headers=None):
+        self.calls.append((method, url, body, headers))
+        if url.endswith("/snap/v1/transactions"):
+            n = sum(1 for c in self.calls if c[1].endswith("/snap/v1/transactions"))
+            return 201, {"token": f"snap-token-{n}", "redirect_url": f"https://snap.test/{n}"}
+        return (200, self.status) if self.status else (404, {"status_code": "404"})
+
+
+def midtrans(monkeypatch):
+    monkeypatch.setenv("MIDTRANS_SERVER_KEY", "SB-Mid-server-test")
+    monkeypatch.setenv("MIDTRANS_CLIENT_KEY", "SB-Mid-client-test")
+    fake = FakeMidtrans()
+    monkeypatch.setattr("app.payments._midtrans", fake)
+    return fake
+
+
+def notification(order_id, status, gross="6785000.00", key="SB-Mid-server-test", **extra):
+    import hashlib
+
+    code = "200" if status in ("settlement", "capture") else "201" if status == "pending" else "202"
+    signature = hashlib.sha512(f"{order_id}{code}{gross}{key}".encode()).hexdigest()
+    return {"order_id": order_id, "status_code": code, "gross_amount": gross, "transaction_status": status, "signature_key": signature, **extra}
+
+
+def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypatch):
+    register(api)
+    order = api.post("/api/orders", json=order_body()).json()["order"]
+    monkeypatch.delenv("MIDTRANS_SERVER_KEY", raising=False)
+    assert api.get("/api/payments/config").json() == {"midtransClientKey": None, "snapUrl": None}
+    assert api.post("/api/payments/ord-12345678/snap").status_code == 503  # switched off
+
+    fake = midtrans(monkeypatch)
+    assert api.get("/api/payments/config").json() == {"midtransClientKey": "SB-Mid-client-test", "snapUrl": "https://app.sandbox.midtrans.com/snap/snap.js"}
+    assert api.post("/api/payments/ord-12345678/snap").json() == {"token": "snap-token-1", "redirectUrl": "https://snap.test/1"}
+    assert api.post("/api/payments/ord-12345678/snap").json()["token"] == "snap-token-1"  # reused, not created twice
+    creates = [c for c in fake.calls if c[1].endswith("/snap/v1/transactions")]
+    assert len(creates) == 1
+    _, url, body, headers = creates[0]
+    assert url == "https://app.sandbox.midtrans.com/snap/v1/transactions"
+    assert body["transaction_details"] == {"order_id": f"{order['number']}-1", "gross_amount": order["costs"]["total"]}
+    assert sum(i["price"] * i["quantity"] for i in body["item_details"]) == order["costs"]["total"]
+    assert body["enabled_payments"] == ["other_qris", "gopay"] and body["customer_details"]["email"] == "a@example.com"
+    assert headers == {"X-Override-Notification": "https://byaurelle.vercel.app/api/payments/midtrans/notification"}
+    # The token never reaches the browser through the order itself.
+    assert "midtrans" not in api.get("/api/orders/ord-12345678").json()["order"]
+
+    stranger = TestClient(api.app)
+    register(stranger, "b@example.com")
+    assert stranger.post("/api/payments/ord-12345678/snap").status_code == 404
+    assert TestClient(api.app).post("/api/payments/ord-12345678/snap").status_code == 401
+
+
+def test_midtrans_notification_is_the_only_way_to_paid(api, monkeypatch):
+    register(api)
+    order = api.post("/api/orders", json=order_body()).json()["order"]
+    midtrans(monkeypatch)
+    api.post("/api/payments/ord-12345678/snap")
+    mid = f"{order['number']}-1"
+    gross = f"{order['costs']['total']}.00"
+    hook = TestClient(api.app)  # Midtrans: no session, no Origin header
+    state = lambda: (lambda o: (o["status"], o["paymentStatus"]))(api.get("/api/orders/ord-12345678").json()["order"])  # noqa: E731
+
+    # Forged, unknown or wrongly priced notifications change nothing (and are not retried).
+    assert hook.post("/api/payments/midtrans/notification", json=notification(mid, "settlement", gross, key="guess")).json() == {"ok": True, "ignored": "bad_signature"}
+    assert hook.post("/api/payments/midtrans/notification", json=notification("AUR-RS-000000-0000-1", "settlement", gross)).json() == {"ok": True, "ignored": "unknown_order"}
+    assert hook.post("/api/payments/midtrans/notification", json=notification(mid, "settlement", "1000.00")).json() == {"ok": True}
+    assert hook.post("/api/payments/midtrans/notification", content=b"not json").json() == {"ok": True, "ignored": "not_json"}
+    assert state() == ("awaiting_payment", "unpaid")
+
+    assert hook.post("/api/payments/midtrans/notification", json=notification(mid, "pending", gross)).status_code == 200
+    assert state() == ("awaiting_payment", "pending")
+    assert hook.post("/api/payments/midtrans/notification", json=notification(mid, "settlement", gross)).status_code == 200
+    assert state() == ("confirmed", "paid")
+    # Midtrans may send the same notification again; nothing is recorded twice.
+    events = len(api.get("/api/orders/ord-12345678").json()["order"]["history"])
+    hook.post("/api/payments/midtrans/notification", json=notification(mid, "settlement", gross))
+    hook.post("/api/payments/midtrans/notification", json=notification(mid, "expire", gross))
+    assert state() == ("confirmed", "paid") and len(api.get("/api/orders/ord-12345678").json()["order"]["history"]) == events
+    assert stock_of(api) == 4  # the units stay sold
+
+
+def test_failed_payment_gets_a_new_attempt_and_sync_reads_midtrans(api, monkeypatch):
+    register(api)
+    order = api.post("/api/orders", json=order_body()).json()["order"]
+    fake = midtrans(monkeypatch)
+    gross = f"{order['costs']['total']}.00"
+    api.post("/api/payments/ord-12345678/snap")
+
+    # Nothing chosen in Snap yet: Midtrans knows no transaction, the order is untouched.
+    synced = api.post("/api/payments/ord-12345678/sync").json()["order"]
+    assert (synced["status"], synced["paymentStatus"]) == ("awaiting_payment", "unpaid")
+
+    fake.status = {"status_code": "202", "transaction_status": "deny", "gross_amount": gross}
+    assert api.post("/api/payments/ord-12345678/sync").json()["order"]["paymentStatus"] == "failed"
+    # Retrying needs a fresh Midtrans order id.
+    assert api.post("/api/payments/ord-12345678/snap").json()["token"] == "snap-token-2"
+    assert [c[2]["transaction_details"]["order_id"] for c in fake.calls if c[0] == "POST"] == [f"{order['number']}-1", f"{order['number']}-2"]
+
+    fake.status = {"status_code": "200", "transaction_status": "capture", "fraud_status": "accept", "gross_amount": gross}
+    paid = api.post("/api/payments/ord-12345678/sync").json()["order"]
+    assert (paid["status"], paid["paymentStatus"]) == ("confirmed", "paid")
+    assert api.post("/api/payments/ord-12345678/snap").status_code == 409  # nothing left to pay

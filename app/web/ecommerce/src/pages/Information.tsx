@@ -21,7 +21,7 @@ export default function Information() {
   const title = t(slug === "size" ? "pages.sizeTitle" : "pages.careTitle");
   const intro = t(slug === "size" ? "pages.sizeIntro" : "pending.draft");
   return <article className={"container section information" + (HERO_IMAGE[slug] ? " information--wide" : "")}>
-    <title>{title} — Aurelle</title><meta name="description" content={intro} />
+    <title>{title} | Aurelle</title><meta name="description" content={intro} />
     <PageHero id="information-hero" eyebrow={t("pages.guideEyebrow")} title={title} intro={intro} image={HERO_IMAGE[slug]} variant={HERO_IMAGE[slug] ? "split" : "compact"} />
     <p className="alert alert--warning">{t("pending.draft")}</p>
     {slug === "care" && <div className="information__list information__list--numbered information__list--grid">{careGuide.groups.map((group) => <section className="card information__block" key={group.icon}><p className="eyebrow">{text(group.label)}</p><h2 className="heading-lg">{text(group.title)}</h2><ul>{group.tips.map((tip, index) => <li key={index}>{text(tip)}</li>)}</ul></section>)}</div>}

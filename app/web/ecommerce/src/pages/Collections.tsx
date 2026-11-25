@@ -34,7 +34,7 @@ export default function Collections() {
 
   return (
     <div className="collections">
-      <title>{`${t('nav.collections')} — Aurelle`}</title>
+      <title>{`${t('nav.collections')} | Aurelle`}</title>
       <meta name="description" content={t('collectionsPage.intro')} />
 
       <header className="container collections__head">

@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { useLocale, useLocalePath } from '../../hooks/useLocale';
+import { signOut } from '../../lib/signOut';
 import './Account.css';
 
 /**
@@ -12,7 +13,7 @@ export default function AccountLayout() {
   const path = useLocalePath();
   const locale = useLocale();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   const links = [
     { id: 'overview', to: path('/account'), label: t('account.overview'), end: true },
@@ -28,8 +29,8 @@ export default function AccountLayout() {
   ];
 
   const handleLogout = () => {
-    logout();
-    navigate(path('/'));
+    signOut();
+    navigate(path('/store'));
   };
 
   const firstName = (user?.username ?? '').trim().split(/\s+/)[0];

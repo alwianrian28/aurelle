@@ -10,6 +10,6 @@ export default function JewelryModel({ model, name }: { model: string; name: str
     return () => observer.disconnect();
   }, []);
   return <div ref={ref} className="product-card__model" onClick={e => e.preventDefault()}>
-    {visible && <iframe src={`/jewelry-3d/index.html?embed=1&model=${encodeURIComponent(model)}`} title={`${name} — 3D`} />}
+    {visible && <iframe src={`/jewelry-3d/index.html?embed=1&model=${encodeURIComponent(model)}`} title={`${name} 3D`} />}
   </div>;
 }

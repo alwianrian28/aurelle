@@ -123,96 +123,62 @@
   .co :is(a, button, label) { transition: none; }
 }
 
-/* ---- Halaman pembayaran / hasil ---- */
-.payment {
-  max-width: 640px;
-  margin-inline: auto;
-}
-.payment-card {
-  padding: var(--space-7) var(--space-6);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--space-4);
-}
-.payment-card .dl-list {
-  width: 100%;
-  text-align: left;
-}
-.payment-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.8rem;
-  border: 1px solid var(--c-line-strong);
-  background: var(--c-white);
-}
-.payment-icon.is-success {
-  background: var(--grad-silver);
-  border-color: transparent;
-  color: var(--c-ink);
-  box-shadow: 0 12px 40px -16px rgba(184, 193, 204, 0.8);
-}
-.payment-icon.is-error {
-  color: var(--c-error);
-  border-color: #e8c4bd;
-  background: #f6e4e0;
-}
-.payment-icon.is-pending {
-  position: relative;
-}
-.payment-icon.is-pending::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  border-top-color: var(--c-silver);
-  animation: payment-spin 1s linear infinite;
-}
-@keyframes payment-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* ---- Payment and its result ---- */
+.pay { background: var(--svc-paper); color: var(--svc-ink); border-bottom: 1px solid var(--svc-line); }
+.pay__inner { display: flex; justify-content: center; padding-block: 56px 112px; }
+.pay :is(a, button):focus-visible { outline: 2px solid var(--svc-ink); outline-offset: 3px; }
+.pay-card { width: 100%; max-width: 620px; padding: 48px; border: 1px solid var(--svc-line); border-radius: 8px; background: #fff; text-align: center; }
+.pay-card__icon { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border: 1px solid var(--svc-line); border-radius: 50%; background: var(--svc-paper); }
+.pay-card--paid .pay-card__icon { border-color: var(--svc-ink); background: var(--svc-ink); color: #fff; }
+.pay-card--failed .pay-card__icon, .pay-card--expired .pay-card__icon { border-color: #e6c9c4; background: #fbf1ef; color: #8a2c20; }
+.pay-card--pending .pay-card__icon svg { animation: pay-pulse 1.6s ease-in-out infinite; }
+@keyframes pay-pulse { 50% { opacity: .35; } }
+.pay-card__number { margin: 22px 0 0; font: 500 11px/1.4 var(--font-sans); letter-spacing: .2em; text-transform: uppercase; color: var(--svc-muted); overflow-wrap: anywhere; }
+.pay-card h1 { margin: 12px 0 0; font: 400 clamp(30px, 3.4vw, 40px)/1.12 var(--font-serif); }
+.pay-card__body { max-width: 440px; margin: 14px auto 0; font-size: 15px; line-height: 1.65; color: var(--svc-muted); }
 
-.payment-gateway {
-  width: 100%;
-  border: 1px dashed var(--c-line-strong);
-  border-radius: var(--radius-md);
-  padding: var(--space-5);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  background: var(--c-pearl-deep);
-}
-.payment-gateway__actions {
-  display: flex;
-  gap: var(--space-3);
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.payment-countdown {
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--c-slate);
-}
-.payment-actions {
-  display: flex;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  justify-content: center;
-}
+.pay-box { margin-top: 32px; padding: 24px; border: 1px solid var(--svc-line); border-radius: 8px; background: var(--svc-paper); text-align: left; }
+.pay-box dl, .pay-summary dl { display: grid; gap: 10px; margin: 0; font-size: 15px; }
+.pay-box dl div, .pay-summary dl div, .pay-summary li { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.pay-box dt, .pay-summary dt { color: var(--svc-muted); }
+.pay-box dd, .pay-summary dd { margin: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pay-box #payment-amount { font-size: 20px; font-weight: 600; }
+.pay-box__time { font-weight: 600; }
+.pay-box__cta { width: 100%; min-height: 56px; margin-top: 22px; padding: 0 16px; white-space: normal; }
+.pay-box .guide-btn:disabled { border-color: #e4e5e9; background: #e4e5e9; color: #555f6d; cursor: progress; }
+.pay-box__demo { margin-top: 20px; padding-top: 18px; border-top: 1px dashed #d8d5cb; }
+.pay-box__demo p { margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: var(--svc-muted); }
+.pay-box__demo div { display: flex; flex-wrap: wrap; gap: 10px; }
+.pay-box__demo .guide-btn { flex: 1 1 180px; min-height: 48px; padding: 0 16px; white-space: normal; }
+.pay-box__notice { margin: 14px 0 0; padding: 12px 14px; border: 1px solid #e6c9c4; border-radius: 8px; background: #fbf1ef; font-size: 14px; line-height: 1.5; color: #8a2c20; }
+.pay-box__secure { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 14px 0 0; font-size: 13px; color: var(--svc-muted); }
+.pay-card__check { margin-top: 22px; padding: 6px 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 500; color: var(--svc-ink); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.pay-card__check:hover { color: var(--svc-muted); }
+
+.pay-summary { margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--svc-line); text-align: left; }
+.pay-summary h2 { margin: 0 0 16px; font: 600 12px/1.4 var(--font-sans); letter-spacing: .18em; text-transform: uppercase; }
+.pay-summary ul { display: grid; gap: 10px; margin: 0 0 16px; padding: 0 0 16px; border-bottom: 1px solid var(--svc-line); list-style: none; font-size: 15px; }
+.pay-summary li > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.pay-summary li > span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pay-summary small { display: block; font-size: 13px; color: var(--svc-muted); }
+.pay-summary .is-total { margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--svc-line); font-weight: 600; }
+.pay-summary .is-total dt { color: var(--svc-ink); }
+.pay-summary .is-total dd { font-size: 18px; }
+
+.pay-card__links { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 18px; margin-top: 32px; }
+.pay-card__links .guide-btn { min-height: 48px; padding: 0 24px; }
+.pay-card__text { font-size: 14px; font-weight: 500; text-decoration: underline; text-underline-offset: 4px; }
+.pay-card__text:hover { color: var(--svc-muted); }
+.pay-card__help { margin: 22px 0 0; font-size: 13px; color: var(--svc-muted); }
+.pay-card__help a { font-weight: 500; color: var(--svc-ink); text-decoration: underline; text-underline-offset: 3px; }
 
 @media (max-width: 640px) {
-  .payment-card {
-    padding: var(--space-6) var(--space-5);
-  }
-  .payment-gateway {
-    padding: var(--space-4);
-  }
+  .pay__inner { padding-block: 28px 72px; }
+  .pay-card { padding: 32px 20px; }
+  .pay-box { padding: 20px 16px; }
+  .pay-card__links { flex-direction: column; align-items: stretch; }
+  .pay-card__links .guide-btn { white-space: normal; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pay-card--pending .pay-card__icon svg { animation: none; }
 }

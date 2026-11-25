@@ -13,7 +13,7 @@ export default function SystemPage({ kind }: { kind: SystemKind }) {
 
   return (
     <div className="container section" style={{ textAlign: 'center', minHeight: '60vh' }}>
-      <title>{`${title} — Aurelle`}</title>
+      <title>{`${title} | Aurelle`}</title>
       <meta name="robots" content="noindex" />
       <p className="eyebrow" style={{ justifyContent: 'center' }}>{code}</p>
       <h1 className="heading-xl">{title}</h1>

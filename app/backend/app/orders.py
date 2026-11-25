@@ -116,6 +116,7 @@ def _to_order(db: Database, row: Row, with_actor: bool = False) -> dict:
     events = db.execute("SELECT status, payment_status, actor, at FROM order_events WHERE order_id = ? ORDER BY id", (row["id"],)).fetchall()
     points = db.execute("SELECT id, label, note, lat, lng, at FROM tracking_points WHERE order_id = ? ORDER BY at, id", (row["id"],)).fetchall()
     order = json.loads(row["data"])
+    order.pop("midtrans", None)  # Snap token and attempt counter stay on the server
     order.update(
         id=row["id"], number=row["number"], userId=row["user_id"], status=row["status"], paymentStatus=row["payment_status"],
         createdAt=row["created_at"], updatedAt=row["updated_at"],

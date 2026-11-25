@@ -70,7 +70,7 @@ export default function Home() {
     return list;
   }, [category, sort]);
   return <div className="storefront"><div className="container">
-    <title>Aurelle — Silver Luxury Jewelry</title>
+    <title>Aurelle | Silver Luxury Jewelry</title>
     <meta name="description" content={id ? 'Jelajahi koleksi Aurelle: cincin, gelang, kalung dan anting dengan tampilan silver.' : 'Explore Aurelle rings, bracelets, necklaces and earrings in a refined silver aesthetic.'} />
     <section className="storefront__hero" aria-labelledby="store-title">
       <HeroSlider slides={HERO_SLIDES} locale={id ? 'id' : 'en'}>

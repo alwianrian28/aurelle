@@ -93,14 +93,14 @@ export const sizeChart: Record<SizeKind, {
       id: 'Suka lebih longgar? Tambahkan 0,5 cm. Untuk bangle kaku, pastikan muat melewati buku tangan.',
       en: 'Prefer a looser fit? Add 0.5 cm. For rigid bangles, make sure it slips over your knuckles.',
     },
-    note: { id: 'Panduan umum: panjang gelang ±1,5–2 cm lebih dari lingkar pergelangan.', en: 'General guide: bracelet length is about 1.5–2 cm more than your wrist.' },
+    note: { id: 'Panduan umum: panjang gelang ±1,5-2 cm lebih dari lingkar pergelangan.', en: 'General guide: bracelet length is about 1.5-2 cm more than your wrist.' },
     columns: [
       { id: 'Ukuran', en: 'Size' },
       { id: 'Pergelangan (cm)', en: 'Wrist (cm)' },
       { id: 'Panjang gelang (cm)', en: 'Bracelet length (cm)' },
     ],
     rows: [
-      ['XS', '13–14', '15.5'], ['S', '14–15', '16.5'], ['M', '15–16', '17.5'], ['L', '16–17', '18.5'], ['XL', '17–18', '19.5'],
+      ['XS', '13-14', '15.5'], ['S', '14-15', '16.5'], ['M', '15-16', '17.5'], ['L', '16-17', '18.5'], ['XL', '17-18', '19.5'],
     ],
   },
 };

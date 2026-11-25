@@ -45,7 +45,7 @@ export default function OurStory() {
 
   return (
     <article className="story">
-      <title>{`${t('nav.ourStory')} — Aurelle`}</title>
+      <title>{`${t('nav.ourStory')} | Aurelle`}</title>
       <meta name="description" content={t('story.heroBody')} />
 
       <header className="story__band story-hero">

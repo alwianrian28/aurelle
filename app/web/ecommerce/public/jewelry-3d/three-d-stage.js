@@ -310,7 +310,7 @@
      *  the camera to its bounds. */
     setObject(object) {
       const THREE = this._THREE;
-      if (!THREE) throw new Error('three-d-stage: not ready — await stage.ready first');
+      if (!THREE) throw new Error('three-d-stage: not ready: await stage.ready first');
       if (this._object) this._scene.remove(this._object);
       this._object = object;
       object.traverse((o) => {

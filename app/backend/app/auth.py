@@ -13,6 +13,10 @@ from .db import Database, IntegrityError, Row, get_db
 from .security import Limiter, hash_password, hash_token, new_token, password_too_long, verify_password
 
 COOKIE = "aurelle_sid"
+# The staff dashboard has its own sign-in and its own cookie. Cookies are shared across ports
+# of one host, so with a single cookie signing in to the shop on localhost:5173 would also
+# sign the dashboard on localhost:5174 in (and the other way round).
+ADMIN_COOKIE = "aurelle_admin_sid"
 DAY = 24 * 60 * 60
 SESSION_S = DAY        # closes with the browser
 KEEP_S = 30 * DAY      # "Keep me logged in"
@@ -23,6 +27,7 @@ EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 Db = Annotated[Database, Depends(get_db)]
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+admin_router = APIRouter(prefix="/api/admin/auth", tags=["admin"])
 login_limiter = Limiter(5, 60)
 _last_sent: dict[str, float] = {}  # resend cooldown per kind+user
 
@@ -68,9 +73,30 @@ def require_user(user: MaybeUser) -> Row:
     return user
 
 
-def require_admin(user: Annotated[Row, Depends(require_user)]) -> Row:
-    if user["role"] != "admin":
-        raise HTTPException(403, "forbidden")
+def _admin_hash(token: str) -> str:
+    """Dashboard sessions are stored under a different hash than shop sessions, so a shop
+    cookie's value can never be replayed as a dashboard session, nor the reverse."""
+    return hash_token("admin:" + token)
+
+
+def current_admin(db: Db, sid: Annotated[str | None, Cookie(alias=ADMIN_COOKIE)] = None) -> Row | None:
+    if not sid:
+        return None
+    row = db.execute("SELECT user_id, expires_at FROM sessions WHERE token_hash = ?", (_admin_hash(sid),)).fetchone()
+    if not row:
+        return None
+    if row["expires_at"] <= time.time():
+        db.execute("DELETE FROM sessions WHERE token_hash = ?", (_admin_hash(sid),))
+        return None
+    user = _user_by_id(db, row["user_id"])
+    # The role is checked on every request: removing it ends dashboard access at once.
+    return user if user and user["role"] == "admin" else None
+
+
+def require_admin(user: Annotated[Row | None, Depends(current_admin)]) -> Row:
+    """Staff endpoints accept the dashboard session only. A shop session, even an admin's, is not enough."""
+    if not user:
+        raise HTTPException(401, "unauthenticated")
     return user
 
 
@@ -258,6 +284,40 @@ def google_login(body: GoogleIn, db: Db, response: Response):
     user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
     _start_session(db, response, user["id"], body.keep)
     return {"user": public_user(user)}
+
+
+@admin_router.post("/login")
+def admin_login(body: LoginIn, db: Db, request: Request, response: Response):
+    """Dashboard sign-in. Only accounts with the admin role get a session; everyone else gets
+    the same answer as a wrong password."""
+    email = body.email.strip().lower()
+    key = f"admin|{request.client.host if request.client else '?'}|{email}"
+    locked = login_limiter.locked_for(key)
+    if locked:
+        raise HTTPException(429, {"error": "throttled", "retryAfterMs": int(locked * 1000)})
+    user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    if not user or not verify_password(body.password, user["password_hash"]) or user["role"] != "admin":
+        login_limiter.fail(key)
+        raise HTTPException(401, {"error": "invalid_credentials", "retryAfterMs": int(login_limiter.locked_for(key) * 1000)})
+    login_limiter.reset(key)
+    token = new_token()
+    db.execute("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)", (_admin_hash(token), user["id"], time.time() + SESSION_S))
+    # Ends with the browser session; staff sign in again each day.
+    response.set_cookie(ADMIN_COOKIE, token, httponly=True, samesite="lax", secure=is_prod(), path="/")
+    return {"user": public_user(user)}
+
+
+@admin_router.post("/logout")
+def admin_logout(db: Db, response: Response, sid: Annotated[str | None, Cookie(alias=ADMIN_COOKIE)] = None):
+    if sid:
+        db.execute("DELETE FROM sessions WHERE token_hash = ?", (_admin_hash(sid),))
+    response.delete_cookie(ADMIN_COOKIE, path="/")
+    return {"ok": True}
+
+
+@admin_router.get("/me")
+def admin_me(user: Annotated[Row | None, Depends(current_admin)]):
+    return {"user": public_user(user) if user else None}
 
 
 @router.post("/logout")

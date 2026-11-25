@@ -44,7 +44,7 @@ export default function Help({ kind }: { kind: 'faq' | 'policy' }) {
 
   return (
     <article className="help">
-      <title>{`${title} — Aurelle`}</title>
+      <title>{`${title} | Aurelle`}</title>
       <meta name="description" content={intro} />
 
       <div className="container help__inner">

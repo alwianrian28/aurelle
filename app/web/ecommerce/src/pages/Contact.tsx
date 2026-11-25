@@ -55,7 +55,7 @@ export default function Contact() {
 
   return (
     <article className="contact">
-      <title>{`${t('nav.contact')} — Aurelle`}</title>
+      <title>{`${t('nav.contact')} | Aurelle`}</title>
       <meta name="description" content={t('contact.intro')} />
 
       <div className="container contact__inner">

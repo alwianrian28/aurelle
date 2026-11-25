@@ -82,7 +82,7 @@ function ProductDetail({ slug }: { slug?: string }) {
   return (
     <div className="pdp">
       <div className="container">
-      <title>{`${name} — Aurelle`}</title>
+      <title>{`${name} | Aurelle`}</title>
 
       <div className="pdp__main">
         <div className={`pdp__gallery${product.media.length > 1 ? '' : ' pdp__gallery--single'}`}>
@@ -116,7 +116,7 @@ function ProductDetail({ slug }: { slug?: string }) {
             <div className="pdp__frame">
               {/* The 3D viewer (iframe + WebGL) exists only while its tab is selected. */}
               {view === '3d' && product.jewelryModel
-                ? <iframe src={`/jewelry-3d/index.html?embed=1&model=${encodeURIComponent(product.jewelryModel)}`} title={`${name} — 3D`} />
+                ? <iframe src={`/jewelry-3d/index.html?embed=1&model=${encodeURIComponent(product.jewelryModel)}`} title={`${name} 3D`} />
                 : <SmartImage key={media?.id} src={media?.src} alt={localized(media?.alt)} category={product.category} loading="eager" />}
             </div>
           </div>

@@ -225,3 +225,26 @@
  .header__account-label { display: none; }
 }
 .header__icon-btn.is-active { background: var(--svc-stone); }
+
+/* ---- Account menu (signed in) ---- */
+.account-menu { position: relative; display: inline-flex; }
+/* Drops from the icon: fades in and settles 8px down. Closed, it is invisible and not clickable. */
+.account-menu__panel { position: absolute; top: calc(100% + 14px); right: -8px; z-index: 5; width: 300px; max-width: calc(100vw - 24px); padding: 8px; border: 1px solid var(--svc-line); border-radius: 12px; background: #fff; box-shadow: 0 18px 44px -18px rgb(21 25 34 / .28); color: var(--svc-ink); opacity: 0; visibility: hidden; transform: translateY(-8px) scale(.98); transform-origin: top right; transition: opacity .2s var(--ease-out), transform .24s var(--ease-out), visibility .2s; }
+.account-menu__panel.is-open { opacity: 1; visibility: visible; transform: none; }
+.account-menu__who { display: grid; gap: 2px; padding: 14px 12px 16px; border-bottom: 1px solid var(--svc-line); }
+.account-menu__who strong { font-size: 16px; font-weight: 500; overflow-wrap: anywhere; }
+.account-menu__who span { font-size: 13px; color: var(--svc-muted); overflow-wrap: anywhere; }
+.account-menu__panel ul { display: grid; gap: 2px; margin: 0; padding: 8px 0; border-bottom: 1px solid var(--svc-line); list-style: none; }
+.account-menu__panel :is(li a, .account-menu__logout) { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 42px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 15px; color: var(--svc-ink); text-align: left; cursor: pointer; transition: background var(--dur-base) var(--ease-out); }
+.account-menu__panel :is(li a, .account-menu__logout):hover { background: var(--svc-stone); }
+.account-menu__panel :is(li a, .account-menu__logout):focus-visible { outline: 2px solid var(--svc-ink); outline-offset: -2px; }
+/* Every icon sits in the same 22px slot, so the labels line up whatever the artwork's size. */
+.account-menu__panel :is(svg, .icon-mask) { flex: none; margin-inline: calc((22px - var(--w, 18px)) / 2); }
+.account-menu__panel .icon-mask { --w: 22px; margin-inline: 0; }
+.account-menu__panel #account-menu-orders .icon-mask { --w: 20px; margin-inline: 1px; }
+.account-menu__panel em { margin-left: auto; min-width: 24px; padding: 3px 8px; border-radius: 999px; text-align: center; font-variant-numeric: tabular-nums; background: var(--svc-stone); font-size: 12px; font-style: normal; font-weight: 500; white-space: nowrap; }
+.account-menu__panel li a:hover em { background: #fff; }
+.account-menu__panel .account-menu__logout { margin-top: 8px; color: var(--svc-muted); }
+@media (prefers-reduced-motion: reduce) {
+  .account-menu__panel { transform: none; transition: none; }
+}

@@ -45,7 +45,7 @@ export default function Entrance() {
     return () => { cancelled = true; cancelAnimationFrame(frame); clearTimeout(Number(root.dataset.startupTimer)); entrance.dispose(); dispose?.(); document.documentElement.lang = previousLanguage; };
   }, [language]);
   return <>
-    <title>Aurelle — The Art of Detail</title>
+    <title>Aurelle | The Art of Detail</title>
     <meta name="description" content="Explore the Aurelle silver showroom in twelve chapters, then discover the collection." />
     <div ref={ref} id="aurelle" dangerouslySetInnerHTML={{ __html: showroomMarkup }} />
   </>;

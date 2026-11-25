@@ -63,7 +63,7 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <div className="cart">
-        <title>{`${t('cart.emptyTitle')} — Aurelle`}</title>
+        <title>{`${t('cart.emptyTitle')} | Aurelle`}</title>
         <div className="container">
           <div className="cart-empty">
             <h1>{t('cart.emptyTitle')}</h1>
@@ -86,7 +86,7 @@ export default function Cart() {
 
   return (
     <div className="cart">
-      <title>{`${t('cart.title')} — Aurelle`}</title>
+      <title>{`${t('cart.title')} | Aurelle`}</title>
       <div className="container">
 
         <header className="cart__head">
@@ -120,9 +120,9 @@ export default function Cart() {
                     {unavailable && <p className="cart-item__flag is-error">{t('cart.unavailable')}</p>}
                     {exceedsStock && <p className="cart-item__flag is-error">{t('cart.exceedsStock', { count: available })}</p>}
                   </div>
-                  <p className="cart-item__price">{variant ? price(variant.priceIdr * item.qty) : '—'}</p>
+                  <p className="cart-item__price">{variant ? price(variant.priceIdr * item.qty) : '-'}</p>
                   <div className="cart-item__actions">
-                    <div className="cart-item__qty" role="group" aria-label={`${t('cart.quantity')} — ${name}`}>
+                    <div className="cart-item__qty" role="group" aria-label={`${t('cart.quantity')}: ${name}`}>
                       <button type="button" onClick={() => setQty(item.variantId, item.qty - 1)} aria-label={t('cart.decrease')} disabled={unavailable}>−</button>
                       <span aria-live="polite">{item.qty}</span>
                       <button type="button" onClick={() => setQty(item.variantId, item.qty + 1)} aria-label={t('cart.increase')} disabled={unavailable || item.qty >= available}>+</button>
@@ -133,7 +133,7 @@ export default function Cart() {
                     {product && (
                       <WishlistButton productId={product.id} className="cart-item__icon" size={18} />
                     )}
-                    <button type="button" className="cart-item__icon" onClick={() => remove(item.variantId)} aria-label={`${t('cart.remove')} — ${name}`} title={t('cart.removeShort')}>
+                    <button type="button" className="cart-item__icon" onClick={() => remove(item.variantId)} aria-label={`${t('cart.remove')}: ${name}`} title={t('cart.removeShort')}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.500 7V4.500h5V7M6.500 7l.8 12.500h9.400L17.500 7M10 11v5M14 11v5" /></svg>
                     </button>
                   </div>

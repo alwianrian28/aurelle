@@ -92,7 +92,7 @@ export default function Shop() {
   return (
     <div className="shop">
       <div className="container">
-        <title>{`${title} — Aurelle`}</title>
+        <title>{`${title} | Aurelle`}</title>
         <meta name="description" content={t('shop.intro')} />
 
 

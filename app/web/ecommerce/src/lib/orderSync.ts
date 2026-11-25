@@ -23,6 +23,9 @@ function applyServer(order: Order) {
   sent.set(order.id, order.history.length);
 }
 
+/** Take over an order exactly as the API returned it (payment sync, checkout). */
+export const applyServerOrder = applyServer;
+
 export interface PlaceOrderInput {
   items: CartItem[];
   /** Price per variant as shown when checkout opened; the server refuses a stale one. */

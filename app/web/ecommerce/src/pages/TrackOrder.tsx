@@ -125,7 +125,7 @@ export default function TrackOrder() {
 
   return (
     <article className="track">
-      <title>{`${t('track.title')} — Aurelle`}</title>
+      <title>{`${t('track.title')} | Aurelle`}</title>
       <meta name="description" content={t('track.intro')} />
 
       <div className="container track__inner">
@@ -247,7 +247,7 @@ function Result({ order, fmtDate, copied, onCopy, onReset, detailPath, contactPa
             <li key={step} className={index < reached ? 'is-done' : index === reached ? 'is-current' : ''} aria-current={index === reached ? 'step' : undefined}>
               <span className="track-steps__dot" aria-hidden="true">{index <= reached && <CheckIcon />}</span>
               <strong>{t(`track.steps.${step}`)}</strong>
-              <small>{index <= reached && reachedAt[index] ? fmtDate(reachedAt[index]!) : '—'}</small>
+              <small>{index <= reached && reachedAt[index] ? fmtDate(reachedAt[index]!) : '-'}</small>
             </li>
           ))}
         </ol>

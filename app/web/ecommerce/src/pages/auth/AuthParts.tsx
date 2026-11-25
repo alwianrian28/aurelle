@@ -34,7 +34,7 @@ export function AuthShell({ photo, sideTitle, side, back = 'shop', legal = true,
 
   return (
     <div className="auth-shell">
-      <title>{`${title} — Aurelle`}</title>
+      <title>{`${title} | Aurelle`}</title>
       <meta name="robots" content="noindex" />
       <aside className="auth-shell__side" style={{ backgroundImage: `url(${AUTH_PHOTOS[photo]})` }}>
         <NavLink to={path('/store')} className="auth-shell__logo" aria-label="Aurelle">AURELLE</NavLink>

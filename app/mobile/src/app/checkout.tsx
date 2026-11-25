@@ -12,7 +12,7 @@ const ERRORS: Record<string, string> = {
   out_of_stock: 'Some pieces are low in stock. Please update your cart.',
   country_not_served: 'We don\'t ship to this country yet.',
   email_unverified: 'Your email isn\'t verified yet. Please verify it before checking out.',
-  invalid_input: 'Please complete your address (phone number must be 6–20 digits).',
+  invalid_input: 'Please complete your address (phone number must be 6-20 digits).',
 };
 
 /**
@@ -107,7 +107,7 @@ export default function Checkout() {
 
         <Text style={styles.heading}>SHIPPING</Text>
         {catalog.shippingServices.map((s) => (
-          <Choice key={s.id} wide label={`${s.courier} — ${s.name.en}`} detail={`${s.etaDays} days · ${idr(s.costIdr)}`} selected={serviceId === s.id} onPress={() => setServiceId(s.id)} />
+          <Choice key={s.id} wide label={`${s.courier} · ${s.name.en}`} detail={`${s.etaDays} days · ${idr(s.costIdr)}`} selected={serviceId === s.id} onPress={() => setServiceId(s.id)} />
         ))}
 
         <Text style={styles.heading}>PAYMENT METHOD</Text>

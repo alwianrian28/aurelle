@@ -154,7 +154,7 @@ export default function OrderDetail() {
                       {[...order.tracking.points].reverse().map((point) => (
                         <li key={point.id} className="timeline__item">
                           <span className="text-muted">{fmtDate(point.at)}</span>
-                          <span><strong>{point.label}</strong>{point.note && ` — ${point.note}`}</span>
+                          <span><strong>{point.label}</strong>{point.note && `: ${point.note}`}</span>
                         </li>
                       ))}
                     </ol>
@@ -226,7 +226,7 @@ export default function OrderDetail() {
               <hr className="divider" style={{ margin: 'var(--space-4) 0' }} />
               <p className="text-sm">
                 <span className="text-muted">{t('order.shippingService')}: </span>
-                {order.shippingService.courier} — {localized(order.shippingService.name)}
+                {order.shippingService.courier} · {localized(order.shippingService.name)}
               </p>
             </section>
           </aside>

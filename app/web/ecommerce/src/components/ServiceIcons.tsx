@@ -13,6 +13,8 @@ const ASSET_ICONS = {
   authentic: '/media/icons/certificate.png',
   warranty: '/media/icons/warranty.png',
   returns: '/media/icons/returns.png',
+  orders: '/media/icons/orders.png',
+  track: '/media/icons/track.png',
 } as const;
 
 type AssetIconName = keyof typeof ASSET_ICONS;

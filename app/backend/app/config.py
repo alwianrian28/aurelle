@@ -33,6 +33,30 @@ def google_client_id() -> str | None:
     return os.environ.get("GOOGLE_CLIENT_ID", "").strip() or None
 
 
+def midtrans_server_key() -> str | None:
+    """Midtrans server key (Dashboard > Settings > Access Keys). Secret: it never leaves the backend.
+    Unset means card/QRIS payments are switched off."""
+    return os.environ.get("MIDTRANS_SERVER_KEY", "").strip() or None
+
+
+def midtrans_client_key() -> str | None:
+    """Midtrans client key: public, handed to the shop to load the Snap popup."""
+    return os.environ.get("MIDTRANS_CLIENT_KEY", "").strip() or None
+
+
+def midtrans_is_production() -> bool:
+    """Sandbox unless MIDTRANS_IS_PRODUCTION=true. Sandbox keys start with "SB-"."""
+    return os.environ.get("MIDTRANS_IS_PRODUCTION", "").strip().lower() == "true"
+
+
+def midtrans_notification_url() -> str | None:
+    """Where Midtrans sends payment notifications for transactions created here. Sent with
+    every transaction, so it wins over the URL saved in the Midtrans dashboard: payments started
+    from a developer's machine still notify the deployed site. Set it to an empty value to fall
+    back to the dashboard setting."""
+    return os.environ.get("MIDTRANS_NOTIFICATION_URL", "https://byaurelle.vercel.app/api/payments/midtrans/notification").strip() or None
+
+
 def database_url() -> str:
     """Postgres connection string.
 

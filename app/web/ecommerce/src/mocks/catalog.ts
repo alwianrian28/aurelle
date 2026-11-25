@@ -18,14 +18,14 @@ export const shippingServices: ShippingService[] = [
     id: 'ship-standard',
     courier: 'DHL',
     name: { id: 'Standar Internasional', en: 'International Standard' },
-    etaDays: '7–12',
+    etaDays: '7-12',
     costIdr: 285000,
   },
   {
     id: 'ship-express',
     courier: 'FedEx',
     name: { id: 'Ekspres Internasional', en: 'International Express' },
-    etaDays: '3–5',
+    etaDays: '3-5',
     costIdr: 540000,
   },
 ];
@@ -36,8 +36,8 @@ export const collections: Collection[] = [
     slug: 'aurora-heritage',
     name: { id: 'Aurora Heritage', en: 'Aurora Heritage' },
     story: {
-      id: 'Siluet klasik yang dihidupkan kembali dengan sentuhan kontemporer — garis bersih, proporsi presisi, dan kilau silver yang tenang.',
-      en: 'Classic silhouettes reimagined with a contemporary touch — clean lines, precise proportions, and a quiet silver glow.',
+      id: 'Siluet klasik yang dihidupkan kembali dengan sentuhan kontemporer: garis bersih, proporsi presisi, dan kilau silver yang tenang.',
+      en: 'Classic silhouettes reimagined with a contemporary touch: clean lines, precise proportions, and a quiet silver glow.',
     },
     banner: '/media/collections/aurora.jpg',
     // Ids of the generated catalog below (`jewelryDesigns[].file`); the first four are the page preview.
@@ -224,8 +224,8 @@ products.splice(0, products.length, ...jewelryDesigns.map((design, index): Produ
       id: `${design.file}-photo-${photoIndex + 1}`,
       src,
       alt: {
-        id: `${design.name} — foto ${photoIndex + 1}`,
-        en: `${src.split('/').pop()!.replace(/-\d+\.png$/, '').replace(/\.png$/, '')} — photo ${photoIndex + 1}`,
+        id: `${design.name}, foto ${photoIndex + 1}`,
+        en: `${src.split('/').pop()!.replace(/-\d+\.png$/, '').replace(/\.png$/, '')}, photo ${photoIndex + 1}`,
       },
     })),
     variants: template.variants.map((variant, i) => ({ ...variant, id: `${design.file}-${i}`, sku: `${slug.toUpperCase()}-${i}` })),

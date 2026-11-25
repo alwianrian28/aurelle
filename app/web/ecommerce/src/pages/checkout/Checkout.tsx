@@ -97,7 +97,8 @@ export default function Checkout() {
       return;
     }
     clear();
-    navigate(path(`/checkout/payment/${result.order.id}`), { replace: true });
+    // `pay` opens the payment popup on arrival, so the customer does not click twice.
+    navigate(path(`/checkout/payment/${result.order.id}`), { replace: true, state: { pay: true } });
   };
 
   const saveAddress = (draft: AddressDraft) => {
@@ -107,7 +108,7 @@ export default function Checkout() {
 
   const chrome = (content: React.ReactNode) => (
     <div className="co">
-      <title>{`${t('checkout.title')} — Aurelle`}</title>
+      <title>{`${t('checkout.title')} | Aurelle`}</title>
       <header className="co-bar">
         <div className="co__inner">
           <NavLink id="checkout-back" to={path('/cart')} className="co-bar__back"><ArrowLeftIcon />{t('checkout.backToBag')}</NavLink>
@@ -255,7 +256,7 @@ export default function Checkout() {
                 <span>{localized(variant?.label)}</span>
                 {(unavailable || exceedsStock) && <em>{t('cart.unavailable')}</em>}
               </div>
-              <span>{variant ? price(variant.priceIdr * item.qty) : '—'}</span>
+              <span>{variant ? price(variant.priceIdr * item.qty) : '-'}</span>
             </li>
           ))}
         </ul>

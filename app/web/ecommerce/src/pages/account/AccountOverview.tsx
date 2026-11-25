@@ -131,7 +131,7 @@ function CurrentOrder({ order }: { order: Order }) {
           <li key={step} className={index < at ? 'is-done' : index === at ? 'is-current' : ''} aria-current={index === at ? 'step' : undefined}>
             <span className="acct-steps__dot" aria-hidden="true">{index < at && <CheckIcon />}</span>
             <strong>{t(`acct.steps.${step}`)}</strong>
-            <small>{index <= at && reachedAt[index] ? date(reachedAt[index]!) : '—'}</small>
+            <small>{index <= at && reachedAt[index] ? date(reachedAt[index]!) : '-'}</small>
           </li>
         ))}
       </ol>

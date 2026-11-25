@@ -4,8 +4,9 @@ import Admin from './Admin';
 import type { User } from './types';
 
 /**
- * Staff dashboard shell: sign in, then the order and catalog desks. The session is the API's
- * httpOnly cookie; every admin endpoint checks the role again on the server.
+ * Staff dashboard shell: sign in, then the order and catalog desks. The dashboard has its own
+ * sign-in and session cookie, separate from the shop's, so a customer account in the same
+ * browser never signs the dashboard in (or out). Every admin endpoint checks the role again.
  */
 export default function App() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -14,15 +15,15 @@ export default function App() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { void api<{ user: User | null }>('/auth/me').then((res) => setUser(res.ok ? res.data.user : null)); }, []);
+  useEffect(() => { void api<{ user: User | null }>('/admin/auth/me').then((res) => setUser(res.ok ? res.data.user : null)); }, []);
 
-  const logout = async () => { setUser(null); await api('/auth/logout', { method: 'POST' }); };
+  const logout = async () => { setUser(null); await api('/admin/auth/logout', { method: 'POST' }); };
 
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError('');
-    const res = await api<{ user: User }>('/auth/login', { body: { email, password } });
+    const res = await api<{ user: User }>('/admin/auth/login', { body: { email, password } });
     setBusy(false);
     if (res.ok) { setPassword(''); setUser(res.data.user); }
     // Generic on purpose: never reveals whether the email exists.

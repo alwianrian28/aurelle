@@ -183,7 +183,7 @@ function OrderPanel({ order, notice, act, onClose }: {
           <button type="submit" id="admin-save-shipment">Save</button>
         </form>
         <p className="admin__hint">Click the map to pick a checkpoint location, name it, then add it.</p>
-        <TrackingMap points={tracking.points} draft={draft} onPick={(lat, lng) => setDraft({ lat, lng })} label="Tracking map — click to pick a location" />
+        <TrackingMap points={tracking.points} draft={draft} onPick={(lat, lng) => setDraft({ lat, lng })} label="Tracking map: click to pick a location" />
         <form className="admin__row" onSubmit={async (e) => {
           e.preventDefault();
           if (!draft) return;
@@ -195,7 +195,7 @@ function OrderPanel({ order, notice, act, onClose }: {
         </form>
         <ol className="admin__points">
           {tracking.points.map((p) => (
-            <li key={p.id}><span><strong>{p.label}</strong>{p.note && ` — ${p.note}`}<small>{when(p.at)}</small></span>
+            <li key={p.id}><span><strong>{p.label}</strong>{p.note && `: ${p.note}`}<small>{when(p.at)}</small></span>
               <button type="button" aria-label={`Remove checkpoint ${p.label}`} onClick={() => void act(`${base}/tracking/${p.id}`, 'DELETE')}>Remove</button></li>
           ))}
         </ol>
