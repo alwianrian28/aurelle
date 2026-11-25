@@ -52,7 +52,7 @@ function readSeen(): string[] {
  * current section. Orders are polled every 10 s so a new checkout shows up on its own. Access
  * is decided by the API (role = admin); this screen only reflects it.
  */
-export default function Admin({ user, onLogout }: { user: User; onLogout: () => void }) {
+export default function Admin({ user, onUser, onLogout }: { user: User; onUser: (user: User) => void; onLogout: () => void }) {
   const [route, setRoute] = useState<Route>(readRoute);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -179,7 +179,7 @@ export default function Admin({ user, onLogout }: { user: User; onLogout: () => 
             route.view === 'overview' ? <Overview go={go} />
               : route.view === 'orders' ? <Orders key={`${route.q ?? ''}|${route.tab ?? ''}`} orders={orders} setOrders={setOrders} reload={loadOrders} route={route} go={go} />
                 : route.view === 'customers' ? <Customers customers={customers} go={go} />
-                  : route.view === 'settings' ? <Settings user={user} />
+                  : route.view === 'settings' ? <Settings user={user} onUser={onUser} />
                     : route.view === 'collections' ? <Collections key={route.id ?? ''} collections={collections} products={products} loaded={catalogLoaded} setCatalog={setCatalog} route={route} go={go} />
                       : route.id === 'new' ? <ProductNew collections={collections} setCatalog={setCatalog} go={go} />
                         : route.id ? <ProductEdit key={route.id} product={products.find((p) => p.id === route.id)} collections={collections} loaded={catalogLoaded} setCatalog={setCatalog} go={go} />

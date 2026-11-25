@@ -318,6 +318,44 @@ def admin_me(user: Annotated[Row | None, Depends(current_admin)]):
     return {"user": public_user(user) if user else None}
 
 
+class AdminProfileIn(BaseModel):
+    username: str = Field(min_length=3, max_length=80)
+
+
+class AdminPasswordIn(BaseModel):
+    current: str = Field(max_length=200)
+    password: str = Field(min_length=12, max_length=72)  # same floor as create_admin
+
+
+@admin_router.patch("/profile")
+def admin_update_profile(body: AdminProfileIn, user: Admin, db: Db):
+    username = body.username.strip()
+    if len(username) < 3:
+        raise HTTPException(400, "invalid_input")
+    db.execute("UPDATE users SET username = ? WHERE id = ?", (username, user["id"]))
+    return {"user": public_user(_user_by_id(db, user["id"]))}
+
+
+@admin_router.post("/password")
+def admin_change_password(body: AdminPasswordIn, request: Request, user: Admin, db: Db, sid: Annotated[str | None, Cookie(alias=ADMIN_COOKIE)] = None):
+    """Needs the current password, so a dashboard left open cannot be used to take the account
+    over. Wrong guesses count against the same limit as sign-in. Every other session of this
+    account ends; the one making the change stays signed in."""
+    key = f"{request.client.host if request.client else '?'}|{user['email']}"
+    locked = login_limiter.locked_for(key)
+    if locked > 0:
+        raise HTTPException(429, {"error": "too_many_attempts", "retryAfterMs": int(locked * 1000)})
+    if password_too_long(body.password):
+        raise HTTPException(400, "invalid_input")
+    if not verify_password(body.current, user["password_hash"]):
+        login_limiter.fail(key)
+        raise HTTPException(403, "wrong_password")
+    login_limiter.reset(key)
+    db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(body.password), user["id"]))
+    db.execute("DELETE FROM sessions WHERE user_id = ? AND token_hash != ?", (user["id"], _admin_hash(sid or "")))
+    return {"ok": True}
+
+
 @router.post("/logout")
 def logout(db: Db, response: Response, sid: Annotated[str | None, Cookie(alias=COOKIE)] = None):
     if sid:

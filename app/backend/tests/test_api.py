@@ -273,6 +273,65 @@ def test_admin_adds_products_and_variants(api):
     assert admin.delete("/api/admin/variants/kalung-bar-0").json() == {"error": "last_variant"}
 
 
+def test_admin_edits_store_settings_and_shipping(api):
+    register(api)
+    assert api.patch("/api/admin/settings", json={"usdToIdr": 16_000}).status_code == 401
+    assert api.patch("/api/admin/shipping/ship-standard", json={"costIdr": 1}).status_code == 401
+    admin = make_admin(api)
+    for bad in ({"usdToIdr": 0}, {"reservationMinutes": 1}, {"servedCountries": []}, {"servedCountries": ["<b>"]}):
+        assert admin.patch("/api/admin/settings", json=bad).status_code == 400, bad
+
+    saved = admin.patch("/api/admin/settings", json={"usdToIdr": 16_250, "reservationMinutes": 45, "servedCountries": ["Indonesia", " Japan ", "Indonesia"]}).json()
+    assert (saved["usdToIdr"], saved["reservationMinutes"], saved["servedCountries"]) == (16_250, 45, ["Indonesia", "Japan"])
+    shop = api.get("/api/catalog").json()
+    assert (shop["usdToIdr"], shop["servedCountries"]) == (16_250, ["Indonesia", "Japan"])
+    # Checkout follows at once: Singapore is no longer served, and the new window is the one that runs.
+    assert api.post("/api/orders", json={**order_body("ord-nosg0000"), "address": {**ADDRESS, "country": "Singapore"}}).json() == {"error": "country_not_served"}
+    order = api.post("/api/orders", json=order_body("ord-window00", qty=1)).json()["order"]
+    left = datetime.fromisoformat(order["reservationExpiresAt"].replace("Z", "+00:00")) - datetime.now(timezone.utc)
+    assert timedelta(minutes=44) < left <= timedelta(minutes=45)
+
+    assert admin.patch("/api/admin/shipping/nope", json={"costIdr": 1}).status_code == 404
+    assert admin.patch("/api/admin/shipping/ship-standard", json={"etaDays": "12-7"}).status_code == 400
+    assert admin.patch("/api/admin/shipping/ship-standard", json={"etaDays": "soon"}).status_code == 400
+    edited = admin.patch("/api/admin/shipping/ship-standard", json={"courier": "JNE", "nameEn": "Standard", "etaDays": "5-9", "costIdr": 250_000}).json()
+    service = next(s for s in edited["shippingServices"] if s["id"] == "ship-standard")
+    assert (service["courier"], service["name"]["en"], service["etaDays"], service["costIdr"]) == ("JNE", "Standard", "5-9", 250_000)
+    assert service["name"]["id"]  # the Indonesian name was not sent, so it stays
+    # The seeded services write their range with an en dash; saving one unchanged must still pass.
+    express = next(s for s in edited["shippingServices"] if s["id"] == "ship-express")
+    assert "–" in express["etaDays"] and admin.patch("/api/admin/shipping/ship-express", json={"etaDays": express["etaDays"], "costIdr": 500_000}).status_code == 200
+    assert admin.patch("/api/admin/shipping/ship-express", json={"etaDays": "9–2"}).status_code == 400
+    assert api.post("/api/catalog/quote", json={"items": [{"variantId": RING, "qty": 1}], "shippingServiceId": "ship-standard"}).json()["costs"]["shipping"] == 250_000
+    assert order["costs"]["shipping"] == 285_000  # the order placed before the change keeps its price
+
+    from app.db import connect
+
+    db = connect()
+    logged = [tuple(r.values()) for r in db.execute("SELECT entity, entity_id FROM catalog_audit ORDER BY id")]
+    db.close()
+    assert logged[:3] == [("setting", "usd_to_idr"), ("setting", "reservation_minutes"), ("setting", "served_countries")] and ("shipping", "ship-standard") in logged
+
+
+def test_admin_changes_own_name_and_password(api):
+    admin = make_admin(api)
+    assert api.patch("/api/admin/auth/profile", json={"username": "Mallory"}).status_code == 401
+    assert admin.patch("/api/admin/auth/profile", json={"username": "  "}).status_code == 400
+    assert admin.patch("/api/admin/auth/profile", json={"username": "Aurelle Owner"}).json()["user"]["username"] == "Aurelle Owner"
+
+    elsewhere = TestClient(api.app)  # the same admin, signed in on another device
+    assert elsewhere.post("/api/admin/auth/login", json={"email": "admin@example.com", "password": "admin-password-1"}).status_code == 200
+    new = {"current": "admin-password-1", "password": "a-brand-new-password"}
+    assert admin.post("/api/admin/auth/password", json={**new, "current": "wrong"}).json() == {"error": "wrong_password"}
+    assert admin.post("/api/admin/auth/password", json={**new, "password": "short"}).status_code == 400
+    assert admin.post("/api/admin/auth/password", json=new).json() == {"ok": True}
+    assert admin.get("/api/admin/auth/me").json()["user"]["username"] == "Aurelle Owner"  # this session stays
+    assert elsewhere.get("/api/admin/auth/me").json()["user"] is None  # every other one ends
+    fresh = TestClient(api.app)
+    assert fresh.post("/api/admin/auth/login", json={"email": "admin@example.com", "password": "admin-password-1"}).status_code == 401
+    assert fresh.post("/api/admin/auth/login", json={"email": "admin@example.com", "password": "a-brand-new-password"}).status_code == 200
+
+
 def test_admin_uploads_photos(api):
     register(api)
     png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64

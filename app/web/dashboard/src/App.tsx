@@ -31,7 +31,7 @@ export default function App() {
   };
 
   if (user === undefined) return <div className="login"><p style={{ color: '#555f6d' }}>Loading…</p></div>;
-  if (user?.role === 'admin') return <Admin user={user} onLogout={() => void logout()} />;
+  if (user?.role === 'admin') return <Admin user={user} onUser={setUser} onLogout={() => void logout()} />;
 
   return (
     <div className="login">

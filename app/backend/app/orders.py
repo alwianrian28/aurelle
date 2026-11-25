@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field, StrictInt
 
 from .auth import Admin, Db, User, now_iso
-from .catalog import RESERVATION_MINUTES, TERMS_VERSION, cost_breakdown, held_stock, served_countries, shipping_service, usd_to_idr
+from .catalog import TERMS_VERSION, cost_breakdown, held_stock, reservation_minutes, served_countries, shipping_service, usd_to_idr
 from .config import is_prod
 from .db import Database, IntegrityError, Row
 from .security import Limiter
@@ -253,7 +253,7 @@ def create_order(body: OrderIn, user: User, db: Db, response: Response):
 
     now = now_iso()
     costs = cost_breakdown(sum(l["qty"] * l["unitPriceIdr"] for l in lines), service["cost_idr"])
-    expires = datetime.now(timezone.utc) + timedelta(minutes=RESERVATION_MINUTES)
+    expires = datetime.now(timezone.utc) + timedelta(minutes=reservation_minutes(db))
     data = {
         "type": "ready_stock", "items": lines, "costs": costs,
         # Snapshots: later edits to the address book or the catalog never change this order.

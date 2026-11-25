@@ -24,7 +24,7 @@ SEED = Path(__file__).parent / "seed" / "catalog.json"
 STOCK_HOLDING = ("awaiting_payment", "confirmed", "preparing", "ready_to_ship", "shipped", "delivered", "pending_decision")
 # The part of STOCK_HOLDING that is only a reservation: not paid for yet, may still be released.
 RESERVED_ONLY = ("awaiting_payment", "pending_decision")
-RESERVATION_MINUTES = 30  # OD-08 is still open; 30 minutes is the working default
+RESERVATION_MINUTES = 30  # default until an admin sets another window in the dashboard (OD-08)
 TERMS_VERSION = "rs-terms-draft-2026-10"
 
 
@@ -95,6 +95,12 @@ def reserved_stock(db: Database) -> dict[str, int]:
 
 def served_countries(db: Database) -> list[str]:
     return json.loads(db.execute("SELECT value FROM settings WHERE name = 'served_countries'").fetchone()[0])
+
+
+def reservation_minutes(db: Database) -> int:
+    """How long an unpaid order keeps its stock. Applies to orders placed from now on."""
+    row = db.execute("SELECT value FROM settings WHERE name = 'reservation_minutes'").fetchone()
+    return int(row[0]) if row else RESERVATION_MINUTES
 
 
 def usd_to_idr(db: Database) -> int:
@@ -224,6 +230,21 @@ class CollectionPatch(BaseModel):
     banner: MediaSrc | Literal[""] | None = None
     active: bool | None = None
     productIds: list[str] | None = Field(default=None, max_length=200)
+
+
+class SettingsPatch(BaseModel):
+    usdToIdr: int | None = Field(default=None, ge=1_000, le=100_000)
+    reservationMinutes: int | None = Field(default=None, ge=5, le=1440)
+    servedCountries: list[Annotated[str, Field(min_length=2, max_length=80, pattern=r"^[^<>\"]+$")]] | None = Field(default=None, min_length=1, max_length=60)
+
+
+class ShippingPatch(BaseModel):
+    courier: str | None = Field(default=None, min_length=2, max_length=60)
+    nameEn: str | None = Field(default=None, min_length=2, max_length=80)
+    nameId: str | None = Field(default=None, min_length=2, max_length=80)
+    # "7-12" or "3": days, shown to the customer as an estimate. The seeded services use an en dash.
+    etaDays: str | None = Field(default=None, pattern=r"^\d{1,2}([-–]\d{1,2})?$")
+    costIdr: int | None = Field(default=None, ge=0, le=10**9)
 
 
 class ProductPatch(BaseModel):
@@ -359,15 +380,62 @@ def _admin_products(db: Database) -> dict:
     return {"products": products, "collections": list(collections.values())}
 
 
-@admin.get("/settings")
-def store_settings(_: Admin, db: Db):
-    """Read-only store rules shown on the dashboard's settings page."""
+def _store_settings(db: Database) -> dict:
     return {
         "usdToIdr": usd_to_idr(db),
         "servedCountries": served_countries(db),
-        "reservationMinutes": RESERVATION_MINUTES,
+        "reservationMinutes": reservation_minutes(db),
         "shippingServices": [shipping_service(s) for s in db.execute("SELECT * FROM shipping_services ORDER BY sort").fetchall()],
     }
+
+
+@admin.get("/settings")
+def store_settings(_: Admin, db: Db):
+    """The store rules checkout applies, as the dashboard's settings page shows and edits them."""
+    return _store_settings(db)
+
+
+@admin.patch("/settings")
+def update_settings(body: SettingsPatch, user: Admin, db: Db):
+    """Changes apply to what happens next: orders already placed keep the rate, the
+    reservation window and the address they were placed with."""
+    changes: list[tuple[str, object, str]] = []
+    if body.usdToIdr is not None and body.usdToIdr != usd_to_idr(db):
+        changes.append(("usd_to_idr", usd_to_idr(db), str(body.usdToIdr)))
+    if body.reservationMinutes is not None and body.reservationMinutes != reservation_minutes(db):
+        changes.append(("reservation_minutes", reservation_minutes(db), str(body.reservationMinutes)))
+    if body.servedCountries is not None:
+        countries = list(dict.fromkeys(c.strip() for c in body.servedCountries if c.strip()))
+        if not countries:
+            raise HTTPException(400, "invalid_input")
+        if countries != served_countries(db):
+            changes.append(("served_countries", ", ".join(served_countries(db)), json.dumps(countries)))
+    for name, old, value in changes:
+        db.execute("INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value", (name, value))
+        _audit(db, user, "setting", name, "value", old, ", ".join(json.loads(value)) if name == "served_countries" else value)
+    return _store_settings(db)
+
+
+@admin.patch("/shipping/{service_id}")
+def update_shipping(service_id: str, body: ShippingPatch, user: Admin, db: Db):
+    """Orders keep the shipping service they were placed with; this changes what new checkouts are offered."""
+    row = db.execute("SELECT * FROM shipping_services WHERE id = ? FOR UPDATE", (service_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "not_found")
+    name = json.loads(row["name"])
+    new_name = {"id": (body.nameId or name["id"]).strip(), "en": (body.nameEn or name["en"]).strip()}
+    wanted = {
+        "courier": (body.courier or row["courier"]).strip(), "name": json.dumps(new_name),
+        "eta_days": body.etaDays or row["eta_days"], "cost_idr": row["cost_idr"] if body.costIdr is None else body.costIdr,
+    }
+    days = [int(n) for n in re.split("[-–]", wanted["eta_days"])]
+    if days != sorted(days):
+        raise HTTPException(400, "invalid_input")
+    for column, value in wanted.items():
+        if value != row[column]:
+            _audit(db, user, "shipping", service_id, column, row[column], value)
+    db.execute("UPDATE shipping_services SET courier = ?, name = ?, eta_days = ?, cost_idr = ? WHERE id = ?", (*wanted.values(), service_id))
+    return _store_settings(db)
 
 
 @admin.get("/products")

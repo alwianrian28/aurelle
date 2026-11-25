@@ -32,6 +32,9 @@ export const SAVE_ERROR: Record<string, string> = {
   invalid_input: 'Some values are missing or not valid. Check the form and try again.',
   conflict: 'That name was just taken. Try again.',
   network: 'Could not reach the server.',
+  wrong_password: 'The current password is not right.',
+  too_many_attempts: 'Too many attempts. Wait a minute, then try again.',
+  unauthenticated: 'You are signed out. Reload the page and sign in again.',
   too_large: 'That photo is too large, even after shrinking. Try a smaller one.',
   not_an_image: 'That file is not a JPEG, PNG or WebP photo.',
 };

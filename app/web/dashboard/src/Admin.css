@@ -339,6 +339,25 @@
 .upload__error { flex-basis: 100%; margin-top: 0; }
 .tracking-map--loading { display: grid; place-items: center; height: 320px; border: 1px solid var(--line); border-radius: 8px; background: var(--fill); color: var(--soft); font-size: 13px; }
 
+/* Settings forms */
+.settings .card > .muted { margin: -8px 0 4px; }
+.settings .notice { margin: 0 0 14px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.form-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.form-grid .field + .field { margin-top: 0; }
+.form-grid + .form-grid, .form-grid + .field { margin-top: 16px; }
+.form-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.form-actions .pill { margin-right: auto; }
+.field__note { color: var(--soft); font-size: 12.5px; font-weight: 400; }
+.field input[readonly] { background: var(--fill); color: var(--soft); }
+.field .money { width: 100%; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 6px; }
+.chips li { display: inline-flex; align-items: center; gap: 4px; padding: 4px 4px 4px 12px; border-radius: 999px; background: var(--fill); font-weight: 400; }
+.chips button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: none; }
+.chips button:hover:not(:disabled) { background: #dfe1e5; }
+.chips button:disabled { opacity: .35; }
+.service { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+
 /* ------------------------------------------------------------ responsive
    Laptop and up: side navigation beside the content, tables as tables.
    <= 1180px: side columns drop under the main column.
@@ -408,8 +427,8 @@
   .media__cover { opacity: 1; }
   .variant-new { padding: 2px 16px 16px; }
   .picked li { gap: 8px; }
-  .settings .summary > div { flex-direction: column; gap: 2px; }
-  .settings .summary dd { text-align: left; }
+  .form-grid, .form-grid--3 { grid-template-columns: minmax(0, 1fr); }
+  .form-actions .btn { flex: 1 1 auto; }
 
   /* Tables with many columns: one card per row, each cell labelled (labels are set per table below). */
   .table--cards, .table--cards tbody, .table--cards tr, .table--cards td { display: block; }

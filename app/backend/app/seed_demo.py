@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 
-from .catalog import RESERVATION_MINUTES, TERMS_VERSION, cost_breakdown, held_stock, shipping_service
+from .catalog import TERMS_VERSION, cost_breakdown, held_stock, reservation_minutes, shipping_service
 from .config import database_url, is_prod
 from .db import Database, connect, init_db
 
@@ -75,6 +75,7 @@ def seed(db: Database) -> tuple[int, int]:
         "SELECT v.id, v.label, v.price_idr, v.stock, p.data FROM variants v JOIN products p ON p.id = v.product_id WHERE p.active = 1 ORDER BY p.sort, v.sort"
     ).fetchall()
     held = held_stock(db)
+    window = timedelta(minutes=reservation_minutes(db))
     left = {v["id"]: v["stock"] - held.get(v["id"], 0) for v in variants}
 
     users = []
@@ -107,7 +108,7 @@ def seed(db: Database) -> tuple[int, int]:
         service = services[n % len(services)]
         costs = cost_breakdown(sum(line["unitPriceIdr"] for line in lines), service["cost_idr"])
         # Only the order still waiting for payment has a reservation that is running.
-        expires = now + timedelta(minutes=RESERVATION_MINUTES) if outcome == "unpaid" else placed + timedelta(minutes=RESERVATION_MINUTES)
+        expires = now + window if outcome == "unpaid" else placed + window
         data = {
             "type": "ready_stock", "items": lines, "costs": costs,
             "addressSnapshot": {
