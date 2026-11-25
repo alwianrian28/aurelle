@@ -3624,5 +3624,57 @@
   "Malaysia",
   "United States",
   "Australia"
+ ],
+ "collections": [
+  {
+   "id": "col-aurora",
+   "slug": "aurora-heritage",
+   "name": {
+    "id": "Aurora Heritage",
+    "en": "Aurora Heritage"
+   },
+   "story": {
+    "id": "Siluet klasik yang dihidupkan kembali dengan sentuhan kontemporer: garis bersih, proporsi presisi, dan kilau silver yang tenang.",
+    "en": "Classic silhouettes reimagined with a contemporary touch: clean lines, precise proportions, and a quiet silver glow."
+   },
+   "banner": "/media/collections/aurora.jpg",
+   "productIds": [
+    "cincin-oval",
+    "kalung-solitaire",
+    "anting-stud",
+    "gelang-tennis",
+    "cincin-solitaire",
+    "kalung-lingkar",
+    "anting-drop",
+    "cincin-eternity",
+    "kalung-hati",
+    "cincin-halo"
+   ]
+  },
+  {
+   "id": "col-noir",
+   "slug": "noir-mineral",
+   "name": {
+    "id": "Noir Mineral",
+    "en": "Noir Mineral"
+   },
+   "story": {
+    "id": "Material campuran dan batu alami bertekstur gelap, dirancang untuk yang menyukai keanggunan yang lebih berani.",
+    "en": "Mixed materials and dark-toned natural stones, designed for those who favor a bolder elegance."
+   },
+   "banner": "/media/collections/noir.jpg",
+   "productIds": [
+    "cincin-pilin",
+    "gelang-cuff",
+    "kalung-bar",
+    "anting-climber",
+    "cincin-bypass-pave",
+    "gelang-bangle-pave",
+    "kalung-station",
+    "anting-huggie",
+    "cincin-terbuka",
+    "gelang-bola"
+   ]
+  }
  ]
 }

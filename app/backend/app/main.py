@@ -7,15 +7,16 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, catalog, orders, payments
+from . import auth, catalog, media, orders, payments
 from .config import app_origins, is_prod, media_dir
-from .db import init_db
+from .db import close_pool, init_db
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
     yield
+    close_pool()
 
 
 def create_app() -> FastAPI:
@@ -55,6 +56,8 @@ def create_app() -> FastAPI:
     app.include_router(orders.customer)
     app.include_router(orders.admin)
     app.include_router(payments.router)
+    app.include_router(media.router)
+    app.include_router(media.admin)
     # Product photos for the mobile app in development. In production they belong on object
     # storage / a CDN (PRD §9), so nothing is mounted there.
     if not is_prod() and os.path.isdir(media_dir()):

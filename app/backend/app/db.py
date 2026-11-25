@@ -1,4 +1,6 @@
-"""Postgres access (Supabase in production). One connection per request; money is stored as integer rupiah."""
+"""Postgres access (Supabase in production, the docker-compose Postgres locally). Each request
+borrows a connection from a small pool; money is stored as integer rupiah."""
+import threading
 import time
 from collections.abc import Iterator, Sequence
 from typing import Any
@@ -69,6 +71,34 @@ SCHEMA = [
       CONSTRAINT variants_stock CHECK (stock >= 0)
     )""",
     "CREATE INDEX IF NOT EXISTS variants_product ON variants (product_id)",
+    # Curated groups of products, each with a story and a banner; `data` holds the texts.
+    """CREATE TABLE IF NOT EXISTS collections (
+      id VARCHAR(80) PRIMARY KEY,
+      slug VARCHAR(120) NOT NULL UNIQUE,
+      active SMALLINT NOT NULL DEFAULT 1,
+      sort INT NOT NULL,
+      data TEXT NOT NULL
+    )""",
+    # Which products a collection shows, in the order the admin arranged them.
+    """CREATE TABLE IF NOT EXISTS collection_products (
+      collection_id VARCHAR(80) NOT NULL,
+      product_id VARCHAR(80) NOT NULL,
+      sort INT NOT NULL,
+      PRIMARY KEY (collection_id, product_id),
+      FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )""",
+    "CREATE INDEX IF NOT EXISTS collection_products_product ON collection_products (product_id)",
+    # Photos uploaded from the dashboard. Kept in the database so the API needs no disk of its
+    # own (it runs on serverless hosts); served at /api/media/<id>.<ext> with a long cache life.
+    """CREATE TABLE IF NOT EXISTS media_files (
+      id VARCHAR(40) PRIMARY KEY,
+      content_type VARCHAR(40) NOT NULL,
+      data BYTEA NOT NULL,
+      size INT NOT NULL,
+      actor VARCHAR(60) NOT NULL,
+      created_at VARCHAR(32) NOT NULL
+    )""",
     """CREATE TABLE IF NOT EXISTS shipping_services (
       id VARCHAR(80) PRIMARY KEY,
       courier VARCHAR(60) NOT NULL,
@@ -144,7 +174,7 @@ SCHEMA = [
     )""",
 ]
 
-TABLES = ("users", "sessions", "tokens", "products", "variants", "shipping_services", "settings", "orders", "order_items", "order_events", "tracking_points", "catalog_audit")
+TABLES = ("users", "sessions", "tokens", "products", "variants", "collections", "collection_products", "shipping_services", "settings", "media_files", "orders", "order_items", "order_events", "tracking_points", "catalog_audit")
 
 
 class Row(dict):
@@ -184,6 +214,11 @@ class Database:
     def close(self) -> None:
         self._conn.close()
 
+    @property
+    def broken(self) -> bool:
+        """True once the connection can no longer be used (closed here, or lost)."""
+        return self._conn.closed or self._conn.broken
+
 
 def connect() -> Database:
     # Postgres runs READ COMMITTED by default: once a checkout holds the row locks on its
@@ -215,8 +250,8 @@ def init_db(retries: int = 30) -> None:
                 raise
             time.sleep(2)
     try:
-        for statement in SCHEMA:
-            db.execute(statement)
+        # One round trip for the whole schema: the database can be far away (see `get_db`).
+        db.execute(";\n".join(SCHEMA))
         _lock_out_data_api(db)
         from .catalog import seed_catalog  # late import: catalog depends on this module
 
@@ -226,14 +261,60 @@ def init_db(retries: int = 30) -> None:
         db.close()
 
 
+# Opening a connection costs a TCP + TLS + login exchange with a database that may be on another
+# continent (about a second to Supabase from Indonesia), so finished requests hand theirs back
+# and the next request reuses it. Quiet connections are not trusted for long: poolers and
+# serverless hosts drop them without telling the client.
+POOL_SIZE = 5
+IDLE_SECONDS = 45
+_idle: list[tuple[str, float, Database]] = []
+_pool_lock = threading.Lock()
+
+
+def _borrow() -> Database:
+    url, now = database_url(), time.monotonic()
+    with _pool_lock:
+        while _idle:
+            made_for, since, db = _idle.pop()
+            if made_for == url and now - since < IDLE_SECONDS and not db.broken:
+                return db
+            _close_quietly(db)
+    return connect()
+
+
+def _hand_back(db: Database) -> None:
+    with _pool_lock:
+        if not db.broken and len(_idle) < POOL_SIZE:
+            _idle.append((database_url(), time.monotonic(), db))
+            return
+    _close_quietly(db)
+
+
+def _close_quietly(db: Database) -> None:
+    try:
+        db.close()
+    except Exception:  # noqa: BLE001 - already unusable; nothing more to do with it
+        pass
+
+
+def close_pool() -> None:
+    """Close every idle connection (application shutdown)."""
+    with _pool_lock:
+        while _idle:
+            _close_quietly(_idle.pop()[2])
+
+
 def get_db() -> Iterator[Database]:
     """FastAPI dependency: commit on success, roll back on error."""
-    db = connect()
+    db = _borrow()
     try:
         yield db
         db.commit()
     except Exception:
-        db.rollback()
+        try:
+            db.rollback()
+        except Exception:  # noqa: BLE001 - the connection is gone; the original error is the one to report
+            _close_quietly(db)
         raise
     finally:
-        db.close()
+        _hand_back(db)

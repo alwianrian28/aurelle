@@ -1,98 +1,126 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
-import type { OrderStatus } from './types';
+import { FulfillmentPill, Icon, PaymentPill, Select, Thumb } from './ui';
+import { downloadCsv, idr, idrShort, plural, todayLong } from './lib';
+import type { IconName } from './ui';
+import type { Go, OverviewData, Route } from './types';
 
-interface OverviewData {
-  today: { orders: number; paidIdr: number };
-  week: { orders: number; paidIdr: number };
-  awaitingPayment: number;
-  toProcess: number;
-  shipped: number;
-  customers: number;
-  daily: { date: string; orders: number; paidIdr: number }[];
-  lowStock: { sku: string; product: string; variant: string; available: number }[];
-  lowStockTotal: number;
-  topProducts: { product: string; variant: string; qty: number }[];
-  latestOrders: { id: string; number: string; status: OrderStatus; paymentStatus: string; totalIdr: number; createdAt: string }[];
-}
+type Days = '7' | '30' | '90';
+const dayLabel = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', weekday: 'short' });
+const longDate = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
-const STATUS: Record<OrderStatus, string> = {
-  awaiting_payment: 'Awaiting payment', confirmed: 'Confirmed', preparing: 'Preparing', ready_to_ship: 'Ready to ship',
-  shipped: 'Shipped', delivered: 'Delivered', cancelled: 'Cancelled', pending_decision: 'Needs decision',
-};
-const idr = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
-/** Compact rupiah for axis and bar labels: 3.7M / 850K. */
-const short = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 1 })}M` : n >= 1000 ? `${Math.round(n / 1000)}K` : String(n));
-const dayLabel = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
-const when = (iso: string) => new Date(iso).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-
-/** Dashboard home: today's numbers, 7-day revenue, and what needs attention. Refreshes every 30 s. */
-export default function Overview({ onOpenOrders, onOpenProducts }: { onOpenOrders: () => void; onOpenProducts: () => void }) {
+/** Dashboard home: the period's numbers, paid revenue per day, and what needs attention. Refreshes every 30 s. */
+export default function Overview({ go }: { go: Go }) {
+  const [days, setDays] = useState<Days>('7');
   const [data, setData] = useState<OverviewData | null>(null);
   const [failed, setFailed] = useState(false);
+  const [asTable, setAsTable] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await api<OverviewData>('/admin/overview');
+    const res = await api<OverviewData>(`/admin/overview?days=${days}`);
     setFailed(!res.ok);
     if (res.ok) setData(res.data);
-  }, []);
+  }, [days]);
   useEffect(() => {
     const first = window.setTimeout(() => void load(), 0);
     const id = window.setInterval(() => void load(), 30_000);
     return () => { window.clearTimeout(first); window.clearInterval(id); };
   }, [load]);
 
-  if (!data) return <p className="admin__empty" role={failed ? 'alert' : undefined}>{failed ? 'Could not load the overview. Make sure the backend is running.' : 'Loading…'}</p>;
+  if (!data) return <p className="empty" role={failed ? 'alert' : undefined}>{failed ? 'Could not load the overview. Make sure the backend is running.' : 'Loading…'}</p>;
+
+  const n = data.period.days;
+  const soldOut = data.lowStock.filter((v) => v.available === 0);
+  const low = data.lowStockTotal - data.soldOutTotal;
+  const names = (items: OverviewData['lowStock'], total: number) => {
+    const shown = items.slice(0, 3).map((v) => `${v.product} ${v.variant}`).join(', ');
+    return total > 3 ? `${shown} and ${total - 3} more.` : `${shown}.`;
+  };
+  const attention: { icon: IconName; tone: string; title: string; text: string; action: string; to: Route }[] = [
+    ...(data.toProcess > 0 ? [{ icon: 'truck' as const, tone: 'amber', title: `${plural(data.toProcess, 'order')} to ship`, text: 'Paid and waiting to be packed.', action: 'Go to orders', to: { view: 'orders' as const, tab: 'toship' } }] : []),
+    ...(data.awaitingPayment > 0 ? [{ icon: 'receipt' as const, tone: 'grey', title: `${plural(data.awaitingPayment, 'order')} awaiting payment`, text: 'Stock is held until the reservation window ends.', action: data.awaitingPayment === 1 ? 'View order' : 'View orders', to: { view: 'orders' as const, tab: 'awaiting' } }] : []),
+    ...(data.soldOutTotal > 0 ? [{ icon: 'box' as const, tone: 'red', title: `${plural(data.soldOutTotal, 'variant')} sold out`, text: names(soldOut, data.soldOutTotal), action: 'Restock', to: { view: 'products' as const, tab: 'restock' } }] : []),
+    ...(low > 0 ? [{ icon: 'box' as const, tone: 'amber', title: `${plural(low, 'variant')} low on stock`, text: '2 or fewer left to sell.', action: 'Review stock', to: { view: 'products' as const } }] : []),
+  ];
+
+  const exportCsv = () => downloadCsv(`aurelle-overview-${n}d`, [['Date', 'Orders received', 'Paid revenue (IDR)'], ...data.daily.map((d) => [d.date, d.orders, d.paidIdr])]);
 
   return (
     <>
-      <h1 className="admin__title">Overview</h1>
-      <dl className="admin__tiles admin__tiles--overview">
-        <div><dt>Revenue today</dt><dd id="kpi-today">{idr(data.today.paidIdr)}</dd><small>{data.today.orders} orders received</small></div>
-        <div><dt>Revenue, 7 days</dt><dd>{idr(data.week.paidIdr)}</dd><small>{data.week.orders} orders received</small></div>
-        <div><dt>To process</dt><dd id="kpi-process">{data.toProcess}</dd><small>paid, not yet shipped</small></div>
-        <div><dt>Awaiting payment</dt><dd>{data.awaitingPayment}</dd><small>{data.shipped} in transit</small></div>
+      <div className="page-head">
+        <div><h1>Overview</h1><p>{todayLong()}</p></div>
+        <div className="page-head__actions">
+          <Select id="overview-period" label="Period" value={days} onChange={setDays} options={[['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days']]} />
+          <button type="button" id="overview-export" className="btn" onClick={exportCsv}><Icon name="download" />Export</button>
+        </div>
+      </div>
+
+      <dl className="tiles">
+        <div><dt>Paid revenue</dt><dd id="kpi-revenue" title={idr(data.period.paidIdr)}>{idrShort(data.period.paidIdr)}</dd><small>{plural(data.period.paidOrders, 'paid order')}</small></div>
+        <div><dt>Orders</dt><dd id="kpi-orders">{data.period.orders}</dd><small>Last {n} days</small></div>
+        <div><dt>To ship</dt><dd id="kpi-process">{data.toProcess}</dd><small>Paid, not shipped</small></div>
+        <div><dt>Awaiting payment</dt><dd id="kpi-awaiting">{data.awaitingPayment}</dd><small>{data.awaitingPayment > 0 ? `${idrShort(data.awaitingPaymentIdr)} held` : 'Nothing on hold'}</small></div>
       </dl>
 
-      <div className="admin__grid">
-        <section className="admin__card admin__card--wide" aria-labelledby="chart-title">
-          <h2 id="chart-title">Paid revenue, last 7 days</h2>
-          <RevenueChart daily={data.daily} />
+      <div className="grid">
+        <section className="card" aria-labelledby="chart-title">
+          <div className="card__head"><h2 id="chart-title">Paid revenue, last {n} days</h2><button type="button" className="link" aria-pressed={asTable} onClick={() => setAsTable((v) => !v)}>{asTable ? 'View as chart' : 'View as table'}</button></div>
+          {asTable ? (
+            <div className="table-wrap table-wrap--short">
+              <table className="table">
+                <thead><tr><th>Day</th><th className="num">Orders received</th><th className="num">Paid revenue</th></tr></thead>
+                <tbody>{data.daily.map((d) => <tr key={d.date}><td>{longDate(d.date)}</td><td className="num">{d.orders}</td><td className="num">{idr(d.paidIdr)}</td></tr>)}</tbody>
+              </table>
+            </div>
+          ) : <RevenueChart daily={data.daily} />}
         </section>
 
-        <section className="admin__card" aria-labelledby="latest-title">
-          <div className="admin__card-head"><h2 id="latest-title">Latest orders</h2><button type="button" className="admin__link" onClick={onOpenOrders}>View all</button></div>
-          {data.latestOrders.length === 0 ? <p className="admin__muted">No orders yet.</p> : (
-            <ul className="admin__list">
-              {data.latestOrders.map((o) => (
-                <li key={o.id}><span><strong>{o.number}</strong><small>{when(o.createdAt)}</small></span><span className="admin__list-end">{idr(o.totalIdr)}<span className={`admin__pill admin__pill--${o.status}`}>{STATUS[o.status]}</span></span></li>
+        <section className="card" aria-labelledby="attention-title">
+          <div className="card__head"><h2 id="attention-title">Needs attention</h2></div>
+          {attention.length === 0 ? <p className="muted">Nothing needs you right now.</p> : (
+            <ul className="attention">
+              {attention.map((a) => (
+                <li key={a.title}>
+                  <span className={`chip chip--lg chip--${a.tone}`}><Icon name={a.icon} size={18} /></span>
+                  <span><strong>{a.title}</strong><small>{a.text}</small></span>
+                  <button type="button" className="link" onClick={() => go(a.to)}>{a.action}</button>
+                </li>
               ))}
             </ul>
           )}
         </section>
 
-        <section className="admin__card" aria-labelledby="stock-title">
-          <div className="admin__card-head"><h2 id="stock-title">Low stock</h2><button type="button" className="admin__link" onClick={onOpenProducts}>Manage stock</button></div>
-          {data.lowStock.length === 0 ? <p className="admin__muted">Every variant has more than 2 in stock.</p> : (
-            <>
-              <ul className="admin__list">
-                {data.lowStock.map((v) => (
-                  <li key={v.sku}><span><strong>{v.product}</strong><small>{v.variant} · {v.sku}</small></span><span className={`admin__pill ${v.available === 0 ? 'admin__pill--cancelled' : 'admin__pill--unpaid'}`}>{v.available === 0 ? 'Sold out' : `${v.available} left`}</span></li>
-                ))}
-              </ul>
-              {data.lowStockTotal > data.lowStock.length && <p className="admin__muted">+{data.lowStockTotal - data.lowStock.length} more variants with stock ≤ 2.</p>}
-            </>
+        <section className="card card--flush" aria-labelledby="latest-title">
+          <div className="card__head"><h2 id="latest-title">Latest orders</h2><button type="button" className="link link--arrow" onClick={() => go({ view: 'orders' })}>View all<Icon name="arrowRight" size={14} /></button></div>
+          {data.latestOrders.length === 0 ? <p className="muted">No orders yet.</p> : (
+            <div className="table-wrap">
+              <table className="table table--cards t-latest">
+                <thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th><th>Fulfillment</th></tr></thead>
+                <tbody>
+                  {data.latestOrders.map((o) => (
+                    <tr key={o.id}>
+                      <td><button type="button" className="table__key" onClick={() => go({ view: 'orders', id: o.id })}>{o.number}</button></td>
+                      <td className="soft nowrap">{o.customer ?? '—'}</td>
+                      <td className="nowrap">{idr(o.totalIdr)}</td>
+                      <td><PaymentPill status={o.paymentStatus} /></td>
+                      <td><FulfillmentPill status={o.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
 
-        <section className="admin__card" aria-labelledby="top-title">
-          <h2 id="top-title">Best sellers (paid orders)</h2>
-          {data.topProducts.length === 0 ? <p className="admin__muted">No sales yet.</p> : (
-            <ul className="admin__list">
-              {data.topProducts.map((p, i) => <li key={i}><span><strong>{p.product}</strong><small>{p.variant}</small></span><span>{p.qty} sold</span></li>)}
+        <section className="card" aria-labelledby="top-title">
+          <div className="card__head"><h2 id="top-title">Best sellers</h2></div>
+          {data.topProducts.length === 0 ? <p className="muted">No paid orders yet.</p> : (
+            <ul className="sellers">
+              {data.topProducts.map((p) => (
+                <li key={p.productId}><Thumb src={p.thumb} size={40} /><button type="button" className="sellers__name" onClick={() => go({ view: 'products', id: p.productId })}>{p.product}</button><span className="soft">{p.qty} sold</span></li>
+              ))}
             </ul>
           )}
-          <p className="admin__muted">{data.customers} registered customers.</p>
         </section>
       </div>
     </>
@@ -101,54 +129,59 @@ export default function Overview({ onOpenOrders, onOpenProducts }: { onOpenOrder
 
 /**
  * Single-series bar chart (one measure, one hue): bars anchored to the baseline with rounded
- * tops, recessive gridlines, a hover/focus tooltip per day, the peak labelled directly, and
- * the same numbers as a table for anyone who prefers it.
+ * tops and a hover/focus tooltip per day. A week labels every bar; longer periods label only
+ * the peak, so the numbers never collide.
  */
 function RevenueChart({ daily }: { daily: OverviewData['daily'] }) {
   const [active, setActive] = useState<number | null>(null);
+  // Drawn at the width it is shown at, so labels keep their real size on a phone.
+  const [W, setW] = useState(660);
+  const figure = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = figure.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => setW(Math.max(260, Math.round(entry.contentRect.width))));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const max = Math.max(...daily.map((d) => d.paidIdr), 1);
   const peak = daily.findIndex((d) => d.paidIdr === max && d.paidIdr > 0);
-  const W = 1100, H = 260, left = 8, bottom = 28, top = 60;
-  const slot = (W - left) / daily.length;
-  const bar = Math.min(56, slot - 16);
+  const H = W < 480 ? 220 : 290, bottom = 30, top = 34;
+  const slot = W / daily.length;
+  const bar = Math.max(3, Math.min(56, slot * 0.6));
+  const r = Math.min(5, bar / 2);
   const y = (v: number) => top + (H - top - bottom) * (1 - v / max);
+  // A label needs about 62 px (value) or 44 px (day): thin them out when the columns are narrower.
+  const every = Math.max(1, Math.ceil(44 / slot));
+  const week = slot >= 62;
 
   return (
-    <figure className="admin__chart">
-      <div className="admin__chart-plot">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Paid revenue per day, last 7 days. Peak ${idr(max === 1 ? 0 : max)}.`}>
-          {[0.5, 1].map((f) => <line key={f} x1={left} x2={W} y1={y(max * f)} y2={y(max * f)} className="admin__chart-grid" />)}
-          <line x1={left} x2={W} y1={H - bottom} y2={H - bottom} className="admin__chart-axis" />
-          {daily.map((d, i) => {
-            const x = left + slot * i + (slot - bar) / 2;
-            const h = Math.max(d.paidIdr > 0 ? 3 : 0, H - bottom - y(d.paidIdr));
-            return (
-              <g key={d.date}>
-                {/* Rounded top, square base on the axis. */}
-                {h > 0 && <path className={`admin__chart-bar${active === i ? ' is-active' : ''}`} d={`M${x},${H - bottom} v${-(h - Math.min(4, h))} q0,${-Math.min(4, h)} ${Math.min(4, h)},${-Math.min(4, h)} h${bar - 2 * Math.min(4, h)} q${Math.min(4, h)},0 ${Math.min(4, h)},${Math.min(4, h)} v${h - Math.min(4, h)} z`} />}
-                {i === peak && active !== i && <text x={x + bar / 2} y={y(d.paidIdr) - 8} textAnchor="middle" className="admin__chart-value">{short(d.paidIdr)}</text>}
-                <text x={x + bar / 2} y={H - 8} textAnchor="middle" className="admin__chart-label">{dayLabel(d.date)}</text>
-                {/* Hit target: the whole column, larger than the bar. */}
-                <rect x={left + slot * i} y={0} width={slot} height={H - bottom} fill="transparent" tabIndex={0} aria-label={`${dayLabel(d.date)}: ${idr(d.paidIdr)}, ${d.orders} orders`}
-                  onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)} onFocus={() => setActive(i)} onBlur={() => setActive(null)} />
-              </g>
-            );
-          })}
-        </svg>
-        {active !== null && (
-          <div className="admin__chart-tip" style={{ left: `${((left + slot * active + slot / 2) / W) * 100}%` }} role="status">
-            <strong>{idr(daily[active].paidIdr)}</strong>
-            <span>{dayLabel(daily[active].date)} · {daily[active].orders} orders</span>
-          </div>
-        )}
-      </div>
-      <details className="admin__chart-table">
-        <summary>View as table</summary>
-        <table>
-          <thead><tr><th>Day</th><th>Orders received</th><th>Paid revenue</th></tr></thead>
-          <tbody>{daily.map((d) => <tr key={d.date}><td>{dayLabel(d.date)}</td><td>{d.orders}</td><td>{idr(d.paidIdr)}</td></tr>)}</tbody>
-        </table>
-      </details>
+    <figure className="chart" ref={figure}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Paid revenue per day, last ${daily.length} days. Highest day ${idr(peak < 0 ? 0 : max)}.`}>
+        <line x1={0} x2={W} y1={H - bottom} y2={H - bottom} className="chart__axis" />
+        {daily.map((d, i) => {
+          const x = slot * i + (slot - bar) / 2;
+          const h = d.paidIdr > 0 ? Math.max(r + 1, H - bottom - y(d.paidIdr)) : 0;
+          return (
+            <g key={d.date}>
+              {h > 0
+                ? <path className={`chart__bar${active === i ? ' is-active' : ''}`} d={`M${x},${H - bottom} v${-(h - r)} q0,${-r} ${r},${-r} h${bar - 2 * r} q${r},0 ${r},${r} v${h - r} z`} />
+                : <rect className="chart__zero" x={x} y={H - bottom - 2} width={bar} height={2} />}
+              {(week || i === peak) && <text x={x + bar / 2} y={(h > 0 ? H - bottom - h : H - bottom) - 10} textAnchor="middle" className="chart__value">{d.paidIdr > 0 ? idrShort(d.paidIdr) : '–'}</text>}
+              {(daily.length - 1 - i) % every === 0 && <text x={x + bar / 2} y={H - 8} textAnchor="middle" className="chart__label">{dayLabel(d.date)}</text>}
+              {/* Hit target: the whole column, larger than the bar. */}
+              <rect x={slot * i} y={0} width={slot} height={H - bottom} fill="transparent" tabIndex={0} aria-label={`${longDate(d.date)}: ${idr(d.paidIdr)}, ${plural(d.orders, 'order')}`}
+                onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)} onFocus={() => setActive(i)} onBlur={() => setActive(null)} />
+            </g>
+          );
+        })}
+      </svg>
+      {active !== null && (
+        <div className="chart__tip" style={{ left: `${Math.min(88, Math.max(12, ((slot * active + slot / 2) / W) * 100))}%` }} role="status">
+          <strong>{idr(daily[active].paidIdr)}</strong>
+          <span>{longDate(daily[active].date)} · {plural(daily[active].orders, 'order')}</span>
+        </div>
+      )}
     </figure>
   );
 }

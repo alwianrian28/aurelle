@@ -52,16 +52,22 @@ def _user_by_id(db: Database, user_id: str) -> Row | None:
     return db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
 
 
-def current_user(db: Db, sid: Annotated[str | None, Cookie(alias=COOKIE)] = None) -> Row | None:
-    if not sid:
-        return None
-    row = db.execute("SELECT user_id, expires_at FROM sessions WHERE token_hash = ?", (hash_token(sid),)).fetchone()
+def _session_user(db: Database, token_hash: str) -> Row | None:
+    """The account a live session belongs to. Runs on every signed-in request, so the session
+    and its user come back in one query: the database may be a long round trip away."""
+    row = db.execute(
+        "SELECT u.*, s.expires_at AS session_expires_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?", (token_hash,)
+    ).fetchone()
     if not row:
         return None
-    if row["expires_at"] <= time.time():
-        db.execute("DELETE FROM sessions WHERE token_hash = ?", (hash_token(sid),))
+    if row.pop("session_expires_at") <= time.time():
+        db.execute("DELETE FROM sessions WHERE token_hash = ?", (token_hash,))
         return None
-    return _user_by_id(db, row["user_id"])
+    return row
+
+
+def current_user(db: Db, sid: Annotated[str | None, Cookie(alias=COOKIE)] = None) -> Row | None:
+    return _session_user(db, hash_token(sid)) if sid else None
 
 
 MaybeUser = Annotated[Row | None, Depends(current_user)]
@@ -80,15 +86,7 @@ def _admin_hash(token: str) -> str:
 
 
 def current_admin(db: Db, sid: Annotated[str | None, Cookie(alias=ADMIN_COOKIE)] = None) -> Row | None:
-    if not sid:
-        return None
-    row = db.execute("SELECT user_id, expires_at FROM sessions WHERE token_hash = ?", (_admin_hash(sid),)).fetchone()
-    if not row:
-        return None
-    if row["expires_at"] <= time.time():
-        db.execute("DELETE FROM sessions WHERE token_hash = ?", (_admin_hash(sid),))
-        return None
-    user = _user_by_id(db, row["user_id"])
+    user = _session_user(db, _admin_hash(sid)) if sid else None
     # The role is checked on every request: removing it ends dashboard access at once.
     return user if user and user["role"] == "admin" else None
 

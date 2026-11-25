@@ -4,7 +4,7 @@ import random
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field, StrictInt
 
 from .auth import Admin, Db, User, now_iso
@@ -112,16 +112,29 @@ def expire_stale(db: Database) -> None:
             _add_event(db, row["id"], "cancelled", "expired", "system")
 
 
-def _to_order(db: Database, row: Row, with_actor: bool = False) -> dict:
-    events = db.execute("SELECT status, payment_status, actor, at FROM order_events WHERE order_id = ? ORDER BY id", (row["id"],)).fetchall()
-    points = db.execute("SELECT id, label, note, lat, lng, at FROM tracking_points WHERE order_id = ? ORDER BY at, id", (row["id"],)).fetchall()
+def _trails(db: Database, order_ids: list[str]) -> tuple[dict[str, list[Row]], dict[str, list[Row]]]:
+    """Status history and tracking checkpoints of many orders, in two queries instead of two per order."""
+    events: dict[str, list[Row]] = {}
+    points: dict[str, list[Row]] = {}
+    if order_ids:
+        for e in db.execute("SELECT order_id, status, payment_status, actor, at FROM order_events WHERE order_id = ANY(?) ORDER BY id", (order_ids,)).fetchall():
+            events.setdefault(e["order_id"], []).append(e)
+        for p in db.execute("SELECT order_id, id, label, note, lat, lng, at FROM tracking_points WHERE order_id = ANY(?) ORDER BY at, id", (order_ids,)).fetchall():
+            points.setdefault(p["order_id"], []).append(p)
+    return events, points
+
+
+def _to_order(db: Database, row: Row, with_actor: bool = False, trails: tuple[dict[str, list[Row]], dict[str, list[Row]]] | None = None) -> dict:
+    """`trails` carries history and checkpoints loaded for a whole list; a single order loads its own."""
+    all_events, all_points = trails or _trails(db, [row["id"]])
+    events, points = all_events.get(row["id"], []), all_points.get(row["id"], [])
     order = json.loads(row["data"])
     order.pop("midtrans", None)  # Snap token and attempt counter stay on the server
     order.update(
         id=row["id"], number=row["number"], userId=row["user_id"], status=row["status"], paymentStatus=row["payment_status"],
         createdAt=row["created_at"], updatedAt=row["updated_at"],
         history=[{"status": e["status"], "paymentStatus": e["payment_status"], "at": e["at"], **({"actor": e["actor"]} if with_actor else {})} for e in events],
-        tracking={"courier": row["courier"], "trackingNumber": row["tracking_number"], "points": [dict(p) for p in points]},
+        tracking={"courier": row["courier"], "trackingNumber": row["tracking_number"], "points": [{k: v for k, v in p.items() if k != "order_id"} for p in points]},
     )
     if row["status"] == "cancelled" and row["payment_status"] == "expired":
         order["cancelReason"] = "payment_expired"
@@ -132,10 +145,23 @@ def _next_for(row: Row) -> list[str]:
     return [s for s in ADMIN_NEXT[row["status"]] if s not in NEEDS_PAID or row["payment_status"] == "paid"]
 
 
+def _admin_orders(db: Database, rows: list[Row]) -> list[dict]:
+    """Orders as the dashboard shows them. Customers, history and checkpoints are loaded once
+    for the whole list, so the number of queries does not grow with the number of orders."""
+    trails = _trails(db, [r["id"] for r in rows])
+    user_ids = list({r["user_id"] for r in rows})
+    users = {u["id"]: u for u in db.execute("SELECT id, email, username, phone_country_code, phone FROM users WHERE id = ANY(?)", (user_ids,)).fetchall()} if user_ids else {}
+    orders = []
+    for row in rows:
+        u = users.get(row["user_id"])
+        phone = f"{u['phone_country_code'] or ''} {u['phone']}".strip() if u and u["phone"] else None
+        customer = {"email": u["email"], "name": u["username"], "phone": phone} if u else None
+        orders.append({**_to_order(db, row, with_actor=True, trails=trails), "customer": customer, "nextStatuses": _next_for(row)})
+    return orders
+
+
 def _admin_order(db: Database, row: Row) -> dict:
-    u = db.execute("SELECT email, username, phone_country_code, phone FROM users WHERE id = ?", (row["user_id"],)).fetchone()
-    phone = f"{u['phone_country_code'] or ''} {u['phone']}".strip() if u and u["phone"] else None
-    return {**_to_order(db, row, with_actor=True), "customer": {"email": u["email"], "name": u["username"], "phone": phone} if u else None, "nextStatuses": _next_for(row)}
+    return _admin_orders(db, [row])[0]
 
 
 def _get(db: Database, order_id: str) -> Row | None:
@@ -165,7 +191,8 @@ def _fresh_number(db: Database) -> str:
 def list_my_orders(user: User, db: Db):
     expire_stale(db)
     rows = db.execute("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC", (user["id"],)).fetchall()
-    return {"orders": [_to_order(db, r) for r in rows]}
+    trails = _trails(db, [r["id"] for r in rows])
+    return {"orders": [_to_order(db, r, trails=trails) for r in rows]}
 
 
 @customer.post("", status_code=201)
@@ -319,75 +346,100 @@ def list_orders(_: Admin, db: Db, status: Status | None = None):
     else:
         rows = db.execute("SELECT * FROM orders ORDER BY created_at DESC LIMIT 500").fetchall()
 
-    def count(where: str, *args: str) -> int:
-        return db.execute(f"SELECT COUNT(*) FROM orders WHERE {where}", args).fetchone()[0]
-
     midnight = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+    totals = db.execute(
+        "SELECT COUNT(*) FILTER (WHERE created_at >= ?) AS today, COUNT(*) FILTER (WHERE status = 'awaiting_payment') AS awaiting, "
+        "COUNT(*) FILTER (WHERE status IN ('confirmed', 'preparing', 'ready_to_ship')) AS to_process, COUNT(*) FILTER (WHERE status = 'shipped') AS shipped, "
+        "COALESCE(SUM(total_idr) FILTER (WHERE payment_status = 'paid'), 0) AS paid FROM orders",
+        (midnight.isoformat(timespec="milliseconds").replace("+00:00", "Z"),),
+    ).fetchone()
     return {
-        "orders": [_admin_order(db, r) for r in rows],
-        "summary": {
-            "today": count("created_at >= ?", midnight.isoformat(timespec="milliseconds").replace("+00:00", "Z")),
-            "awaitingPayment": count("status = 'awaiting_payment'"),
-            "toProcess": count("status IN ('confirmed', 'preparing', 'ready_to_ship')"),
-            "shipped": count("status = 'shipped'"),
-            "paidTotalIdr": int(db.execute("SELECT COALESCE(SUM(total_idr), 0) FROM orders WHERE payment_status = 'paid'").fetchone()[0]),
-        },
+        "orders": _admin_orders(db, rows),
+        "summary": {"today": totals["today"], "awaitingPayment": totals["awaiting"], "toProcess": totals["to_process"], "shipped": totals["shipped"], "paidTotalIdr": int(totals["paid"])},
     }
 
 
 @admin.get("/overview")
-def overview(_: Admin, db: Db):
-    """Numbers for the dashboard home: today, the last 7 days, what needs attention."""
+def overview(_: Admin, db: Db, days: Annotated[int, Query(ge=1, le=90)] = 7):
+    """Numbers for the dashboard home: the chosen period (ending today) and what needs attention."""
     expire_stale(db)
     now = datetime.now().astimezone()
     midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_start = midnight - timedelta(days=6)
+    start = midnight - timedelta(days=days - 1)
     iso = lambda d: d.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")  # noqa: E731
 
-    def count(where: str, *args: str) -> int:
-        return db.execute(f"SELECT COUNT(*) FROM orders WHERE {where}", args).fetchone()[0]
-
     # Revenue counts paid orders only, on the day the order was placed (local time).
-    days = {(week_start + timedelta(days=i)).date(): {"orders": 0, "paidIdr": 0} for i in range(7)}
-    for row in db.execute("SELECT created_at, payment_status, total_idr FROM orders WHERE created_at >= ?", (iso(week_start),)).fetchall():
+    per_day = {(start + timedelta(days=i)).date(): {"orders": 0, "paidOrders": 0, "paidIdr": 0} for i in range(days)}
+    for row in db.execute("SELECT created_at, payment_status, total_idr FROM orders WHERE created_at >= ?", (iso(start),)).fetchall():
         day = datetime.fromisoformat(row["created_at"].replace("Z", "+00:00")).astimezone(now.tzinfo).date()
-        if day in days:
-            days[day]["orders"] += 1
+        if day in per_day:
+            per_day[day]["orders"] += 1
             if row["payment_status"] == "paid":
-                days[day]["paidIdr"] += int(row["total_idr"])
+                per_day[day]["paidOrders"] += 1
+                per_day[day]["paidIdr"] += int(row["total_idr"])
 
     held = held_stock(db)
     low = []
-    for v in db.execute("SELECT v.id, v.sku, v.label, v.stock, p.data FROM variants v JOIN products p ON p.id = v.product_id WHERE p.active = 1 ORDER BY p.sort, v.sort").fetchall():
+    for v in db.execute("SELECT v.id, v.sku, v.label, v.stock, p.id AS product_id, p.data FROM variants v JOIN products p ON p.id = v.product_id WHERE p.active = 1 ORDER BY p.sort, v.sort").fetchall():
         available = max(0, v["stock"] - held.get(v["id"], 0))
         if available <= 2:
-            low.append({"sku": v["sku"], "product": json.loads(v["data"])["name"]["en"], "variant": json.loads(v["label"])["en"], "available": available})
+            low.append({"sku": v["sku"], "productId": v["product_id"], "product": json.loads(v["data"])["name"]["en"], "variant": json.loads(v["label"])["en"], "available": available})
     low.sort(key=lambda item: item["available"])
 
     top = db.execute(
-        "SELECT i.variant_id, SUM(i.qty) AS qty FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.payment_status = 'paid' GROUP BY i.variant_id ORDER BY qty DESC LIMIT 5"
+        "SELECT p.id AS product_id, p.data, SUM(i.qty) AS qty FROM order_items i JOIN orders o ON o.id = i.order_id JOIN variants v ON v.id = i.variant_id "
+        "JOIN products p ON p.id = v.product_id WHERE o.payment_status = 'paid' GROUP BY p.id ORDER BY qty DESC, p.id LIMIT 5"
     ).fetchall()
     top_products = []
     for row in top:
-        v = db.execute("SELECT v.label, p.data FROM variants v JOIN products p ON p.id = v.product_id WHERE v.id = ?", (row["variant_id"],)).fetchone()
-        if v:
-            top_products.append({"product": json.loads(v["data"])["name"]["en"], "variant": json.loads(v["label"])["en"], "qty": int(row["qty"])})
+        data = json.loads(row["data"])
+        thumb = data.get("thumb") or (data["media"][0]["src"] if data.get("media") else None)
+        top_products.append({"productId": row["product_id"], "product": data["name"]["en"], "thumb": thumb, "qty": int(row["qty"])})
 
-    latest = db.execute("SELECT * FROM orders ORDER BY created_at DESC LIMIT 6").fetchall()
-    today = days[midnight.date()]
+    latest = db.execute("SELECT o.*, u.username FROM orders o LEFT JOIN users u ON u.id = o.user_id ORDER BY o.created_at DESC LIMIT 5").fetchall()
+    today = per_day[midnight.date()]
+    total = lambda key: sum(d[key] for d in per_day.values())  # noqa: E731
+    now_counts = db.execute(
+        "SELECT COUNT(*) FILTER (WHERE status = 'awaiting_payment') AS awaiting, COALESCE(SUM(total_idr) FILTER (WHERE status = 'awaiting_payment'), 0) AS awaiting_idr, "
+        "COUNT(*) FILTER (WHERE status IN ('confirmed', 'preparing', 'ready_to_ship')) AS to_process, COUNT(*) FILTER (WHERE status = 'shipped') AS shipped, "
+        "(SELECT COUNT(*) FROM users WHERE role = 'customer') AS customers FROM orders"
+    ).fetchone()
     return {
         "today": {"orders": today["orders"], "paidIdr": today["paidIdr"]},
-        "week": {"orders": sum(d["orders"] for d in days.values()), "paidIdr": sum(d["paidIdr"] for d in days.values())},
-        "awaitingPayment": count("status = 'awaiting_payment'"),
-        "toProcess": count("status IN ('confirmed', 'preparing', 'ready_to_ship')"),
-        "shipped": count("status = 'shipped'"),
-        "customers": db.execute("SELECT COUNT(*) FROM users WHERE role = 'customer'").fetchone()[0],
-        "daily": [{"date": d.isoformat(), **values} for d, values in days.items()],
+        "period": {"days": days, "orders": total("orders"), "paidOrders": total("paidOrders"), "paidIdr": total("paidIdr")},
+        "awaitingPayment": now_counts["awaiting"],
+        "awaitingPaymentIdr": int(now_counts["awaiting_idr"]),
+        "toProcess": now_counts["to_process"],
+        "shipped": now_counts["shipped"],
+        "customers": now_counts["customers"],
+        "daily": [{"date": d.isoformat(), "orders": v["orders"], "paidIdr": v["paidIdr"]} for d, v in per_day.items()],
         "lowStock": low[:8],
         "lowStockTotal": len(low),
+        "soldOutTotal": sum(1 for item in low if item["available"] == 0),
         "topProducts": top_products,
-        "latestOrders": [{"id": r["id"], "number": r["number"], "status": r["status"], "paymentStatus": r["payment_status"], "totalIdr": int(r["total_idr"]), "createdAt": r["created_at"]} for r in latest],
+        "latestOrders": [
+            {"id": r["id"], "number": r["number"], "customer": r["username"], "status": r["status"], "paymentStatus": r["payment_status"], "totalIdr": int(r["total_idr"]), "createdAt": r["created_at"]}
+            for r in latest
+        ],
     }
+
+
+@admin.get("/customers")
+def list_customers(_: Admin, db: Db):
+    """Customer accounts with what they have ordered and paid so far."""
+    rows = db.execute(
+        "SELECT u.id, u.email, u.username, u.email_verified, u.created_at, u.phone_country_code, u.phone, COUNT(o.id) AS orders, "
+        "COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total_idr ELSE 0 END), 0) AS paid_idr, MAX(o.created_at) AS last_order_at "
+        "FROM users u LEFT JOIN orders o ON o.user_id = u.id WHERE u.role = 'customer' GROUP BY u.id ORDER BY u.created_at DESC LIMIT 1000"
+    ).fetchall()
+    return {"customers": [
+        {
+            "id": r["id"], "email": r["email"], "name": r["username"], "emailVerified": bool(r["email_verified"]), "createdAt": r["created_at"],
+            "phone": f"{r['phone_country_code'] or ''} {r['phone']}".strip() if r["phone"] else None,
+            "orders": int(r["orders"]), "paidIdr": int(r["paid_idr"]), "lastOrderAt": r["last_order_at"],
+        }
+        for r in rows
+    ]}
 
 
 @admin.get("/orders/{order_id}")

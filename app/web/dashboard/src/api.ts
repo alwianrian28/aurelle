@@ -22,3 +22,15 @@ export async function api<T = Record<string, unknown>>(path: string, options: { 
     return { ok: false, status: 0, error: 'network' };
   }
 }
+
+/** Sends one image to the media store and answers with the address to save as a photo. */
+export async function upload(image: Blob): Promise<ApiResult<{ src: string }>> {
+  try {
+    const res = await fetch('/api/admin/media', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': image.type || 'application/octet-stream' }, body: image });
+    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    if (res.ok) return { ok: true, status: res.status, data: data as { src: string } };
+    return { ok: false, status: res.status, error: typeof data.error === 'string' ? data.error : res.status === 413 ? 'too_large' : 'server_error', data };
+  } catch {
+    return { ok: false, status: 0, error: 'network' };
+  }
+}

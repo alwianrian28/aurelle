@@ -227,6 +227,141 @@ def test_admin_manages_products_prices_and_stock(api):
     db.close()
     assert fields == ["price_idr", "stock", "name.id", "active"]
 
+    edit = {"descriptionEn": "A new description.", "materialsEn": "White gold", "category": "bracelet", "active": True}
+    edited = next(p for p in admin.patch("/api/admin/products/cincin-oval", json=edit).json()["products"] if p["id"] == "cincin-oval")
+    assert (edited["description"]["en"], edited["materials"]["en"], edited["category"]) == ("A new description.", "White gold", "bracelet")
+    assert edited["description"]["id"] and edited["media"] and edited["thumb"]  # untouched fields stay
+    shop = next(p for p in api.get("/api/catalog").json()["products"] if p["id"] == "cincin-oval")
+    assert (shop["description"]["en"], shop["category"]) == ("A new description.", "bracelet")
+    assert admin.patch("/api/admin/products/cincin-oval", json={"category": "watch"}).status_code == 400
+
+    # Reserved (unpaid) and sold (paid) units are reported apart.
+    api.post("/api/orders/ord-newprice/demo-payment", json={"paymentStatus": "paid"})
+    split = next(v for p in admin.get("/api/admin/products").json()["products"] for v in p["variants"] if v["id"] == RING)
+    assert (split["available"], split["held"], split["sold"]) == (9, 2, 1)
+
+
+def test_admin_adds_products_and_variants(api):
+    register(api)
+    size = {"labelEn": "Size 6", "sku": "MOON-RING-6", "priceIdr": 2_900_000, "available": 4}
+    new = {"nameEn": "Moon Ring", "category": "ring", "descriptionEn": "A crescent.", "media": ["https://cdn.example.com/moon.jpg", "/media/moon-2.jpg"], "collectionIds": ["col-aurora"], "variants": [size]}
+    assert api.post("/api/admin/products", json=new).status_code == 401
+    admin = make_admin(api)
+    assert admin.post("/api/admin/products", json={**new, "variants": []}).status_code == 400
+    assert admin.post("/api/admin/products", json={**new, "media": ["javascript:alert(1)"]}).status_code == 400
+    assert admin.post("/api/admin/products", json={**new, "variants": [{**size, "sku": "oval-ring-0"}]}).json() == {"error": "sku_taken"}
+
+    made = admin.post("/api/admin/products", json=new)
+    assert made.status_code == 201 and made.json()["id"] == "moon-ring"
+    product = next(p for p in made.json()["products"] if p["id"] == "moon-ring")
+    assert (product["active"], product["thumb"], product["collectionIds"]) == (False, "https://cdn.example.com/moon.jpg", ["col-aurora"])
+    assert product["variants"][0] == {"id": "moon-ring-0", "sku": "MOON-RING-6", "label": {"id": "Size 6", "en": "Size 6"}, "priceIdr": 2_900_000, "available": 4, "held": 0, "sold": 0}
+    assert all(p["id"] != "moon-ring" for p in api.get("/api/catalog").json()["products"])  # hidden until switched on
+    assert admin.post("/api/admin/products", json={**new, "variants": [{**size, "sku": "MOON-B"}]}).json()["id"] == "moon-ring-2"  # same name, new address
+
+    assert admin.patch("/api/admin/products/moon-ring", json={"active": True, "media": ["/media/moon-2.jpg"], "collectionIds": []}).status_code == 200
+    shop = next(p for p in api.get("/api/catalog").json()["products"] if p["id"] == "moon-ring")
+    assert (shop["active"], shop["collectionIds"], [m["src"] for m in shop["media"]], shop["variants"][0]["size"]) == (True, [], ["/media/moon-2.jpg"], "6")
+    assert api.post("/api/orders", json=order_body("ord-moon0000", qty=1, price=2_900_000, variant="moon-ring-0")).status_code == 201
+
+    assert admin.post("/api/admin/products/moon-ring/variants", json=size).json() == {"error": "sku_taken"}
+    added = admin.post("/api/admin/products/moon-ring/variants", json={**size, "labelEn": "Size 7", "sku": "MOON-RING-7"})
+    assert added.status_code == 201
+    assert [v["id"] for p in added.json()["products"] if p["id"] == "moon-ring" for v in p["variants"]] == ["moon-ring-0", "moon-ring-1"]
+    assert admin.delete("/api/admin/variants/moon-ring-0").json() == {"error": "variant_in_orders"}
+    assert admin.delete("/api/admin/variants/moon-ring-1").status_code == 200
+    assert admin.delete("/api/admin/variants/kalung-bar-0").json() == {"error": "last_variant"}
+
+
+def test_admin_uploads_photos(api):
+    register(api)
+    png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+    assert api.post("/api/admin/media", content=png).status_code == 401
+    admin = make_admin(api)
+    assert admin.post("/api/admin/media", content=b"<svg onload=alert(1)>", headers={"Content-Type": "image/png"}).json() == {"error": "not_an_image"}
+    assert admin.post("/api/admin/media", content=b"\xff\xd8\xff" + b"\x00" * (4 * 1024 * 1024)).status_code == 413
+
+    made = admin.post("/api/admin/media", content=png, headers={"Content-Type": "text/html"})  # the header is not believed
+    assert made.status_code == 201 and made.json()["src"].startswith("/api/media/") and made.json()["src"].endswith(".png")
+    served = TestClient(api.app).get(made.json()["src"])  # public: the shop shows it to everyone
+    assert (served.content, served.headers["content-type"], served.headers["x-content-type-options"]) == (png, "image/png", "nosniff")
+    assert "immutable" in served.headers["cache-control"]
+    assert api.get("/api/media/nope.png").status_code == 404 and api.get(f"/api/media/{'0' * 32}.png").status_code == 404
+
+    # Added in front of the photos the product already has (whose file names contain spaces and commas).
+    before = next(p for p in admin.get("/api/admin/products").json()["products"] if p["id"] == "cincin-oval")["media"]
+    assert any(" " in src for src in before)
+    edited = admin.patch("/api/admin/products/cincin-oval", json={"media": [made.json()["src"], *before]})
+    assert edited.status_code == 200
+    after = next(p for p in edited.json()["products"] if p["id"] == "cincin-oval")
+    assert (after["thumb"], after["media"]) == (made.json()["src"], [made.json()["src"], *before])
+    assert admin.patch("/api/admin/products/cincin-oval", json={"media": ['/media/x"onerror="alert(1)']}).status_code == 400
+
+
+def test_order_lists_do_not_query_per_order(api, monkeypatch):
+    """The database can be a continent away: a list must cost the same few queries for 1 order or 100."""
+    from app import db as database
+
+    register(api)
+    for n in range(3):
+        api.post("/api/orders", json=order_body(f"ord-batch-{n:04d}", qty=1))
+    admin = make_admin(api)
+    counted = []
+    original = database.Database.execute
+    monkeypatch.setattr(database.Database, "execute", lambda self, sql, params=(): (counted.append(sql), original(self, sql, params))[1])
+    listed = admin.get("/api/admin/orders").json()["orders"]
+    assert len(listed) == 3 and all(o["customer"]["email"] == "a@example.com" and len(o["history"]) == 1 for o in listed)
+    for_three = len(counted)
+    api.post("/api/orders", json=order_body("ord-batch-0003", qty=1))
+    counted.clear()
+    assert len(admin.get("/api/admin/orders").json()["orders"]) == 4 and len(counted) == for_three <= 8
+    counted.clear()
+    assert len(api.get("/api/orders").json()["orders"]) == 4 and len(counted) <= 6
+
+
+def test_admin_manages_collections(api):
+    register(api)
+    seeded = api.get("/api/catalog").json()["collections"]
+    assert [c["id"] for c in seeded] == ["col-aurora", "col-noir"] and seeded[0]["productIds"][:2] == ["cincin-oval", "kalung-solitaire"]
+    assert "col-aurora" in next(p for p in api.get("/api/catalog").json()["products"] if p["id"] == "cincin-oval")["collectionIds"]
+    assert api.post("/api/admin/collections", json={"nameEn": "Lumen"}).status_code == 401
+    admin = make_admin(api)
+
+    made = admin.post("/api/admin/collections", json={"nameEn": "Lumen", "storyEn": "Light.", "productIds": ["kalung-bar", "cincin-oval", "kalung-bar"]})
+    assert made.status_code == 201 and made.json()["id"] == "col-lumen"
+    lumen = next(c for c in made.json()["collections"] if c["id"] == "col-lumen")
+    assert (lumen["slug"], lumen["productIds"], lumen["active"]) == ("lumen", ["kalung-bar", "cincin-oval"], True)
+    assert admin.post("/api/admin/collections", json={"nameEn": "Lumen", "productIds": ["no-such-product"]}).status_code == 400
+
+    edit = {"nameEn": "Lumen Edit", "banner": "/media/collections/aurora.jpg", "productIds": ["cincin-oval"]}
+    assert admin.patch("/api/admin/collections/col-lumen", json=edit).status_code == 200
+    public = next(c for c in api.get("/api/catalog").json()["collections"] if c["id"] == "col-lumen")
+    assert (public["name"]["en"], public["banner"], public["productIds"]) == ("Lumen Edit", "/media/collections/aurora.jpg", ["cincin-oval"])
+    admin.patch("/api/admin/products/cincin-oval", json={"active": False})  # its only product is hidden: nothing left to show
+    assert all(c["id"] != "col-lumen" for c in api.get("/api/catalog").json()["collections"])
+    admin.patch("/api/admin/products/cincin-oval", json={"active": True})
+    assert admin.patch("/api/admin/collections/col-lumen", json={"active": False}).status_code == 200
+    assert all(c["id"] != "col-lumen" for c in api.get("/api/catalog").json()["collections"])
+
+    left = admin.delete("/api/admin/collections/col-lumen").json()
+    assert [c["id"] for c in left["collections"]] == ["col-aurora", "col-noir"] and len(left["products"]) == 30  # products stay
+    assert admin.delete("/api/admin/collections/col-lumen").status_code == 404
+
+
+def test_admin_lists_customers_and_store_settings(api):
+    register(api)
+    assert api.get("/api/admin/customers").status_code == 401
+    assert api.get("/api/admin/settings").status_code == 401
+    api.post("/api/orders", json=order_body("ord-paid0000", qty=1))
+    api.post("/api/orders/ord-paid0000/demo-payment", json={"paymentStatus": "paid"})
+    api.post("/api/orders", json=order_body("ord-unpaid00", qty=1))
+    admin = make_admin(api)
+    customers = admin.get("/api/admin/customers").json()["customers"]
+    assert [c["email"] for c in customers] == ["a@example.com"]  # staff accounts are not customers
+    assert (customers[0]["orders"], customers[0]["paidIdr"], customers[0]["emailVerified"]) == (2, 3_250_000 + 285_000 + 163_000, True)
+    settings = admin.get("/api/admin/settings").json()
+    assert settings["reservationMinutes"] == 30 and "Indonesia" in settings["servedCountries"] and settings["shippingServices"]
+
 
 def test_overview_counts_paid_revenue_and_low_stock(api):
     register(api)
@@ -236,8 +371,14 @@ def test_overview_counts_paid_revenue_and_low_stock(api):
     api.post("/api/orders", json=order_body("ord-unpaid00", qty=1))
     data = make_admin(api).get("/api/admin/overview").json()
     paid_total = 5 * 3_250_000 + 285_000 + 813_000  # 5% duty of 16,250,000 = 812,500 -> 813,000
-    assert data["today"] == {"orders": 2, "paidIdr": paid_total} and data["week"]["paidIdr"] == paid_total
+    assert data["today"] == {"orders": 2, "paidIdr": paid_total}
+    assert data["period"] == {"days": 7, "orders": 2, "paidOrders": 1, "paidIdr": paid_total}
     assert (data["awaitingPayment"], data["toProcess"], data["customers"]) == (1, 1, 1)
+    assert data["awaitingPaymentIdr"] == 3_250_000 + 285_000 + 163_000 and data["soldOutTotal"] >= 1
+    assert data["latestOrders"][0]["customer"] == "Tester" and data["topProducts"][0]["productId"] == "cincin-oval"
+    admin = make_admin(api, "b@example.com")
+    assert len(admin.get("/api/admin/overview?days=30").json()["daily"]) == 30
+    assert admin.get("/api/admin/overview?days=400").status_code == 400
     assert len(data["daily"]) == 7 and data["daily"][-1]["orders"] == 2
     assert data["topProducts"][0]["qty"] == 5 and len(data["latestOrders"]) == 2
     ring = next(i for i in data["lowStock"] if i["sku"] == "OVAL-RING-0")
