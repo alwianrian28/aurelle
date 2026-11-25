@@ -1,13 +1,17 @@
 import { api } from './api';
 import { applyServerOrder } from './orderSync';
-import type { Order } from '../types/domain';
+import type { Order, PaymentMethod } from '../types/domain';
 
 /**
  * Midtrans Snap on the payment page.
- * The popup's callbacks only tell us the customer is done with it. Whether the order is paid
+ * Midtrans' own form (card fields, or the QRIS code) is shown inside our page, so card
+ * details go from the customer straight to Midtrans and never pass through Aurelle.
+ * The form's callbacks only tell us the customer is done with it. Whether the order is paid
  * is always decided by the API, which hears it from Midtrans itself (FR-08-09).
  */
 
+/** What the form reports when the customer is done with it. Never proof of payment. */
+export type SnapOutcome = 'success' | 'pending' | 'error' | 'closed';
 interface SnapCallbacks {
   onSuccess?: () => void;
   onPending?: () => void;
@@ -16,7 +20,11 @@ interface SnapCallbacks {
 }
 declare global {
   interface Window {
-    snap?: { pay: (token: string, callbacks: SnapCallbacks) => void; hide?: () => void };
+    snap?: {
+      pay: (token: string, callbacks: SnapCallbacks) => void;
+      embed?: (token: string, options: SnapCallbacks & { embedId: string }) => void;
+      hide?: () => void;
+    };
   }
 }
 
@@ -26,7 +34,7 @@ export interface PaymentConfig {
 }
 
 let config: Promise<PaymentConfig> | null = null;
-/** Whether card/QRIS payments are switched on, and what the page needs to open Snap. */
+/** Whether card/QRIS payments are switched on, and what the page needs to show Snap. */
 export function loadPaymentConfig(): Promise<PaymentConfig> {
   config ??= api<PaymentConfig>('/payments/config').then((res) => {
     if (res.ok) return res.data;
@@ -51,21 +59,25 @@ function loadSnap(url: string, clientKey: string): Promise<void> {
 }
 
 /** Ask the API to check this order's payment at Midtrans now, and take over its answer. */
-export async function syncPayment(orderId: string): Promise<void> {
+export async function syncPayment(orderId: string): Promise<Order | null> {
   const res = await api<{ order: Order }>(`/payments/${orderId}/sync`, { method: 'POST' });
-  if (res.ok) applyServerOrder(res.data.order);
+  if (!res.ok) return null;
+  applyServerOrder(res.data.order);
+  return res.data.order;
 }
 
-export type PayResult = 'done' | 'closed' | 'unavailable' | 'network' | 'not_allowed';
+export type PayProblem = 'unavailable' | 'network' | 'not_allowed';
 
 /**
- * Open the Snap popup for an order. Resolves when the customer finishes or closes it, after
- * the order has been refreshed from the server.
+ * Shows Midtrans' payment form for an order inside the element with id `embedId`, offering
+ * the given method. Asking for the other method starts a new attempt for the same order.
+ * `onOutcome` fires when the customer finishes with the form; read the order from the API
+ * afterwards to learn what actually happened.
  */
-export async function payWithSnap(orderId: string): Promise<PayResult> {
+export async function showPaymentForm(orderId: string, method: PaymentMethod, embedId: string, onOutcome: (outcome: SnapOutcome) => void): Promise<PayProblem | null> {
   const { midtransClientKey, snapUrl } = await loadPaymentConfig();
   if (!midtransClientKey || !snapUrl) return 'unavailable';
-  const res = await api<{ token: string }>(`/payments/${orderId}/snap`, { method: 'POST' });
+  const res = await api<{ token: string }>(`/payments/${orderId}/snap`, { body: { method } });
   if (!res.ok) {
     if (res.status === 409) await syncPayment(orderId); // already paid, cancelled or expired
     return res.status === 0 ? 'network' : res.status === 409 ? 'not_allowed' : 'unavailable';
@@ -75,9 +87,15 @@ export async function payWithSnap(orderId: string): Promise<PayResult> {
   } catch {
     return 'network';
   }
-  if (!window.snap) return 'unavailable';
-  return new Promise<PayResult>((resolve) => {
-    const finish = (result: PayResult) => () => { void syncPayment(orderId).then(() => resolve(result)); };
-    window.snap!.pay(res.data.token, { onSuccess: finish('done'), onPending: finish('done'), onError: finish('done'), onClose: finish('closed') });
-  });
+  // The element may be gone by now (the customer switched method or left the page).
+  if (!window.snap?.embed || !document.getElementById(embedId)) return window.snap?.embed ? null : 'unavailable';
+  hidePaymentForm();
+  const report = (outcome: SnapOutcome) => () => onOutcome(outcome);
+  window.snap.embed(res.data.token, { embedId, onSuccess: report('success'), onPending: report('pending'), onError: report('error'), onClose: report('closed') });
+  return null;
+}
+
+/** Takes the form down again (leaving the page, or before showing another attempt). */
+export function hidePaymentForm(): void {
+  try { window.snap?.hide?.(); } catch { /* nothing was showing */ }
 }

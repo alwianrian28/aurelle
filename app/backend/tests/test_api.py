@@ -634,7 +634,7 @@ def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypa
 
     fake = midtrans(monkeypatch)
     assert api.get("/api/payments/config").json() == {"midtransClientKey": "SB-Mid-client-test", "snapUrl": "https://app.sandbox.midtrans.com/snap/snap.js"}
-    assert api.post("/api/payments/ord-12345678/snap").json() == {"token": "snap-token-1", "redirectUrl": "https://snap.test/1"}
+    assert api.post("/api/payments/ord-12345678/snap").json() == {"token": "snap-token-1", "redirectUrl": "https://snap.test/1", "method": "qris"}
     assert api.post("/api/payments/ord-12345678/snap").json()["token"] == "snap-token-1"  # reused, not created twice
     creates = [c for c in fake.calls if c[1].endswith("/snap/v1/transactions")]
     assert len(creates) == 1
@@ -650,6 +650,20 @@ def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypa
     stranger = TestClient(api.app)
     register(stranger, "b@example.com")
     assert stranger.post("/api/payments/ord-12345678/snap").status_code == 404
+
+    # Switching method: the QRIS attempt is cancelled and a card one takes its place.
+    assert api.post("/api/payments/ord-12345678/snap", json={"method": "qris"}).json()["token"] == "snap-token-1"  # same method, same token
+    switched = api.post("/api/payments/ord-12345678/snap", json={"method": "card"}).json()
+    assert (switched["token"], switched["method"]) == ("snap-token-2", "card")
+    assert ("POST", f"https://api.sandbox.midtrans.com/v2/{order['number']}-1/cancel") in [(c[0], c[1]) for c in fake.calls]
+    card = [c for c in fake.calls if c[1].endswith("/snap/v1/transactions")][-1][2]
+    assert card["transaction_details"]["order_id"] == f"{order['number']}-2" and card["enabled_payments"] == ["credit_card"]
+    assert api.get("/api/orders/ord-12345678").json()["order"]["paymentMethod"] == "card"
+    assert api.post("/api/payments/ord-12345678/snap").json()["token"] == "snap-token-2"  # no method given: the current one
+    assert api.post("/api/payments/ord-12345678/snap", json={"method": "bank"}).status_code == 400
+    # QRIS stays an IDR-only method, also when switching.
+    usd = api.post("/api/orders", json={**order_body("ord-usd00000", qty=1), "paymentMethod": "card", "currency": "USD"})
+    assert usd.status_code == 201 and api.post("/api/payments/ord-usd00000/snap", json={"method": "qris"}).status_code == 400
     assert TestClient(api.app).post("/api/payments/ord-12345678/snap").status_code == 401
 
 

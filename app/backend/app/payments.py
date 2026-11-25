@@ -2,7 +2,8 @@
 
 Three pieces:
 - POST /api/payments/{order_id}/snap: creates the Snap transaction and returns its token; the shop
-  opens the Snap popup with it.
+  shows Midtrans' payment form with it, inside its own payment page. The customer may switch
+  between card and QRIS there: each switch is a new Snap transaction for the same order.
 - POST /api/payments/midtrans/notification: Midtrans calls this when a payment changes state.
   It is the source of truth for "paid" (FR-08-09): the browser's own callbacks are never trusted.
 - POST /api/payments/{order_id}/sync: the shop asks us to look the payment up at Midtrans right
@@ -14,8 +15,12 @@ import hmac
 import json
 from datetime import datetime, timezone
 
+from typing import Literal
+
 import requests
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
+from pydantic import BaseModel
 
 from .auth import Db, User
 from .config import midtrans_client_key, midtrans_is_production, midtrans_notification_url, midtrans_server_key, shop_origin
@@ -105,6 +110,12 @@ def _apply(db: Database, row: Row, payload: dict) -> None:
         _add_event(db, row["id"], "cancelled", "expired", actor)
 
 
+class SnapIn(BaseModel):
+    """Which method the form should offer. Left out, it is the one chosen at checkout."""
+
+    method: Literal["card", "qris"] | None = None
+
+
 def _order_for(db: Database, midtrans_order_id: str) -> Row | None:
     """Our order for a Midtrans order id ("<order number>-<attempt>")."""
     number = midtrans_order_id.rsplit("-", 1)[0]
@@ -128,6 +139,13 @@ async def midtrans_notification(request: Request, db: Db):
         payload = None
     if not isinstance(payload, dict):
         return {"ok": True, "ignored": "not_json"}
+    # Only reading the body happens on the event loop. The rest waits for a row lock in the
+    # database, and waiting there on the loop would freeze every other request, including
+    # the one that holds the lock and needs the loop to finish.
+    return await run_in_threadpool(_handle_notification, db, payload)
+
+
+def _handle_notification(db: Database, payload: dict) -> dict:
     key = midtrans_server_key()
     if not key:
         raise HTTPException(503, "payments_not_configured")
@@ -143,8 +161,9 @@ async def midtrans_notification(request: Request, db: Db):
 
 
 @router.post("/{order_id}/snap")
-def create_snap_transaction(order_id: str, user: User, db: Db):
-    """Snap token for paying this order. Asking again returns the same token while it is usable."""
+def create_snap_transaction(order_id: str, user: User, db: Db, body: SnapIn | None = None):
+    """Snap token for paying this order. Asking again returns the same token while it is usable:
+    until that attempt fails, or the customer asks for the other payment method."""
     _server_key()
     expire_stale(db)
     _own(db, order_id, user)
@@ -157,10 +176,20 @@ def create_snap_transaction(order_id: str, user: User, db: Db):
     if minutes_left < 1:
         raise HTTPException(409, "not_allowed")
 
+    method = (body.method if body else None) or data["paymentMethod"]
+    # FR-03-07: QRIS is offered for IDR only (the same rule checkout applies).
+    if method == "qris" and data["currency"] != "IDR":
+        raise HTTPException(400, "invalid_order")
     previous = data.get("midtrans") or {}
-    # A failed attempt needs a new Midtrans order id; otherwise the existing token still works.
-    if previous.get("token") and row["payment_status"] != "failed":
-        return {"token": previous["token"], "redirectUrl": previous.get("redirectUrl")}
+    same_method = previous.get("method", data["paymentMethod"]) == method
+    # A failed attempt needs a new Midtrans order id, and so does the other method (a Snap
+    # transaction offers what it was created with); otherwise the existing token still works.
+    if previous.get("token") and same_method and row["payment_status"] != "failed":
+        return {"token": previous["token"], "redirectUrl": previous.get("redirectUrl"), "method": method}
+    if previous.get("orderId") and not same_method:
+        # The attempt being left behind must not stay payable next to the new one. Best effort:
+        # Midtrans answers 404 when the customer never got as far as starting it.
+        _midtrans("POST", f"{_hosts()[1]}/v2/{previous['orderId']}/cancel")
 
     attempt = int(previous.get("attempt", 0)) + 1
     midtrans_order_id = f"{row['number']}-{attempt}"
@@ -182,7 +211,7 @@ def create_snap_transaction(order_id: str, user: User, db: Db):
         "transaction_details": {"order_id": midtrans_order_id, "gross_amount": int(row["total_idr"])},
         "item_details": items,
         "customer_details": {"first_name": user["username"][:255], "email": user["email"], "phone": phone, "shipping_address": shipping},
-        "enabled_payments": ENABLED_PAYMENTS[data["paymentMethod"]],
+        "enabled_payments": ENABLED_PAYMENTS[method],
         "credit_card": {"secure": True},
         # The payment page closes when the stock reservation does.
         "expiry": {"unit": "minute", "duration": minutes_left},
@@ -194,9 +223,13 @@ def create_snap_transaction(order_id: str, user: User, db: Db):
         print(f"[midtrans] snap create failed for {row['number']}: {status} {res.get('error_messages')}", flush=True)
         raise HTTPException(502, "payment_provider_error")
 
-    data["midtrans"] = {"orderId": midtrans_order_id, "attempt": attempt, "token": res["token"], "redirectUrl": res.get("redirect_url")}
+    data["midtrans"] = {"orderId": midtrans_order_id, "attempt": attempt, "method": method, "token": res["token"], "redirectUrl": res.get("redirect_url")}
+    data["paymentMethod"] = method  # the order shows the method it is actually being paid with
     db.execute("UPDATE orders SET data = ? WHERE id = ?", (json.dumps(data), row["id"]))
-    return {"token": res["token"], "redirectUrl": res.get("redirect_url")}
+    if row["payment_status"] in ("failed", "pending"):
+        # A fresh attempt starts unpaid: the failure, or the abandoned method's pending state, is history.
+        _add_event(db, row["id"], "awaiting_payment", "unpaid", "customer")
+    return {"token": res["token"], "redirectUrl": res.get("redirect_url"), "method": method}
 
 
 @router.post("/{order_id}/sync")
@@ -204,11 +237,13 @@ def sync_payment(order_id: str, user: User, db: Db):
     """Ask Midtrans for this order's payment status now and apply it. The answer comes from
     Midtrans' own API, authenticated with the server key, so the browser cannot fake a payment."""
     expire_stale(db)
-    _own(db, order_id, user)
-    row = db.execute("SELECT * FROM orders WHERE id = ? FOR UPDATE", (order_id,)).fetchone()
-    midtrans_order_id = (json.loads(row["data"]).get("midtrans") or {}).get("orderId")
+    seen = _own(db, order_id, user)
+    midtrans_order_id = (json.loads(seen["data"]).get("midtrans") or {}).get("orderId")
     if midtrans_order_id and midtrans_server_key():
+        # Ask Midtrans first, lock the order afterwards: the page asks every few seconds, and a
+        # lock held across a call to another company's server would make everyone else wait.
         status, payload = _midtrans("GET", f"{_hosts()[1]}/v2/{midtrans_order_id}/status")
+        row = db.execute("SELECT * FROM orders WHERE id = ? FOR UPDATE", (order_id,)).fetchone()
         # 404: the customer has not chosen a payment method in Snap yet, so nothing to apply.
         if status == 200 and str(payload.get("status_code")) != "404":
             _apply(db, row, {**payload, "order_id": midtrans_order_id})

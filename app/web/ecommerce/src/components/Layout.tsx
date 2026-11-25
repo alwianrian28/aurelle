@@ -25,8 +25,8 @@ export default function Layout() {
 
   useEffect(() => { document.documentElement.lang = i18n.language.startsWith("id") ? "id" : "en"; }, [i18n.language]);
   const smoothEnabled = !NO_SMOOTH_PATTERN.test(location.pathname);
-  /** Checkout renders its own slim bar and footer: no site navigation mid-purchase. */
-  const bare = /^\/checkout\/?$/.test(location.pathname);
+  /** Checkout and its payment step render their own slim bar and footer: no site navigation mid-purchase. */
+  const bare = /^\/checkout(\/|$)/.test(location.pathname);
 
   useLayoutEffect(() => {
     if (!smoothEnabled || prefersReducedMotion() || !wrapperRef.current || !contentRef.current) {

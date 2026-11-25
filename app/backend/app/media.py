@@ -7,6 +7,7 @@ import re
 import uuid
 
 from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.concurrency import run_in_threadpool
 
 from .auth import Admin, Db, now_iso
 
@@ -43,7 +44,9 @@ async def upload(request: Request, user: Admin, db: Db):
     if not kind:
         raise HTTPException(400, "not_an_image")
     name = f"{uuid.uuid4().hex}.{kind[0]}"
-    db.execute(
+    # Off the event loop: sending megabytes to a distant database must not stall other requests.
+    await run_in_threadpool(
+        db.execute,
         "INSERT INTO media_files (id, content_type, data, size, actor, created_at) VALUES (?, ?, ?, ?, ?, ?)",
         (name, kind[1], data, len(data), f"admin:{user['id']}", now_iso()),
     )
