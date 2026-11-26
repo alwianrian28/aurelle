@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<title>Perhiasan Perak 3D</title>
+<title>Perhiasan Emas Putih 3D</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="ext-resource-dependency" content="vendor/three.module.js" data-resource-id="lib0">
 <meta name="ext-resource-dependency" content="vendor/three.core.js" data-resource-id="lib1">
@@ -51,7 +51,7 @@ html.embedded,html.embedded body{background:radial-gradient(ellipse at center,#f
 </head>
 <body>
 <header id="head">
-  <div><p id="eyebrow">Silver Edition</p><h1 id="title">Kalung Berlapis</h1></div>
+  <div><p id="eyebrow">White Gold</p><h1 id="title">Kalung Berlapis</h1></div>
   <div id="nav"><nav id="cats" aria-label="Kategori"></nav><nav id="list" aria-label="Model"></nav></div>
 </header>
 <p id="note"></p>
@@ -81,7 +81,7 @@ scene.traverse(o => {
   if (o.isMesh && o.material.isShadowMaterial) o.material.opacity = 0.35;
 });
 
-// Materials — rhodium-white silver #E4E5E8
+// Materials — rhodium-plated white gold #E4E5E8 (the variable keeps its old name)
 const silver = new THREE.MeshPhysicalMaterial({ name: 'silver', color: 0xE4E5E8, metalness: 1, roughness: 0.05, envMapIntensity: 1 });
 const chainMat = new THREE.MeshPhysicalMaterial({ name: 'silver_chain', color: 0xE4E5E8, metalness: 1, roughness: 0.08, flatShading: true, envMapIntensity: 1 });
 // Exportable stand-in for the traced stone shader (used by OBJ/GLB downloads)

@@ -349,6 +349,45 @@ def test_admin_changes_own_name_and_password(api):
     assert fresh.post("/api/admin/auth/login", json={"email": "admin@example.com", "password": "a-brand-new-password"}).status_code == 200
 
 
+def test_catalog_speaks_of_white_gold_and_old_wording_is_migrated(api):
+    import json
+
+    from app.db import connect
+    from app.wording import migrate
+
+    shop = api.get("/api/catalog").json()
+    said = json.dumps([{k: p[k] for k in ("description", "materials")} | {"alt": [m["alt"] for m in p["media"]]} for p in shop["products"]] + [c["story"] for c in shop["collections"]]).lower()
+    assert "silver" not in said and "mixed material" not in said and "campuran" not in said
+    ring = next(p for p in shop["products"] if p["id"] == "cincin-oval")
+    assert ring["materials"] == {"id": "Emas putih 18K, berlapis rhodium", "en": "18K white gold, rhodium-plated"}
+    assert ring["description"]["en"] == "A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette."
+    # The src of a photo is a file name and stays; only its description changes.
+    assert any("silver" in m["src"].lower() for m in ring["media"])
+
+    # A database seeded with the old wording is brought up to date once; an admin's own text is not touched.
+    db = connect()
+    data = json.loads(db.execute("SELECT data FROM products WHERE id = 'cincin-oval'").fetchone()[0])
+    data["materials"] = {"id": "Tampilan silver \u00b7 material demo belum terverifikasi", "en": "Silver appearance \u00b7 demo material not yet verified"}
+    data["description"]["en"] = "A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette."
+    db.execute("UPDATE products SET data = ? WHERE id = 'cincin-oval'", (json.dumps(data),))
+    mine = json.loads(db.execute("SELECT data FROM products WHERE id = 'kalung-bar'").fetchone()[0])
+    mine["description"]["en"] = "My own words about a silver lining."
+    db.execute("UPDATE products SET data = ? WHERE id = 'kalung-bar'", (json.dumps(mine),))
+    db.execute("DELETE FROM settings WHERE name = 'wording_white_gold_2'")
+    migrate(db)
+    db.commit()
+    fixed = {p["id"]: p for p in api.get("/api/catalog").json()["products"]}
+    assert fixed["cincin-oval"]["materials"]["en"] == "18K white gold, rhodium-plated" and "ring in white gold," in fixed["cincin-oval"]["description"]["en"]
+    assert fixed["kalung-bar"]["description"]["en"] == "My own words about a silver lining."
+    # Once done it does not run again: a later admin edit that mentions silver stays.
+    data["materials"]["en"] = "Silver appearance \u00b7 demo material not yet verified"
+    db.execute("UPDATE products SET data = ? WHERE id = 'cincin-oval'", (json.dumps(data),))
+    migrate(db)
+    db.commit()
+    db.close()
+    assert next(p for p in api.get("/api/catalog").json()["products"] if p["id"] == "cincin-oval")["materials"]["en"].startswith("Silver appearance")
+
+
 def test_admin_uploads_photos(api):
     register(api)
     png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64

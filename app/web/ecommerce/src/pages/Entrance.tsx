@@ -46,7 +46,7 @@ export default function Entrance() {
   }, [language]);
   return <>
     <title>Aurelle | The Art of Detail</title>
-    <meta name="description" content="Explore the Aurelle silver showroom in twelve chapters, then discover the collection." />
+    <meta name="description" content="Explore the Aurelle white gold showroom in twelve chapters, then discover the collection." />
     <div ref={ref} id="aurelle" dangerouslySetInnerHTML={{ __html: showroomMarkup }} />
   </>;
 }

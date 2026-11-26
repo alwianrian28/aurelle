@@ -53,6 +53,10 @@
 .care-guide__card h3 { margin: 6px 0 0; font: 400 24px/1.15 var(--font-serif); }
 .care-guide__card ul { margin: 18px 0 0; padding: 0; list-style: none; }
 .care-guide__card li { padding: 12px 0; border-top: 1px solid var(--svc-line); font-size: 14px; line-height: 1.6; color: var(--svc-muted); }
+.care-guide__note { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 16px 56px; margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--svc-line); }
+.care-guide__note h3 { margin: 6px 0 0; font: 400 24px/1.15 var(--font-serif); }
+.care-guide__note p:not(.guide-dialog__label) { margin: 0; font-size: 14px; line-height: 1.6; color: var(--svc-muted); }
+.care-guide__note p + p { margin-top: 10px; }
 .care-guide__cta { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--svc-line); }
 .care-guide__cta p { margin: 0; font-size: 13px; color: var(--svc-soft); }
 .care-guide__cta .care-guide__cta-title { margin-bottom: 4px; font-size: 14px; font-weight: 500; color: var(--svc-ink); }
@@ -66,6 +70,7 @@
   .care-guide { grid-template-columns: 1fr; }
   .care-guide__card, .care-guide__card:first-child, .care-guide__card:last-child { padding: 0; }
   .care-guide__card + .care-guide__card { margin-top: 28px; padding-top: 28px; border-left: 0; border-top: 1px solid var(--svc-line); }
+  .care-guide__note { grid-template-columns: 1fr; }
   .care-guide__cta { flex-direction: column; align-items: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -147,6 +147,16 @@ export const careGuide = {
       ],
     },
   ],
+  // Whether Aurelle itself re-plates is not confirmed, so the note only says a jeweler can.
+  rhodium: {
+    label: { id: 'Baik untuk diketahui', en: 'Good to know' },
+    title: { id: 'Tentang lapisan rhodium', en: 'About the rhodium finish' },
+    body: {
+      id: 'Putih terang pada perhiasan Anda berasal dari lapisan rhodium di atas emas putih 18K. Lapisan ini menipis perlahan seiring pemakaian, lebih cepat pada cincin dan gelang, sehingga rona emas putih yang sedikit lebih hangat bisa mulai terlihat. Ini wajar dan tidak merusak perhiasan: toko perhiasan dapat melapisinya kembali agar putih seperti semula.',
+      en: 'The bright white of your jewelry comes from a layer of rhodium over 18K white gold. This layer thins gradually with wear, sooner on rings and bracelets, so the slightly warmer tone of the white gold beneath may begin to show. This is normal and does not harm the piece: a jeweler can re-plate it to bring back the original white.',
+    },
+    tip: { id: 'Gesekan, keringat, klorin, dan pembersih keras mempercepat menipisnya lapisan rhodium.', en: 'Friction, sweat, chlorine and harsh cleaners make the rhodium layer wear faster.' },
+  },
   // PENDING: cleaning/resizing/repair services are not yet a confirmed offering (PRD §14).
   ctaTitle: { id: 'Butuh pembersihan atau perbaikan profesional?', en: 'Need a professional clean or repair?' },
   ctaBody: { id: 'Tim kami dapat membantu pembersihan, penyesuaian ukuran, dan perbaikan.', en: 'Our team can help with cleaning, resizing and repairs.' },

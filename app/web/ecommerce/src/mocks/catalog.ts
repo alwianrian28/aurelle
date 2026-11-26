@@ -36,8 +36,8 @@ export const collections: Collection[] = [
     slug: 'aurora-heritage',
     name: { id: 'Aurora Heritage', en: 'Aurora Heritage' },
     story: {
-      id: 'Siluet klasik yang dihidupkan kembali dengan sentuhan kontemporer: garis bersih, proporsi presisi, dan kilau silver yang tenang.',
-      en: 'Classic silhouettes reimagined with a contemporary touch: clean lines, precise proportions, and a quiet silver glow.',
+      id: 'Siluet klasik yang dihidupkan kembali dengan sentuhan kontemporer: garis bersih, proporsi presisi, dan kilau emas putih yang tenang.',
+      en: 'Classic silhouettes reimagined with a contemporary touch: clean lines, precise proportions, and the quiet glow of white gold.',
     },
     banner: '/media/collections/aurora.jpg',
     // Ids of the generated catalog below (`jewelryDesigns[].file`); the first four are the page preview.
@@ -48,8 +48,8 @@ export const collections: Collection[] = [
     slug: 'noir-mineral',
     name: { id: 'Noir Mineral', en: 'Noir Mineral' },
     story: {
-      id: 'Material campuran dan batu alami bertekstur gelap, dirancang untuk yang menyukai keanggunan yang lebih berani.',
-      en: 'Mixed materials and dark-toned natural stones, designed for those who favor a bolder elegance.',
+      id: 'Emas putih dengan batu alami bertekstur gelap, dirancang untuk yang menyukai keanggunan yang lebih berani.',
+      en: 'White gold set with dark-toned natural stones, designed for those who favor a bolder elegance.',
     },
     banner: '/media/collections/noir.jpg',
     productIds: ['cincin-pilin', 'gelang-cuff', 'kalung-bar', 'anting-climber', 'cincin-bypass-pave', 'gelang-bangle-pave', 'kalung-station', 'anting-huggie', 'cincin-terbuka', 'gelang-bola'],
@@ -63,13 +63,13 @@ export const products: Product[] = [
     name: { id: 'Cincin Aria Solitaire', en: 'Aria Solitaire Ring' },
     tagline: { id: 'Kemilau tunggal yang abadi', en: 'A single, timeless glow' },
     description: {
-      id: 'Cincin solitaire dengan tampilan logam silver, dirancang untuk kilau maksimal dengan siluet minimal.',
-      en: 'A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette.',
+      id: 'Cincin solitaire dari emas putih, dirancang untuk kilau maksimal dengan siluet minimal.',
+      en: 'A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette.',
     },
     category: 'ring',
     collectionIds: ['col-aurora'],
     saleType: 'ready_stock',
-    materials: { id: 'Tampilan silver · material demo belum terverifikasi', en: 'Silver appearance · demo material not yet verified' },
+    materials: { id: 'Emas putih 18K, berlapis rhodium', en: '18K white gold, rhodium-plated' },
     stoneType: { id: 'Zirkonia kubik', en: 'Cubic zirconia' },
     engravingAvailable: false,
     featured: true,
@@ -91,13 +91,13 @@ export const products: Product[] = [
     name: { id: 'Cincin Ombra Twist', en: 'Ombra Twist Ring' },
     tagline: { id: 'Lekukan berani, kilau lembut', en: 'Bold curves, soft shine' },
     description: {
-      id: 'Desain twist asimetris dengan material campuran gelap, cocok dipadukan sendiri atau bertumpuk.',
-      en: 'An asymmetric twist design in dark mixed material, perfect worn alone or stacked.',
+      id: 'Desain twist asimetris dari emas putih, cocok dipadukan sendiri atau bertumpuk.',
+      en: 'An asymmetric twist design in white gold, perfect worn alone or stacked.',
     },
     category: 'ring',
     collectionIds: ['col-noir'],
     saleType: 'ready_stock',
-    materials: { id: 'Tampilan silver · material demo belum terverifikasi', en: 'Silver appearance · demo material not yet verified' },
+    materials: { id: 'Emas putih 18K, berlapis rhodium', en: '18K white gold, rhodium-plated' },
     engravingAvailable: true,
     featured: false,
     active: true,
@@ -117,13 +117,13 @@ export const products: Product[] = [
     name: { id: 'Gelang Rantai Mira', en: 'Mira Chain Bracelet' },
     tagline: { id: 'Elegan dalam setiap tautan', en: 'Elegance in every link' },
     description: {
-      id: 'Gelang rantai halus dengan material campuran, nyaman dipakai harian maupun acara formal.',
-      en: 'A delicate chain bracelet in mixed material, comfortable for daily wear or formal occasions.',
+      id: 'Gelang rantai halus dari emas putih, nyaman dipakai harian maupun acara formal.',
+      en: 'A delicate chain bracelet in white gold, comfortable for daily wear or formal occasions.',
     },
     category: 'bracelet',
     collectionIds: ['col-noir'],
     saleType: 'ready_stock',
-    materials: { id: 'Tampilan silver · material demo belum terverifikasi', en: 'Silver appearance · demo material not yet verified' },
+    materials: { id: 'Emas putih 18K, berlapis rhodium', en: '18K white gold, rhodium-plated' },
     engravingAvailable: true,
     featured: false,
     active: true,
@@ -144,13 +144,13 @@ export const products: Product[] = [
     name: { id: 'Kalung Pendant Lumen', en: 'Lumen Pendant Necklace' },
     tagline: { id: 'Cahaya yang mengikuti gerakmu', en: 'Light that follows your movement' },
     description: {
-      id: 'Pendant sculptural dengan tampilan silver dan batu dekoratif, menjadi focal point yang anggun.',
-      en: 'A sculptural pendant in silver-colored metal and decorative stone, an elegant focal point.',
+      id: 'Pendant sculptural dari emas putih dengan batu dekoratif, menjadi focal point yang anggun.',
+      en: 'A sculptural pendant in white gold set with a decorative stone, an elegant focal point.',
     },
     category: 'necklace',
     collectionIds: ['col-aurora'],
     saleType: 'ready_stock',
-    materials: { id: 'Tampilan silver · material demo belum terverifikasi', en: 'Silver appearance · demo material not yet verified' },
+    materials: { id: 'Emas putih 18K, berlapis rhodium', en: '18K white gold, rhodium-plated' },
     stoneType: { id: 'Batu bulan', en: 'Moonstone' },
     engravingAvailable: false,
     featured: true,
@@ -177,7 +177,7 @@ export const products: Product[] = [
     category: 'earring',
     collectionIds: ['col-aurora'],
     saleType: 'ready_stock',
-    materials: { id: 'Tampilan silver · material demo belum terverifikasi', en: 'Silver appearance · demo material not yet verified' },
+    materials: { id: 'Emas putih 18K, berlapis rhodium', en: '18K white gold, rhodium-plated' },
     engravingAvailable: false,
     featured: false,
     active: true,
@@ -213,6 +213,8 @@ export function getProductsByCollection(collectionId: string): Product[] {
 /** Original interactive collection. Prices and stock inherit category demo templates, not verified retail data. */
 const jewelryDesigns = [{"category": "ring", "name": "Oval Ring", "file": "cincin-oval"}, {"category": "ring", "name": "Stacking Ring", "file": "cincin-susun"}, {"category": "necklace", "name": "Layered Necklace", "file": "kalung-berlapis"}, {"category": "bracelet", "name": "Stone Bangle", "file": "gelang"}, {"category": "bracelet", "name": "Tennis Bracelet", "file": "gelang-tennis"}, {"category": "bracelet", "name": "Cuff Bracelet", "file": "gelang-cuff"}, {"category": "bracelet", "name": "Bead Bracelet", "file": "gelang-bola"}, {"category": "bracelet", "name": "Heart Charm Bracelet", "file": "gelang-charm-hati"}, {"category": "bracelet", "name": "Infinity Bracelet", "file": "gelang-infinity"}, {"category": "bracelet", "name": "Pavé Bangle", "file": "gelang-bangle-pave"}, {"category": "ring", "name": "Solitaire Ring", "file": "cincin-solitaire"}, {"category": "ring", "name": "Eternity Ring", "file": "cincin-eternity"}, {"category": "ring", "name": "Halo Ring", "file": "cincin-halo"}, {"category": "ring", "name": "Twist Ring", "file": "cincin-pilin"}, {"category": "ring", "name": "Open Ring", "file": "cincin-terbuka"}, {"category": "ring", "name": "Pavé Bypass Ring", "file": "cincin-bypass-pave"}, {"category": "necklace", "name": "Solitaire Necklace", "file": "kalung-solitaire"}, {"category": "necklace", "name": "Bar Necklace", "file": "kalung-bar"}, {"category": "necklace", "name": "Circle Necklace", "file": "kalung-lingkar"}, {"category": "necklace", "name": "Station Necklace", "file": "kalung-station"}, {"category": "necklace", "name": "Heart Necklace", "file": "kalung-hati"}, {"category": "necklace", "name": "Three-Stone Necklace", "file": "kalung-tiga-batu"}, {"category": "earring", "name": "Stud Earrings", "file": "anting-stud"}, {"category": "earring", "name": "Hoop Earrings", "file": "anting-hoop"}, {"category": "earring", "name": "Huggie Earrings", "file": "anting-huggie"}, {"category": "earring", "name": "Drop Earrings", "file": "anting-drop"}, {"category": "earring", "name": "Hook Earrings", "file": "anting-kait"}, {"category": "earring", "name": "Climber Earrings", "file": "anting-climber"}, {"category": "earring", "name": "Flower Earrings", "file": "anting-bunga"}, {"category": "earring", "name": "Wire Flower Earrings", "file": "anting-bunga-kawat"}] as const;
 const demoTemplates = [...products];
+/** The photo files were named when the metal was still called "silver"; the pieces are 18K white gold. */
+const whiteGold = (text: string) => text.replace(/\bSilver\b(?= [A-Z])/g, 'White Gold').replace(/\bSilver\b/g, 'White gold').replace(/\bsilver\b/g, 'white gold');
 products.splice(0, products.length, ...jewelryDesigns.map((design, index): Product => {
   const template = demoTemplates.find(product => product.category === design.category)!;
   // Slug and SKUs follow the English name; `file` stays the id (media, 3D model, saved carts).
@@ -225,7 +227,7 @@ products.splice(0, products.length, ...jewelryDesigns.map((design, index): Produ
       src,
       alt: {
         id: `${design.name}, foto ${photoIndex + 1}`,
-        en: `${src.split('/').pop()!.replace(/-\d+\.png$/, '').replace(/\.png$/, '')}, photo ${photoIndex + 1}`,
+        en: `${whiteGold(src.split('/').pop()!.replace(/-\d+\.png$/, '').replace(/\.png$/, ''))}, photo ${photoIndex + 1}`,
       },
     })),
     variants: template.variants.map((variant, i) => ({ ...variant, id: `${design.file}-${i}`, sku: `${slug.toUpperCase()}-${i}` })),

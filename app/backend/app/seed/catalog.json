@@ -12,15 +12,15 @@
     "en": "A single, timeless glow"
    },
    "description": {
-    "id": "Cincin solitaire dengan tampilan logam silver, dirancang untuk kilau maksimal dengan siluet minimal.",
-    "en": "A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette."
+    "id": "Cincin solitaire dari emas putih, dirancang untuk kilau maksimal dengan siluet minimal.",
+    "en": "A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette."
    },
    "category": "ring",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Zirkonia kubik",
@@ -43,7 +43,7 @@
      "src": "/media/products/Rings/Ring_silver_oval_diamond/Open Oval Diamond Silver Ring-4.png",
      "alt": {
       "id": "Cincin Oval \u2014 foto 2",
-      "en": "Open Oval Diamond Silver Ring \u2014 photo 2"
+      "en": "Open Oval Diamond White Gold Ring \u2014 photo 2"
      }
     },
     {
@@ -59,7 +59,7 @@
      "src": "/media/products/Rings/Ring_silver_oval_diamond/Silver Oval Ring Studio Portrait-1.png",
      "alt": {
       "id": "Cincin Oval \u2014 foto 4",
-      "en": "Silver Oval Ring Studio Portrait \u2014 photo 4"
+      "en": "White Gold Oval Ring Studio Portrait \u2014 photo 4"
      }
     },
     {
@@ -75,7 +75,7 @@
      "src": "/media/products/Rings/Ring_silver_oval_diamond/Serene profile with silver oval ring-3.png",
      "alt": {
       "id": "Cincin Oval \u2014 foto 6",
-      "en": "Serene profile with silver oval ring \u2014 photo 6"
+      "en": "Serene profile with white gold oval ring \u2014 photo 6"
      }
     },
     {
@@ -83,7 +83,7 @@
      "src": "/media/products/Rings/Ring_silver_oval_diamond/Silver Open Oval Diamond Ring-7.png",
      "alt": {
       "id": "Cincin Oval \u2014 foto 7",
-      "en": "Silver Open Oval Diamond Ring \u2014 photo 7"
+      "en": "White Gold Open Oval Diamond Ring \u2014 photo 7"
      }
     },
     {
@@ -91,7 +91,7 @@
      "src": "/media/products/Rings/Ring_silver_oval_diamond/Silver Oval Ring Studio Portrait-2.png",
      "alt": {
       "id": "Cincin Oval \u2014 foto 8",
-      "en": "Silver Oval Ring Studio Portrait \u2014 photo 8"
+      "en": "White Gold Oval Ring Studio Portrait \u2014 photo 8"
      }
     },
     {
@@ -144,15 +144,15 @@
     "en": "A single, timeless glow"
    },
    "description": {
-    "id": "Cincin solitaire dengan tampilan logam silver, dirancang untuk kilau maksimal dengan siluet minimal.",
-    "en": "A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette."
+    "id": "Cincin solitaire dari emas putih, dirancang untuk kilau maksimal dengan siluet minimal.",
+    "en": "A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette."
    },
    "category": "ring",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Zirkonia kubik",
@@ -167,7 +167,7 @@
      "src": "/media/products/Rings/Ring_silver_stacked/Stacked silver rings by white blouse-1.png",
      "alt": {
       "id": "Cincin Susun \u2014 foto 1",
-      "en": "Stacked silver rings by white blouse \u2014 photo 1"
+      "en": "Stacked white gold rings by white blouse \u2014 photo 1"
      }
     },
     {
@@ -175,7 +175,7 @@
      "src": "/media/products/Rings/Ring_silver_stacked/Luxury Silver Ring Stack Macro-4.png",
      "alt": {
       "id": "Cincin Susun \u2014 foto 2",
-      "en": "Luxury Silver Ring Stack Macro \u2014 photo 2"
+      "en": "Luxury White Gold Ring Stack Macro \u2014 photo 2"
      }
     },
     {
@@ -183,7 +183,7 @@
      "src": "/media/products/Rings/Ring_silver_stacked/Elegant Three-Ring Silver Portrait-1.png",
      "alt": {
       "id": "Cincin Susun \u2014 foto 3",
-      "en": "Elegant Three-Ring Silver Portrait \u2014 photo 3"
+      "en": "Elegant Three-Ring White Gold Portrait \u2014 photo 3"
      }
     },
     {
@@ -191,7 +191,7 @@
      "src": "/media/products/Rings/Ring_silver_stacked/Luxury Three-Ring Silver Portrait-2.png",
      "alt": {
       "id": "Cincin Susun \u2014 foto 4",
-      "en": "Luxury Three-Ring Silver Portrait \u2014 photo 4"
+      "en": "Luxury Three-Ring White Gold Portrait \u2014 photo 4"
      }
     },
     {
@@ -199,7 +199,7 @@
      "src": "/media/products/Rings/Ring_silver_stacked/Refined Silver Ring Stack Portrait-3.png",
      "alt": {
       "id": "Cincin Susun \u2014 foto 5",
-      "en": "Refined Silver Ring Stack Portrait \u2014 photo 5"
+      "en": "Refined White Gold Ring Stack Portrait \u2014 photo 5"
      }
     },
     {
@@ -207,7 +207,7 @@
      "src": "/media/products/Rings/Ring_silver_stacked/Silver three-ring stack on silk-7.png",
      "alt": {
       "id": "Cincin Susun \u2014 foto 6",
-      "en": "Silver three-ring stack on silk \u2014 photo 6"
+      "en": "White gold three-ring stack on silk \u2014 photo 6"
      }
     },
     {
@@ -215,7 +215,7 @@
      "src": "/media/products/Rings/Ring_silver_stacked/Stacked silver ring trio-9.png",
      "alt": {
       "id": "Cincin Susun \u2014 foto 7",
-      "en": "Stacked silver ring trio \u2014 photo 7"
+      "en": "Stacked white gold ring trio \u2014 photo 7"
      }
     },
     {
@@ -223,7 +223,7 @@
      "src": "/media/products/Rings/Ring_silver_stacked/Three-ring silver stack editorial portrait-8.png",
      "alt": {
       "id": "Cincin Susun \u2014 foto 8",
-      "en": "Three-ring silver stack editorial portrait \u2014 photo 8"
+      "en": "Three-ring white gold stack editorial portrait \u2014 photo 8"
      }
     },
     {
@@ -231,7 +231,7 @@
      "src": "/media/products/Rings/Ring_silver_stacked/Three-ring silver stack on pale stone-5.png",
      "alt": {
       "id": "Cincin Susun \u2014 foto 9",
-      "en": "Three-ring silver stack on pale stone \u2014 photo 9"
+      "en": "Three-ring white gold stack on pale stone \u2014 photo 9"
      }
     }
    ],
@@ -276,15 +276,15 @@
     "en": "Light that follows your movement"
    },
    "description": {
-    "id": "Pendant sculptural dengan tampilan silver dan batu dekoratif, menjadi focal point yang anggun.",
-    "en": "A sculptural pendant in silver-colored metal and decorative stone, an elegant focal point."
+    "id": "Pendant sculptural dari emas putih dengan batu dekoratif, menjadi focal point yang anggun.",
+    "en": "A sculptural pendant in white gold set with a decorative stone, an elegant focal point."
    },
    "category": "necklace",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Batu bulan",
@@ -299,7 +299,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_teardrop/Layered Silver Necklaces on White Blouse-5.png",
      "alt": {
       "id": "Kalung Berlapis \u2014 foto 1",
-      "en": "Layered Silver Necklaces on White Blouse \u2014 photo 1"
+      "en": "Layered White Gold Necklaces on White Blouse \u2014 photo 1"
      }
     },
     {
@@ -307,7 +307,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_teardrop/Silver Teardrop and Lariat Elegance-1.png",
      "alt": {
       "id": "Kalung Berlapis \u2014 foto 2",
-      "en": "Silver Teardrop and Lariat Elegance \u2014 photo 2"
+      "en": "White Gold Teardrop and Lariat Elegance \u2014 photo 2"
      }
     },
     {
@@ -315,7 +315,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_teardrop/Three-quarter silver necklace studio portrait-1.png",
      "alt": {
       "id": "Kalung Berlapis \u2014 foto 3",
-      "en": "Three-quarter silver necklace studio portrait \u2014 photo 3"
+      "en": "Three-quarter white gold necklace studio portrait \u2014 photo 3"
      }
     },
     {
@@ -323,7 +323,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_teardrop/Elegant layered silver necklace portrait-2.png",
      "alt": {
       "id": "Kalung Berlapis \u2014 foto 4",
-      "en": "Elegant layered silver necklace portrait \u2014 photo 4"
+      "en": "Elegant layered white gold necklace portrait \u2014 photo 4"
      }
     },
     {
@@ -331,7 +331,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_teardrop/High-angle layered silver necklace editorial-3.png",
      "alt": {
       "id": "Kalung Berlapis \u2014 foto 5",
-      "en": "High-angle layered silver necklace editorial \u2014 photo 5"
+      "en": "High-angle layered white gold necklace editorial \u2014 photo 5"
      }
     },
     {
@@ -339,7 +339,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_teardrop/Layered silver necklaces, low-angle elegance-4.png",
      "alt": {
       "id": "Kalung Berlapis \u2014 foto 6",
-      "en": "Layered silver necklaces, low-angle elegance \u2014 photo 6"
+      "en": "Layered white gold necklaces, low-angle elegance \u2014 photo 6"
      }
     },
     {
@@ -347,7 +347,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_teardrop/Layered silver teardrop necklace close-up-8.png",
      "alt": {
       "id": "Kalung Berlapis \u2014 foto 7",
-      "en": "Layered silver teardrop necklace close-up \u2014 photo 7"
+      "en": "Layered white gold teardrop necklace close-up \u2014 photo 7"
      }
     },
     {
@@ -355,7 +355,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_teardrop/Silver necklaces on a white blouse-2.png",
      "alt": {
       "id": "Kalung Berlapis \u2014 foto 8",
-      "en": "Silver necklaces on a white blouse \u2014 photo 8"
+      "en": "White gold necklaces on a white blouse \u2014 photo 8"
      }
     }
    ],
@@ -388,15 +388,15 @@
     "en": "Elegance in every link"
    },
    "description": {
-    "id": "Gelang rantai halus dengan material campuran, nyaman dipakai harian maupun acara formal.",
-    "en": "A delicate chain bracelet in mixed material, comfortable for daily wear or formal occasions."
+    "id": "Gelang rantai halus dari emas putih, nyaman dipakai harian maupun acara formal.",
+    "en": "A delicate chain bracelet in white gold, comfortable for daily wear or formal occasions."
    },
    "category": "bracelet",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": true,
    "featured": true,
@@ -415,7 +415,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_diamond_hinged/Elegant Portrait with Silver Diamond Bangle-1.png",
      "alt": {
       "id": "Gelang Batu \u2014 foto 2",
-      "en": "Elegant Portrait with Silver Diamond Bangle \u2014 photo 2"
+      "en": "Elegant Portrait with White Gold Diamond Bangle \u2014 photo 2"
      }
     },
     {
@@ -498,15 +498,15 @@
     "en": "Elegance in every link"
    },
    "description": {
-    "id": "Gelang rantai halus dengan material campuran, nyaman dipakai harian maupun acara formal.",
-    "en": "A delicate chain bracelet in mixed material, comfortable for daily wear or formal occasions."
+    "id": "Gelang rantai halus dari emas putih, nyaman dipakai harian maupun acara formal.",
+    "en": "A delicate chain bracelet in white gold, comfortable for daily wear or formal occasions."
    },
    "category": "bracelet",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": true,
    "featured": true,
@@ -517,7 +517,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_tennis/Silver tennis bracelet on white sleeve-17.png",
      "alt": {
       "id": "Gelang Tennis \u2014 foto 1",
-      "en": "Silver tennis bracelet on white sleeve \u2014 photo 1"
+      "en": "White gold tennis bracelet on white sleeve \u2014 photo 1"
      }
     },
     {
@@ -573,7 +573,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_tennis/Elegant side profile, silver tennis bracelet-3.png",
      "alt": {
       "id": "Gelang Tennis \u2014 foto 8",
-      "en": "Elegant side profile, silver tennis bracelet \u2014 photo 8"
+      "en": "Elegant side profile, white gold tennis bracelet \u2014 photo 8"
      }
     },
     {
@@ -581,7 +581,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_tennis/Elegant Silver Tennis Bracelet Portrait-2.png",
      "alt": {
       "id": "Gelang Tennis \u2014 foto 9",
-      "en": "Elegant Silver Tennis Bracelet Portrait \u2014 photo 9"
+      "en": "Elegant White Gold Tennis Bracelet Portrait \u2014 photo 9"
      }
     },
     {
@@ -597,7 +597,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_tennis/Silver tennis bracelet cuff detail-7.png",
      "alt": {
       "id": "Gelang Tennis \u2014 foto 11",
-      "en": "Silver tennis bracelet cuff detail \u2014 photo 11"
+      "en": "White gold tennis bracelet cuff detail \u2014 photo 11"
      }
     },
     {
@@ -605,7 +605,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_tennis/Silver tennis bracelet on ivory boucl\u00e9-3.png",
      "alt": {
       "id": "Gelang Tennis \u2014 foto 12",
-      "en": "Silver tennis bracelet on ivory boucl\u00e9 \u2014 photo 12"
+      "en": "White gold tennis bracelet on ivory boucl\u00e9 \u2014 photo 12"
      }
     }
    ],
@@ -648,15 +648,15 @@
     "en": "Elegance in every link"
    },
    "description": {
-    "id": "Gelang rantai halus dengan material campuran, nyaman dipakai harian maupun acara formal.",
-    "en": "A delicate chain bracelet in mixed material, comfortable for daily wear or formal occasions."
+    "id": "Gelang rantai halus dari emas putih, nyaman dipakai harian maupun acara formal.",
+    "en": "A delicate chain bracelet in white gold, comfortable for daily wear or formal occasions."
    },
    "category": "bracelet",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": true,
    "featured": true,
@@ -667,7 +667,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_cuff/Polished Silver Cuff on Wrist-18.png",
      "alt": {
       "id": "Gelang Cuff \u2014 foto 1",
-      "en": "Polished Silver Cuff on Wrist \u2014 photo 1"
+      "en": "Polished White Gold Cuff on Wrist \u2014 photo 1"
      }
     },
     {
@@ -675,7 +675,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_cuff/Elevated elegance with a silver open cuff-4.png",
      "alt": {
       "id": "Gelang Cuff \u2014 foto 2",
-      "en": "Elevated elegance with a silver open cuff \u2014 photo 2"
+      "en": "Elevated elegance with a white gold open cuff \u2014 photo 2"
      }
     },
     {
@@ -683,7 +683,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_cuff/Silver open cuff portrait-1.png",
      "alt": {
       "id": "Gelang Cuff \u2014 foto 3",
-      "en": "Silver open cuff portrait \u2014 photo 3"
+      "en": "White gold open cuff portrait \u2014 photo 3"
      }
     },
     {
@@ -691,7 +691,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_cuff/Elegant seated portrait with silver open cuff-2.png",
      "alt": {
       "id": "Gelang Cuff \u2014 foto 4",
-      "en": "Elegant seated portrait with silver open cuff \u2014 photo 4"
+      "en": "Elegant seated portrait with white gold open cuff \u2014 photo 4"
      }
     },
     {
@@ -699,7 +699,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_cuff/Open silver cuff with twin stones-5.png",
      "alt": {
       "id": "Gelang Cuff \u2014 foto 5",
-      "en": "Open silver cuff with twin stones \u2014 photo 5"
+      "en": "Open white gold cuff with twin stones \u2014 photo 5"
      }
     },
     {
@@ -715,7 +715,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_cuff/Polished silver open cuff on ivory boucle-3.png",
      "alt": {
       "id": "Gelang Cuff \u2014 foto 7",
-      "en": "Polished silver open cuff on ivory boucle \u2014 photo 7"
+      "en": "Polished white gold open cuff on ivory boucle \u2014 photo 7"
      }
     },
     {
@@ -723,7 +723,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_cuff/Side profile with silver open cuff-6.png",
      "alt": {
       "id": "Gelang Cuff \u2014 foto 8",
-      "en": "Side profile with silver open cuff \u2014 photo 8"
+      "en": "Side profile with white gold open cuff \u2014 photo 8"
      }
     },
     {
@@ -731,7 +731,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_cuff/Twin-stone silver cuff macro-7.png",
      "alt": {
       "id": "Gelang Cuff \u2014 foto 9",
-      "en": "Twin-stone silver cuff macro \u2014 photo 9"
+      "en": "Twin-stone white gold cuff macro \u2014 photo 9"
      }
     }
    ],
@@ -774,15 +774,15 @@
     "en": "Elegance in every link"
    },
    "description": {
-    "id": "Gelang rantai halus dengan material campuran, nyaman dipakai harian maupun acara formal.",
-    "en": "A delicate chain bracelet in mixed material, comfortable for daily wear or formal occasions."
+    "id": "Gelang rantai halus dari emas putih, nyaman dipakai harian maupun acara formal.",
+    "en": "A delicate chain bracelet in white gold, comfortable for daily wear or formal occasions."
    },
    "category": "bracelet",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": true,
    "featured": true,
@@ -793,7 +793,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_bead/Silver Bead Bracelet on Ivory Trousers-4.png",
      "alt": {
       "id": "Gelang Bola \u2014 foto 1",
-      "en": "Silver Bead Bracelet on Ivory Trousers \u2014 photo 1"
+      "en": "White Gold Bead Bracelet on Ivory Trousers \u2014 photo 1"
      }
     },
     {
@@ -801,7 +801,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_bead/Polished Silver Bead Bracelet Macro-6.png",
      "alt": {
       "id": "Gelang Bola \u2014 foto 2",
-      "en": "Polished Silver Bead Bracelet Macro \u2014 photo 2"
+      "en": "Polished White Gold Bead Bracelet Macro \u2014 photo 2"
      }
     },
     {
@@ -809,7 +809,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_bead/Silver bead bracelet on an elegant wrist-3.png",
      "alt": {
       "id": "Gelang Bola \u2014 foto 3",
-      "en": "Silver bead bracelet on an elegant wrist \u2014 photo 3"
+      "en": "White gold bead bracelet on an elegant wrist \u2014 photo 3"
      }
     },
     {
@@ -817,7 +817,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_bead/Elegant portrait with silver bead bracelet-1.png",
      "alt": {
       "id": "Gelang Bola \u2014 foto 4",
-      "en": "Elegant portrait with silver bead bracelet \u2014 photo 4"
+      "en": "Elegant portrait with white gold bead bracelet \u2014 photo 4"
      }
     },
     {
@@ -825,7 +825,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_bead/Over-the-shoulder silver bead bracelet-7.png",
      "alt": {
       "id": "Gelang Bola \u2014 foto 5",
-      "en": "Over-the-shoulder silver bead bracelet \u2014 photo 5"
+      "en": "Over-the-shoulder white gold bead bracelet \u2014 photo 5"
      }
     },
     {
@@ -833,7 +833,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_bead/Silver bead bracelet editorial portrait-5.png",
      "alt": {
       "id": "Gelang Bola \u2014 foto 6",
-      "en": "Silver bead bracelet editorial portrait \u2014 photo 6"
+      "en": "White gold bead bracelet editorial portrait \u2014 photo 6"
      }
     },
     {
@@ -841,7 +841,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_polished_bead/Silver bead bracelet in soft light-2.png",
      "alt": {
       "id": "Gelang Bola \u2014 foto 7",
-      "en": "Silver bead bracelet in soft light \u2014 photo 7"
+      "en": "White gold bead bracelet in soft light \u2014 photo 7"
      }
     }
    ],
@@ -884,15 +884,15 @@
     "en": "Elegance in every link"
    },
    "description": {
-    "id": "Gelang rantai halus dengan material campuran, nyaman dipakai harian maupun acara formal.",
-    "en": "A delicate chain bracelet in mixed material, comfortable for daily wear or formal occasions."
+    "id": "Gelang rantai halus dari emas putih, nyaman dipakai harian maupun acara formal.",
+    "en": "A delicate chain bracelet in white gold, comfortable for daily wear or formal occasions."
    },
    "category": "bracelet",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": true,
    "featured": true,
@@ -903,7 +903,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_delicate_heart/Silver open-heart bracelet wrist close-up-6.png",
      "alt": {
       "id": "Gelang Charm Hati \u2014 foto 1",
-      "en": "Silver open-heart bracelet wrist close-up \u2014 photo 1"
+      "en": "White gold open-heart bracelet wrist close-up \u2014 photo 1"
      }
     },
     {
@@ -911,7 +911,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_delicate_heart/Delicate Silver Heart Bracelet Portrait-1.png",
      "alt": {
       "id": "Gelang Charm Hati \u2014 foto 2",
-      "en": "Delicate Silver Heart Bracelet Portrait \u2014 photo 2"
+      "en": "Delicate White Gold Heart Bracelet Portrait \u2014 photo 2"
      }
     },
     {
@@ -919,7 +919,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_delicate_heart/Delicate silver heart bracelet close-up-19.png",
      "alt": {
       "id": "Gelang Charm Hati \u2014 foto 3",
-      "en": "Delicate silver heart bracelet close-up \u2014 photo 3"
+      "en": "Delicate white gold heart bracelet close-up \u2014 photo 3"
      }
     },
     {
@@ -927,7 +927,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_delicate_heart/Delicate Silver Heart Bracelet Close-Up-4.png",
      "alt": {
       "id": "Gelang Charm Hati \u2014 foto 4",
-      "en": "Delicate Silver Heart Bracelet Close-Up \u2014 photo 4"
+      "en": "Delicate White Gold Heart Bracelet Close-Up \u2014 photo 4"
      }
     },
     {
@@ -935,7 +935,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_delicate_heart/Elegant silver heart bracelet portrait-8.png",
      "alt": {
       "id": "Gelang Charm Hati \u2014 foto 5",
-      "en": "Elegant silver heart bracelet portrait \u2014 photo 5"
+      "en": "Elegant white gold heart bracelet portrait \u2014 photo 5"
      }
     },
     {
@@ -943,7 +943,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_delicate_heart/Luxury silver heart bracelet macro-5.png",
      "alt": {
       "id": "Gelang Charm Hati \u2014 foto 6",
-      "en": "Luxury silver heart bracelet macro \u2014 photo 6"
+      "en": "Luxury white gold heart bracelet macro \u2014 photo 6"
      }
     },
     {
@@ -951,7 +951,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_delicate_heart/Open Heart Silver Bracelet Portrait-3.png",
      "alt": {
       "id": "Gelang Charm Hati \u2014 foto 7",
-      "en": "Open Heart Silver Bracelet Portrait \u2014 photo 7"
+      "en": "Open Heart White Gold Bracelet Portrait \u2014 photo 7"
      }
     },
     {
@@ -959,7 +959,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_delicate_heart/Silver Heart Bracelet Hair-Tucking Portrait-2.png",
      "alt": {
       "id": "Gelang Charm Hati \u2014 foto 8",
-      "en": "Silver Heart Bracelet Hair-Tucking Portrait \u2014 photo 8"
+      "en": "White Gold Heart Bracelet Hair-Tucking Portrait \u2014 photo 8"
      }
     },
     {
@@ -967,7 +967,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_delicate_heart/Silver open-heart bracelet on crossed hands-7.png",
      "alt": {
       "id": "Gelang Charm Hati \u2014 foto 9",
-      "en": "Silver open-heart bracelet on crossed hands \u2014 photo 9"
+      "en": "White gold open-heart bracelet on crossed hands \u2014 photo 9"
      }
     }
    ],
@@ -1010,15 +1010,15 @@
     "en": "Elegance in every link"
    },
    "description": {
-    "id": "Gelang rantai halus dengan material campuran, nyaman dipakai harian maupun acara formal.",
-    "en": "A delicate chain bracelet in mixed material, comfortable for daily wear or formal occasions."
+    "id": "Gelang rantai halus dari emas putih, nyaman dipakai harian maupun acara formal.",
+    "en": "A delicate chain bracelet in white gold, comfortable for daily wear or formal occasions."
    },
    "category": "bracelet",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": true,
    "featured": true,
@@ -1029,7 +1029,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_infinity/Macro silver infinity bracelet on wrist-7.png",
      "alt": {
       "id": "Gelang Infinity \u2014 foto 1",
-      "en": "Macro silver infinity bracelet on wrist \u2014 photo 1"
+      "en": "Macro white gold infinity bracelet on wrist \u2014 photo 1"
      }
     },
     {
@@ -1037,7 +1037,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_infinity/Infinity Silver Bracelet Close-Up-20.png",
      "alt": {
       "id": "Gelang Infinity \u2014 foto 2",
-      "en": "Infinity Silver Bracelet Close-Up \u2014 photo 2"
+      "en": "Infinity White Gold Bracelet Close-Up \u2014 photo 2"
      }
     },
     {
@@ -1053,7 +1053,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_infinity/Elegant Portrait with Silver Infinity Bracelet-2.png",
      "alt": {
       "id": "Gelang Infinity \u2014 foto 4",
-      "en": "Elegant Portrait with Silver Infinity Bracelet \u2014 photo 4"
+      "en": "Elegant Portrait with White Gold Infinity Bracelet \u2014 photo 4"
      }
     },
     {
@@ -1061,7 +1061,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_infinity/Elegant Silver Infinity Bracelet Portrait-5.png",
      "alt": {
       "id": "Gelang Infinity \u2014 foto 5",
-      "en": "Elegant Silver Infinity Bracelet Portrait \u2014 photo 5"
+      "en": "Elegant White Gold Infinity Bracelet Portrait \u2014 photo 5"
      }
     },
     {
@@ -1077,7 +1077,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_infinity/Polished silver infinity bracelet close-up-4.png",
      "alt": {
       "id": "Gelang Infinity \u2014 foto 7",
-      "en": "Polished silver infinity bracelet close-up \u2014 photo 7"
+      "en": "Polished white gold infinity bracelet close-up \u2014 photo 7"
      }
     },
     {
@@ -1085,7 +1085,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_infinity/Silver infinity bracelet on crossed hands-8.png",
      "alt": {
       "id": "Gelang Infinity \u2014 foto 8",
-      "en": "Silver infinity bracelet on crossed hands \u2014 photo 8"
+      "en": "White gold infinity bracelet on crossed hands \u2014 photo 8"
      }
     },
     {
@@ -1093,7 +1093,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_infinity/Silver infinity bracelet side portrait-3.png",
      "alt": {
       "id": "Gelang Infinity \u2014 foto 9",
-      "en": "Silver infinity bracelet side portrait \u2014 photo 9"
+      "en": "White gold infinity bracelet side portrait \u2014 photo 9"
      }
     }
    ],
@@ -1136,15 +1136,15 @@
     "en": "Elegance in every link"
    },
    "description": {
-    "id": "Gelang rantai halus dengan material campuran, nyaman dipakai harian maupun acara formal.",
-    "en": "A delicate chain bracelet in mixed material, comfortable for daily wear or formal occasions."
+    "id": "Gelang rantai halus dari emas putih, nyaman dipakai harian maupun acara formal.",
+    "en": "A delicate chain bracelet in white gold, comfortable for daily wear or formal occasions."
    },
    "category": "bracelet",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": true,
    "featured": true,
@@ -1155,7 +1155,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_elegant_pave/Luxury silver bangle on relaxed wrist-5.png",
      "alt": {
       "id": "Gelang Bangle Pav\u00e9 \u2014 foto 1",
-      "en": "Luxury silver bangle on relaxed wrist \u2014 photo 1"
+      "en": "Luxury white gold bangle on relaxed wrist \u2014 photo 1"
      }
     },
     {
@@ -1163,7 +1163,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_elegant_pave/Elevated portrait with a diamond-set silver bangle-3.png",
      "alt": {
       "id": "Gelang Bangle Pav\u00e9 \u2014 foto 2",
-      "en": "Elevated portrait with a diamond-set silver bangle \u2014 photo 2"
+      "en": "Elevated portrait with a diamond-set white gold bangle \u2014 photo 2"
      }
     },
     {
@@ -1171,7 +1171,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_elegant_pave/Silver bangle beside a gentle smile-1.png",
      "alt": {
       "id": "Gelang Bangle Pav\u00e9 \u2014 foto 3",
-      "en": "Silver bangle beside a gentle smile \u2014 photo 3"
+      "en": "White gold bangle beside a gentle smile \u2014 photo 3"
      }
     },
     {
@@ -1179,7 +1179,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_elegant_pave/Close-up of a silver bangle\u2019s stone-set arc-7.png",
      "alt": {
       "id": "Gelang Bangle Pav\u00e9 \u2014 foto 4",
-      "en": "Close-up of a silver bangle\u2019s stone-set arc \u2014 photo 4"
+      "en": "Close-up of a white gold bangle\u2019s stone-set arc \u2014 photo 4"
      }
     },
     {
@@ -1195,7 +1195,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_elegant_pave/Elegant pav\u00e9 silver bangle close-up-21.png",
      "alt": {
       "id": "Gelang Bangle Pav\u00e9 \u2014 foto 6",
-      "en": "Elegant pav\u00e9 silver bangle close-up \u2014 photo 6"
+      "en": "Elegant pav\u00e9 white gold bangle close-up \u2014 photo 6"
      }
     },
     {
@@ -1203,7 +1203,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_elegant_pave/Low-angle silver bangle on wrist-6.png",
      "alt": {
       "id": "Gelang Bangle Pav\u00e9 \u2014 foto 7",
-      "en": "Low-angle silver bangle on wrist \u2014 photo 7"
+      "en": "Low-angle white gold bangle on wrist \u2014 photo 7"
      }
     },
     {
@@ -1211,7 +1211,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_elegant_pave/Profile portrait with diamond-set silver bangle-4.png",
      "alt": {
       "id": "Gelang Bangle Pav\u00e9 \u2014 foto 8",
-      "en": "Profile portrait with diamond-set silver bangle \u2014 photo 8"
+      "en": "Profile portrait with diamond-set white gold bangle \u2014 photo 8"
      }
     },
     {
@@ -1219,7 +1219,7 @@
      "src": "/media/products/Bracelets/Bracelet_silver_elegant_pave/Three-Quarter Portrait with Diamond-Set Silver Bangle-2.png",
      "alt": {
       "id": "Gelang Bangle Pav\u00e9 \u2014 foto 9",
-      "en": "Three-Quarter Portrait with Diamond-Set Silver Bangle \u2014 photo 9"
+      "en": "Three-Quarter Portrait with Diamond-Set White Gold Bangle \u2014 photo 9"
      }
     }
    ],
@@ -1262,15 +1262,15 @@
     "en": "A single, timeless glow"
    },
    "description": {
-    "id": "Cincin solitaire dengan tampilan logam silver, dirancang untuk kilau maksimal dengan siluet minimal.",
-    "en": "A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette."
+    "id": "Cincin solitaire dari emas putih, dirancang untuk kilau maksimal dengan siluet minimal.",
+    "en": "A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette."
    },
    "category": "ring",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Zirkonia kubik",
@@ -1285,7 +1285,7 @@
      "src": "/media/products/Rings/Ring_silver_solitaire/Silver solitaire on resting hands-3.png",
      "alt": {
       "id": "Cincin Solitaire \u2014 foto 1",
-      "en": "Silver solitaire on resting hands \u2014 photo 1"
+      "en": "White gold solitaire on resting hands \u2014 photo 1"
      }
     },
     {
@@ -1293,7 +1293,7 @@
      "src": "/media/products/Rings/Ring_silver_solitaire/Minimalist Silver Solitaire on Pale Stone-7.png",
      "alt": {
       "id": "Cincin Solitaire \u2014 foto 2",
-      "en": "Minimalist Silver Solitaire on Pale Stone \u2014 photo 2"
+      "en": "Minimalist White Gold Solitaire on Pale Stone \u2014 photo 2"
      }
     },
     {
@@ -1301,7 +1301,7 @@
      "src": "/media/products/Rings/Ring_silver_solitaire/Elegant Silver Solitaire Portrait-1.png",
      "alt": {
       "id": "Cincin Solitaire \u2014 foto 3",
-      "en": "Elegant Silver Solitaire Portrait \u2014 photo 3"
+      "en": "Elegant White Gold Solitaire Portrait \u2014 photo 3"
      }
     },
     {
@@ -1325,7 +1325,7 @@
      "src": "/media/products/Rings/Ring_silver_solitaire/Refined Silver Solitaire Portrait-3.png",
      "alt": {
       "id": "Cincin Solitaire \u2014 foto 6",
-      "en": "Refined Silver Solitaire Portrait \u2014 photo 6"
+      "en": "Refined White Gold Solitaire Portrait \u2014 photo 6"
      }
     },
     {
@@ -1333,7 +1333,7 @@
      "src": "/media/products/Rings/Ring_silver_solitaire/Silver Solitaire Across the Shoulder-2.png",
      "alt": {
       "id": "Cincin Solitaire \u2014 foto 7",
-      "en": "Silver Solitaire Across the Shoulder \u2014 photo 7"
+      "en": "White Gold Solitaire Across the Shoulder \u2014 photo 7"
      }
     },
     {
@@ -1341,7 +1341,7 @@
      "src": "/media/products/Rings/Ring_silver_solitaire/Silver solitaire ring on cool gray-6.png",
      "alt": {
       "id": "Cincin Solitaire \u2014 foto 8",
-      "en": "Silver solitaire ring on cool gray \u2014 photo 8"
+      "en": "White gold solitaire ring on cool gray \u2014 photo 8"
      }
     },
     {
@@ -1349,7 +1349,7 @@
      "src": "/media/products/Rings/Ring_silver_solitaire/Silver Solitaire Ring on Pale Silk-8.png",
      "alt": {
       "id": "Cincin Solitaire \u2014 foto 9",
-      "en": "Silver Solitaire Ring on Pale Silk \u2014 photo 9"
+      "en": "White Gold Solitaire Ring on Pale Silk \u2014 photo 9"
      }
     }
    ],
@@ -1394,15 +1394,15 @@
     "en": "A single, timeless glow"
    },
    "description": {
-    "id": "Cincin solitaire dengan tampilan logam silver, dirancang untuk kilau maksimal dengan siluet minimal.",
-    "en": "A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette."
+    "id": "Cincin solitaire dari emas putih, dirancang untuk kilau maksimal dengan siluet minimal.",
+    "en": "A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette."
    },
    "category": "ring",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Zirkonia kubik",
@@ -1417,7 +1417,7 @@
      "src": "/media/products/Rings/Ring_silver_eternity/Silver diamond eternity ring on relaxed hands-6.png",
      "alt": {
       "id": "Cincin Eternity \u2014 foto 1",
-      "en": "Silver diamond eternity ring on relaxed hands \u2014 photo 1"
+      "en": "White gold diamond eternity ring on relaxed hands \u2014 photo 1"
      }
     },
     {
@@ -1425,7 +1425,7 @@
      "src": "/media/products/Rings/Ring_silver_eternity/Silver Eternity Band on Ivory Satin.png",
      "alt": {
       "id": "Cincin Eternity \u2014 foto 2",
-      "en": "Silver Eternity Band on Ivory Satin \u2014 photo 2"
+      "en": "White Gold Eternity Band on Ivory Satin \u2014 photo 2"
      }
     },
     {
@@ -1433,7 +1433,7 @@
      "src": "/media/products/Rings/Ring_silver_eternity/Luxury portrait with silver eternity ring-1.png",
      "alt": {
       "id": "Cincin Eternity \u2014 foto 3",
-      "en": "Luxury portrait with silver eternity ring \u2014 photo 3"
+      "en": "Luxury portrait with white gold eternity ring \u2014 photo 3"
      }
     },
     {
@@ -1441,7 +1441,7 @@
      "src": "/media/products/Rings/Ring_silver_eternity/Elegant Portrait with Silver Eternity Ring-3.png",
      "alt": {
       "id": "Cincin Eternity \u2014 foto 4",
-      "en": "Elegant Portrait with Silver Eternity Ring \u2014 photo 4"
+      "en": "Elegant Portrait with White Gold Eternity Ring \u2014 photo 4"
      }
     },
     {
@@ -1473,7 +1473,7 @@
      "src": "/media/products/Rings/Ring_silver_eternity/Polished silver eternity band on plinth-7.png",
      "alt": {
       "id": "Cincin Eternity \u2014 foto 8",
-      "en": "Polished silver eternity band on plinth \u2014 photo 8"
+      "en": "Polished white gold eternity band on plinth \u2014 photo 8"
      }
     },
     {
@@ -1481,7 +1481,7 @@
      "src": "/media/products/Rings/Ring_silver_eternity/Silver Eternity Band Portrait-2.png",
      "alt": {
       "id": "Cincin Eternity \u2014 foto 9",
-      "en": "Silver Eternity Band Portrait \u2014 photo 9"
+      "en": "White Gold Eternity Band Portrait \u2014 photo 9"
      }
     }
    ],
@@ -1526,15 +1526,15 @@
     "en": "A single, timeless glow"
    },
    "description": {
-    "id": "Cincin solitaire dengan tampilan logam silver, dirancang untuk kilau maksimal dengan siluet minimal.",
-    "en": "A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette."
+    "id": "Cincin solitaire dari emas putih, dirancang untuk kilau maksimal dengan siluet minimal.",
+    "en": "A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette."
    },
    "category": "ring",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Zirkonia kubik",
@@ -1557,7 +1557,7 @@
      "src": "/media/products/Rings/Ring_silver_halo/Upright silver halo diamond ring-6.png",
      "alt": {
       "id": "Cincin Halo \u2014 foto 2",
-      "en": "Upright silver halo diamond ring \u2014 photo 2"
+      "en": "Upright white gold halo diamond ring \u2014 photo 2"
      }
     },
     {
@@ -1565,7 +1565,7 @@
      "src": "/media/products/Rings/Ring_silver_halo/Silver Halo Ring Across Shoulder-1.png",
      "alt": {
       "id": "Cincin Halo \u2014 foto 3",
-      "en": "Silver Halo Ring Across Shoulder \u2014 photo 3"
+      "en": "White Gold Halo Ring Across Shoulder \u2014 photo 3"
      }
     },
     {
@@ -1573,7 +1573,7 @@
      "src": "/media/products/Rings/Ring_silver_halo/Silver halo ring portrait-1.png",
      "alt": {
       "id": "Cincin Halo \u2014 foto 4",
-      "en": "Silver halo ring portrait \u2014 photo 4"
+      "en": "White gold halo ring portrait \u2014 photo 4"
      }
     },
     {
@@ -1589,7 +1589,7 @@
      "src": "/media/products/Rings/Ring_silver_halo/Seated portrait with silver halo ring-2.png",
      "alt": {
       "id": "Cincin Halo \u2014 foto 6",
-      "en": "Seated portrait with silver halo ring \u2014 photo 6"
+      "en": "Seated portrait with white gold halo ring \u2014 photo 6"
      }
     },
     {
@@ -1597,7 +1597,7 @@
      "src": "/media/products/Rings/Ring_silver_halo/Silver halo diamond ring on ivory silk-8.png",
      "alt": {
       "id": "Cincin Halo \u2014 foto 7",
-      "en": "Silver halo diamond ring on ivory silk \u2014 photo 7"
+      "en": "White gold halo diamond ring on ivory silk \u2014 photo 7"
      }
     },
     {
@@ -1605,7 +1605,7 @@
      "src": "/media/products/Rings/Ring_silver_halo/Silver Halo Ring in Soft Portrait-5.png",
      "alt": {
       "id": "Cincin Halo \u2014 foto 8",
-      "en": "Silver Halo Ring in Soft Portrait \u2014 photo 8"
+      "en": "White Gold Halo Ring in Soft Portrait \u2014 photo 8"
      }
     },
     {
@@ -1613,7 +1613,7 @@
      "src": "/media/products/Rings/Ring_silver_halo/Silver halo ring portrait-4.png",
      "alt": {
       "id": "Cincin Halo \u2014 foto 9",
-      "en": "Silver halo ring portrait \u2014 photo 9"
+      "en": "White gold halo ring portrait \u2014 photo 9"
      }
     }
    ],
@@ -1658,15 +1658,15 @@
     "en": "A single, timeless glow"
    },
    "description": {
-    "id": "Cincin solitaire dengan tampilan logam silver, dirancang untuk kilau maksimal dengan siluet minimal.",
-    "en": "A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette."
+    "id": "Cincin solitaire dari emas putih, dirancang untuk kilau maksimal dengan siluet minimal.",
+    "en": "A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette."
    },
    "category": "ring",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Zirkonia kubik",
@@ -1681,7 +1681,7 @@
      "src": "/media/products/Rings/Ring_silver_delicate_twisted/Delicate twisted silver ring on hand-6.png",
      "alt": {
       "id": "Cincin Pilin \u2014 foto 1",
-      "en": "Delicate twisted silver ring on hand \u2014 photo 1"
+      "en": "Delicate twisted white gold ring on hand \u2014 photo 1"
      }
     },
     {
@@ -1689,7 +1689,7 @@
      "src": "/media/products/Rings/Ring_silver_delicate_twisted/Twisted Silver Ring on Ivory Silk-7.png",
      "alt": {
       "id": "Cincin Pilin \u2014 foto 2",
-      "en": "Twisted Silver Ring on Ivory Silk \u2014 photo 2"
+      "en": "Twisted White Gold Ring on Ivory Silk \u2014 photo 2"
      }
     },
     {
@@ -1697,7 +1697,7 @@
      "src": "/media/products/Rings/Ring_silver_delicate_twisted/Twisted silver ring, timeless elegance-1.png",
      "alt": {
       "id": "Cincin Pilin \u2014 foto 3",
-      "en": "Twisted silver ring, timeless elegance \u2014 photo 3"
+      "en": "Twisted white gold ring, timeless elegance \u2014 photo 3"
      }
     },
     {
@@ -1705,7 +1705,7 @@
      "src": "/media/products/Rings/Ring_silver_delicate_twisted/Delicate Twisted Silver Ring-8.png",
      "alt": {
       "id": "Cincin Pilin \u2014 foto 4",
-      "en": "Delicate Twisted Silver Ring \u2014 photo 4"
+      "en": "Delicate Twisted White Gold Ring \u2014 photo 4"
      }
     },
     {
@@ -1713,7 +1713,7 @@
      "src": "/media/products/Rings/Ring_silver_delicate_twisted/Silver Twist Ring Portrait-4.png",
      "alt": {
       "id": "Cincin Pilin \u2014 foto 5",
-      "en": "Silver Twist Ring Portrait \u2014 photo 5"
+      "en": "White Gold Twist Ring Portrait \u2014 photo 5"
      }
     },
     {
@@ -1721,7 +1721,7 @@
      "src": "/media/products/Rings/Ring_silver_delicate_twisted/Top-down elegance with a twisted silver ring-3.png",
      "alt": {
       "id": "Cincin Pilin \u2014 foto 6",
-      "en": "Top-down elegance with a twisted silver ring \u2014 photo 6"
+      "en": "Top-down elegance with a twisted white gold ring \u2014 photo 6"
      }
     },
     {
@@ -1729,7 +1729,7 @@
      "src": "/media/products/Rings/Ring_silver_delicate_twisted/Twisted Silver Ring on Resting Hand-4.png",
      "alt": {
       "id": "Cincin Pilin \u2014 foto 7",
-      "en": "Twisted Silver Ring on Resting Hand \u2014 photo 7"
+      "en": "Twisted White Gold Ring on Resting Hand \u2014 photo 7"
      }
     },
     {
@@ -1737,7 +1737,7 @@
      "src": "/media/products/Rings/Ring_silver_delicate_twisted/Twisted silver ring portrait-2.png",
      "alt": {
       "id": "Cincin Pilin \u2014 foto 8",
-      "en": "Twisted silver ring portrait \u2014 photo 8"
+      "en": "Twisted white gold ring portrait \u2014 photo 8"
      }
     },
     {
@@ -1745,7 +1745,7 @@
      "src": "/media/products/Rings/Ring_silver_delicate_twisted/Twisted Silver Ring, Quiet Elegance-5.png",
      "alt": {
       "id": "Cincin Pilin \u2014 foto 9",
-      "en": "Twisted Silver Ring, Quiet Elegance \u2014 photo 9"
+      "en": "Twisted White Gold Ring, Quiet Elegance \u2014 photo 9"
      }
     }
    ],
@@ -1790,15 +1790,15 @@
     "en": "A single, timeless glow"
    },
    "description": {
-    "id": "Cincin solitaire dengan tampilan logam silver, dirancang untuk kilau maksimal dengan siluet minimal.",
-    "en": "A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette."
+    "id": "Cincin solitaire dari emas putih, dirancang untuk kilau maksimal dengan siluet minimal.",
+    "en": "A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette."
    },
    "category": "ring",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Zirkonia kubik",
@@ -1813,7 +1813,7 @@
      "src": "/media/products/Rings/Ring_silver_bypass/Silver bypass ring, white blouse detail-2.png",
      "alt": {
       "id": "Cincin Terbuka \u2014 foto 1",
-      "en": "Silver bypass ring, white blouse detail \u2014 photo 1"
+      "en": "White gold bypass ring, white blouse detail \u2014 photo 1"
      }
     },
     {
@@ -1821,7 +1821,7 @@
      "src": "/media/products/Rings/Ring_silver_bypass/Minimalist silver bypass ring on ivory silk-8.png",
      "alt": {
       "id": "Cincin Terbuka \u2014 foto 2",
-      "en": "Minimalist silver bypass ring on ivory silk \u2014 photo 2"
+      "en": "Minimalist white gold bypass ring on ivory silk \u2014 photo 2"
      }
     },
     {
@@ -1829,7 +1829,7 @@
      "src": "/media/products/Rings/Ring_silver_bypass/Elegant Silver Bypass Ring Portrait-1.png",
      "alt": {
       "id": "Cincin Terbuka \u2014 foto 3",
-      "en": "Elegant Silver Bypass Ring Portrait \u2014 photo 3"
+      "en": "Elegant White Gold Bypass Ring Portrait \u2014 photo 3"
      }
     },
     {
@@ -1837,7 +1837,7 @@
      "src": "/media/products/Rings/Ring_silver_bypass/Silver bypass ring, effortless elegance-1.png",
      "alt": {
       "id": "Cincin Terbuka \u2014 foto 4",
-      "en": "Silver bypass ring, effortless elegance \u2014 photo 4"
+      "en": "White gold bypass ring, effortless elegance \u2014 photo 4"
      }
     },
     {
@@ -1845,7 +1845,7 @@
      "src": "/media/products/Rings/Ring_silver_bypass/Polished silver bypass ring by her cheek-4.png",
      "alt": {
       "id": "Cincin Terbuka \u2014 foto 5",
-      "en": "Polished silver bypass ring by her cheek \u2014 photo 5"
+      "en": "Polished white gold bypass ring by her cheek \u2014 photo 5"
      }
     },
     {
@@ -1853,7 +1853,7 @@
      "src": "/media/products/Rings/Ring_silver_bypass/Polished silver bypass ring, gentle portrait-6.png",
      "alt": {
       "id": "Cincin Terbuka \u2014 foto 6",
-      "en": "Polished silver bypass ring, gentle portrait \u2014 photo 6"
+      "en": "Polished white gold bypass ring, gentle portrait \u2014 photo 6"
      }
     },
     {
@@ -1861,7 +1861,7 @@
      "src": "/media/products/Rings/Ring_silver_bypass/Silver bypass ring in a poised portrait-3.png",
      "alt": {
       "id": "Cincin Terbuka \u2014 foto 7",
-      "en": "Silver bypass ring in a poised portrait \u2014 photo 7"
+      "en": "White gold bypass ring in a poised portrait \u2014 photo 7"
      }
     },
     {
@@ -1869,7 +1869,7 @@
      "src": "/media/products/Rings/Ring_silver_bypass/Silver Bypass Ring, Graceful Shoulder Pose-3.png",
      "alt": {
       "id": "Cincin Terbuka \u2014 foto 8",
-      "en": "Silver Bypass Ring, Graceful Shoulder Pose \u2014 photo 8"
+      "en": "White Gold Bypass Ring, Graceful Shoulder Pose \u2014 photo 8"
      }
     },
     {
@@ -1877,7 +1877,7 @@
      "src": "/media/products/Rings/Ring_silver_bypass/Three-quarter portrait with silver bypass ring-2.png",
      "alt": {
       "id": "Cincin Terbuka \u2014 foto 9",
-      "en": "Three-quarter portrait with silver bypass ring \u2014 photo 9"
+      "en": "Three-quarter portrait with white gold bypass ring \u2014 photo 9"
      }
     }
    ],
@@ -1922,15 +1922,15 @@
     "en": "A single, timeless glow"
    },
    "description": {
-    "id": "Cincin solitaire dengan tampilan logam silver, dirancang untuk kilau maksimal dengan siluet minimal.",
-    "en": "A solitaire ring in silver-colored metal, engineered for maximum sparkle with a minimal silhouette."
+    "id": "Cincin solitaire dari emas putih, dirancang untuk kilau maksimal dengan siluet minimal.",
+    "en": "A solitaire ring in white gold, engineered for maximum sparkle with a minimal silhouette."
    },
    "category": "ring",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Zirkonia kubik",
@@ -1945,7 +1945,7 @@
      "src": "/media/products/Rings/Ring_silver_pave/Silver bypass solitaire on white blouse.png",
      "alt": {
       "id": "Cincin Bypass Pav\u00e9 \u2014 foto 1",
-      "en": "Silver bypass solitaire on white blouse \u2014 photo 1"
+      "en": "White gold bypass solitaire on white blouse \u2014 photo 1"
      }
     },
     {
@@ -1953,7 +1953,7 @@
      "src": "/media/products/Rings/Ring_silver_pave/Silver bypass pav\u00e9 diamond ring-5.png",
      "alt": {
       "id": "Cincin Bypass Pav\u00e9 \u2014 foto 2",
-      "en": "Silver bypass pav\u00e9 diamond ring \u2014 photo 2"
+      "en": "White gold bypass pav\u00e9 diamond ring \u2014 photo 2"
      }
     },
     {
@@ -1961,7 +1961,7 @@
      "src": "/media/products/Rings/Ring_silver_pave/Silver bypass ring, serene side profile-2.png",
      "alt": {
       "id": "Cincin Bypass Pav\u00e9 \u2014 foto 3",
-      "en": "Silver bypass ring, serene side profile \u2014 photo 3"
+      "en": "White gold bypass ring, serene side profile \u2014 photo 3"
      }
     },
     {
@@ -1969,7 +1969,7 @@
      "src": "/media/products/Rings/Ring_silver_pave/Silver bypass ring with diamond pav\u00e9-7.png",
      "alt": {
       "id": "Cincin Bypass Pav\u00e9 \u2014 foto 4",
-      "en": "Silver bypass ring with diamond pav\u00e9 \u2014 photo 4"
+      "en": "White gold bypass ring with diamond pav\u00e9 \u2014 photo 4"
      }
     },
     {
@@ -1977,7 +1977,7 @@
      "src": "/media/products/Rings/Ring_silver_pave/Top-down silver pav\u00e9 ring on ivory satin-11.png",
      "alt": {
       "id": "Cincin Bypass Pav\u00e9 \u2014 foto 5",
-      "en": "Top-down silver pav\u00e9 ring on ivory satin \u2014 photo 5"
+      "en": "Top-down white gold pav\u00e9 ring on ivory satin \u2014 photo 5"
      }
     },
     {
@@ -1985,7 +1985,7 @@
      "src": "/media/products/Rings/Ring_silver_pave/Elegant silver bypass ring portrait-1.png",
      "alt": {
       "id": "Cincin Bypass Pav\u00e9 \u2014 foto 6",
-      "en": "Elegant silver bypass ring portrait \u2014 photo 6"
+      "en": "Elegant white gold bypass ring portrait \u2014 photo 6"
      }
     },
     {
@@ -1993,7 +1993,7 @@
      "src": "/media/products/Rings/Ring_silver_pave/Silver bypass ring in elegant studio-3.png",
      "alt": {
       "id": "Cincin Bypass Pav\u00e9 \u2014 foto 7",
-      "en": "Silver bypass ring in elegant studio \u2014 photo 7"
+      "en": "White gold bypass ring in elegant studio \u2014 photo 7"
      }
     },
     {
@@ -2001,7 +2001,7 @@
      "src": "/media/products/Rings/Ring_silver_pave/Silver bypass ring with pav\u00e9 diamond-9.png",
      "alt": {
       "id": "Cincin Bypass Pav\u00e9 \u2014 foto 8",
-      "en": "Silver bypass ring with pav\u00e9 diamond \u2014 photo 8"
+      "en": "White gold bypass ring with pav\u00e9 diamond \u2014 photo 8"
      }
     },
     {
@@ -2009,7 +2009,7 @@
      "src": "/media/products/Rings/Ring_silver_pave/Silver diamond bypass ring on ivory satin-8.png",
      "alt": {
       "id": "Cincin Bypass Pav\u00e9 \u2014 foto 9",
-      "en": "Silver diamond bypass ring on ivory satin \u2014 photo 9"
+      "en": "White gold diamond bypass ring on ivory satin \u2014 photo 9"
      }
     }
    ],
@@ -2054,15 +2054,15 @@
     "en": "Light that follows your movement"
    },
    "description": {
-    "id": "Pendant sculptural dengan tampilan silver dan batu dekoratif, menjadi focal point yang anggun.",
-    "en": "A sculptural pendant in silver-colored metal and decorative stone, an elegant focal point."
+    "id": "Pendant sculptural dari emas putih dengan batu dekoratif, menjadi focal point yang anggun.",
+    "en": "A sculptural pendant in white gold set with a decorative stone, an elegant focal point."
    },
    "category": "necklace",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Batu bulan",
@@ -2077,7 +2077,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_solitaire_pendant/Silver Solitaire Necklace on White Blouse-3.png",
      "alt": {
       "id": "Kalung Solitaire \u2014 foto 1",
-      "en": "Silver Solitaire Necklace on White Blouse \u2014 photo 1"
+      "en": "White Gold Solitaire Necklace on White Blouse \u2014 photo 1"
      }
     },
     {
@@ -2085,7 +2085,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_solitaire_pendant/Silver Solitaire Necklace on White Collar-5.png",
      "alt": {
       "id": "Kalung Solitaire \u2014 foto 2",
-      "en": "Silver Solitaire Necklace on White Collar \u2014 photo 2"
+      "en": "White Gold Solitaire Necklace on White Collar \u2014 photo 2"
      }
     },
     {
@@ -2093,7 +2093,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_solitaire_pendant/Silver solitaire necklace, three-quarter portrait-1.png",
      "alt": {
       "id": "Kalung Solitaire \u2014 foto 3",
-      "en": "Silver solitaire necklace, three-quarter portrait \u2014 photo 3"
+      "en": "White gold solitaire necklace, three-quarter portrait \u2014 photo 3"
      }
     },
     {
@@ -2101,7 +2101,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_solitaire_pendant/Silver Solitaire Necklace Catalog Portrait-4.png",
      "alt": {
       "id": "Kalung Solitaire \u2014 foto 4",
-      "en": "Silver Solitaire Necklace Catalog Portrait \u2014 photo 4"
+      "en": "White Gold Solitaire Necklace Catalog Portrait \u2014 photo 4"
      }
     },
     {
@@ -2109,7 +2109,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_solitaire_pendant/Three-quarter silver diamond necklace close-up-2.png",
      "alt": {
       "id": "Kalung Solitaire \u2014 foto 5",
-      "en": "Three-quarter silver diamond necklace close-up \u2014 photo 5"
+      "en": "Three-quarter white gold diamond necklace close-up \u2014 photo 5"
      }
     }
    ],
@@ -2142,15 +2142,15 @@
     "en": "Light that follows your movement"
    },
    "description": {
-    "id": "Pendant sculptural dengan tampilan silver dan batu dekoratif, menjadi focal point yang anggun.",
-    "en": "A sculptural pendant in silver-colored metal and decorative stone, an elegant focal point."
+    "id": "Pendant sculptural dari emas putih dengan batu dekoratif, menjadi focal point yang anggun.",
+    "en": "A sculptural pendant in white gold set with a decorative stone, an elegant focal point."
    },
    "category": "necklace",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Batu bulan",
@@ -2173,7 +2173,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_bar/Refined Silver Bar Pendant Close-Up-3.png",
      "alt": {
       "id": "Kalung Bar \u2014 foto 2",
-      "en": "Refined Silver Bar Pendant Close-Up \u2014 photo 2"
+      "en": "Refined White Gold Bar Pendant Close-Up \u2014 photo 2"
      }
     },
     {
@@ -2189,7 +2189,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_bar/Luxury silver bar necklace portrait-1.png",
      "alt": {
       "id": "Kalung Bar \u2014 foto 4",
-      "en": "Luxury silver bar necklace portrait \u2014 photo 4"
+      "en": "Luxury white gold bar necklace portrait \u2014 photo 4"
      }
     },
     {
@@ -2197,7 +2197,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_bar/Delicate Silver Bar Necklace Close-Up-2.png",
      "alt": {
       "id": "Kalung Bar \u2014 foto 5",
-      "en": "Delicate Silver Bar Necklace Close-Up \u2014 photo 5"
+      "en": "Delicate White Gold Bar Necklace Close-Up \u2014 photo 5"
      }
     },
     {
@@ -2205,7 +2205,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_bar/Silver Bar Pendant Three-Quarter Portrait-4.png",
      "alt": {
       "id": "Kalung Bar \u2014 foto 6",
-      "en": "Silver Bar Pendant Three-Quarter Portrait \u2014 photo 6"
+      "en": "White Gold Bar Pendant Three-Quarter Portrait \u2014 photo 6"
      }
     },
     {
@@ -2213,7 +2213,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_bar/Silver Bar Pendant, Studio Elegance-5.png",
      "alt": {
       "id": "Kalung Bar \u2014 foto 7",
-      "en": "Silver Bar Pendant, Studio Elegance \u2014 photo 7"
+      "en": "White Gold Bar Pendant, Studio Elegance \u2014 photo 7"
      }
     },
     {
@@ -2221,7 +2221,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_bar/Silver curved diamond bar necklace-3.png",
      "alt": {
       "id": "Kalung Bar \u2014 foto 8",
-      "en": "Silver curved diamond bar necklace \u2014 photo 8"
+      "en": "White gold curved diamond bar necklace \u2014 photo 8"
      }
     }
    ],
@@ -2254,15 +2254,15 @@
     "en": "Light that follows your movement"
    },
    "description": {
-    "id": "Pendant sculptural dengan tampilan silver dan batu dekoratif, menjadi focal point yang anggun.",
-    "en": "A sculptural pendant in silver-colored metal and decorative stone, an elegant focal point."
+    "id": "Pendant sculptural dari emas putih dengan batu dekoratif, menjadi focal point yang anggun.",
+    "en": "A sculptural pendant in white gold set with a decorative stone, an elegant focal point."
    },
    "category": "necklace",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Batu bulan",
@@ -2366,15 +2366,15 @@
     "en": "Light that follows your movement"
    },
    "description": {
-    "id": "Pendant sculptural dengan tampilan silver dan batu dekoratif, menjadi focal point yang anggun.",
-    "en": "A sculptural pendant in silver-colored metal and decorative stone, an elegant focal point."
+    "id": "Pendant sculptural dari emas putih dengan batu dekoratif, menjadi focal point yang anggun.",
+    "en": "A sculptural pendant in white gold set with a decorative stone, an elegant focal point."
    },
    "category": "necklace",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Batu bulan",
@@ -2389,7 +2389,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_delicate_diamond_station/Seven-diamond silver necklace detail shot-3.png",
      "alt": {
       "id": "Kalung Station \u2014 foto 1",
-      "en": "Seven-diamond silver necklace detail shot \u2014 photo 1"
+      "en": "Seven-diamond white gold necklace detail shot \u2014 photo 1"
      }
     },
     {
@@ -2397,7 +2397,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_delicate_diamond_station/Seven-diamond silver station necklace-1.png",
      "alt": {
       "id": "Kalung Station \u2014 foto 2",
-      "en": "Seven-diamond silver station necklace \u2014 photo 2"
+      "en": "Seven-diamond white gold station necklace \u2014 photo 2"
      }
     },
     {
@@ -2405,7 +2405,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_delicate_diamond_station/Silver seven-diamond station necklace-1.png",
      "alt": {
       "id": "Kalung Station \u2014 foto 3",
-      "en": "Silver seven-diamond station necklace \u2014 photo 3"
+      "en": "White gold seven-diamond station necklace \u2014 photo 3"
      }
     },
     {
@@ -2478,15 +2478,15 @@
     "en": "Light that follows your movement"
    },
    "description": {
-    "id": "Pendant sculptural dengan tampilan silver dan batu dekoratif, menjadi focal point yang anggun.",
-    "en": "A sculptural pendant in silver-colored metal and decorative stone, an elegant focal point."
+    "id": "Pendant sculptural dari emas putih dengan batu dekoratif, menjadi focal point yang anggun.",
+    "en": "A sculptural pendant in white gold set with a decorative stone, an elegant focal point."
    },
    "category": "necklace",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Batu bulan",
@@ -2501,7 +2501,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_open_heart/Silver Open Heart Pendant Close-Up-2.png",
      "alt": {
       "id": "Kalung Hati \u2014 foto 1",
-      "en": "Silver Open Heart Pendant Close-Up \u2014 photo 1"
+      "en": "White Gold Open Heart Pendant Close-Up \u2014 photo 1"
      }
     },
     {
@@ -2509,7 +2509,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_open_heart/Luxury Silver Open Heart Pendant-1.png",
      "alt": {
       "id": "Kalung Hati \u2014 foto 2",
-      "en": "Luxury Silver Open Heart Pendant \u2014 photo 2"
+      "en": "Luxury White Gold Open Heart Pendant \u2014 photo 2"
      }
     },
     {
@@ -2517,7 +2517,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_open_heart/Silver open heart pendant portrait-1.png",
      "alt": {
       "id": "Kalung Hati \u2014 foto 3",
-      "en": "Silver open heart pendant portrait \u2014 photo 3"
+      "en": "White gold open heart pendant portrait \u2014 photo 3"
      }
     },
     {
@@ -2525,7 +2525,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_open_heart/Elegant silver heart necklace portrait-5.png",
      "alt": {
       "id": "Kalung Hati \u2014 foto 4",
-      "en": "Elegant silver heart necklace portrait \u2014 photo 4"
+      "en": "Elegant white gold heart necklace portrait \u2014 photo 4"
      }
     },
     {
@@ -2533,7 +2533,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_open_heart/Open-heart silver pendant in soft studio light-4.png",
      "alt": {
       "id": "Kalung Hati \u2014 foto 5",
-      "en": "Open-heart silver pendant in soft studio light \u2014 photo 5"
+      "en": "Open-heart white gold pendant in soft studio light \u2014 photo 5"
      }
     },
     {
@@ -2549,7 +2549,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_open_heart/Silver open heart pendant portrait-3.png",
      "alt": {
       "id": "Kalung Hati \u2014 foto 7",
-      "en": "Silver open heart pendant portrait \u2014 photo 7"
+      "en": "White gold open heart pendant portrait \u2014 photo 7"
      }
     },
     {
@@ -2557,7 +2557,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_open_heart/Silver open-heart pendant portrait-2.png",
      "alt": {
       "id": "Kalung Hati \u2014 foto 8",
-      "en": "Silver open-heart pendant portrait \u2014 photo 8"
+      "en": "White gold open-heart pendant portrait \u2014 photo 8"
      }
     }
    ],
@@ -2590,15 +2590,15 @@
     "en": "Light that follows your movement"
    },
    "description": {
-    "id": "Pendant sculptural dengan tampilan silver dan batu dekoratif, menjadi focal point yang anggun.",
-    "en": "A sculptural pendant in silver-colored metal and decorative stone, an elegant focal point."
+    "id": "Pendant sculptural dari emas putih dengan batu dekoratif, menjadi focal point yang anggun.",
+    "en": "A sculptural pendant in white gold set with a decorative stone, an elegant focal point."
    },
    "category": "necklace",
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "stoneType": {
     "id": "Batu bulan",
@@ -2613,7 +2613,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_three-diamond/Three-diamond silver drop necklace-5.png",
      "alt": {
       "id": "Kalung Tiga Batu \u2014 foto 1",
-      "en": "Three-diamond silver drop necklace \u2014 photo 1"
+      "en": "Three-diamond white gold drop necklace \u2014 photo 1"
      }
     },
     {
@@ -2621,7 +2621,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_three-diamond/Three-diamond silver necklace on white blouse-4.png",
      "alt": {
       "id": "Kalung Tiga Batu \u2014 foto 2",
-      "en": "Three-diamond silver necklace on white blouse \u2014 photo 2"
+      "en": "Three-diamond white gold necklace on white blouse \u2014 photo 2"
      }
     },
     {
@@ -2637,7 +2637,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_three-diamond/Silver three-diamond necklace portrait-2.png",
      "alt": {
       "id": "Kalung Tiga Batu \u2014 foto 4",
-      "en": "Silver three-diamond necklace portrait \u2014 photo 4"
+      "en": "White gold three-diamond necklace portrait \u2014 photo 4"
      }
     },
     {
@@ -2645,7 +2645,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_three-diamond/Three-Diamond Silver Drop Necklace-6.png",
      "alt": {
       "id": "Kalung Tiga Batu \u2014 foto 5",
-      "en": "Three-Diamond Silver Drop Necklace \u2014 photo 5"
+      "en": "Three-Diamond White Gold Drop Necklace \u2014 photo 5"
      }
     },
     {
@@ -2653,7 +2653,7 @@
      "src": "/media/products/Necklaces/Necklace_silver_three-diamond/Three-diamond silver necklace portrait-3.png",
      "alt": {
       "id": "Kalung Tiga Batu \u2014 foto 6",
-      "en": "Three-diamond silver necklace portrait \u2014 photo 6"
+      "en": "Three-diamond white gold necklace portrait \u2014 photo 6"
      }
     }
    ],
@@ -2693,8 +2693,8 @@
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": false,
    "featured": true,
@@ -2753,7 +2753,7 @@
      "src": "/media/products/Earrings/Earring_silver_elegant_diamond_stud/Elegant Silver Diamond Stud Portrait-22.png",
      "alt": {
       "id": "Anting Stud \u2014 foto 7",
-      "en": "Elegant Silver Diamond Stud Portrait \u2014 photo 7"
+      "en": "Elegant White Gold Diamond Stud Portrait \u2014 photo 7"
      }
     },
     {
@@ -2808,8 +2808,8 @@
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": false,
    "featured": true,
@@ -2836,7 +2836,7 @@
      "src": "/media/products/Earrings/Earring_silver_diamond-lined_hoop/Diamond-lined silver hoop earring-24.png",
      "alt": {
       "id": "Anting Hoop \u2014 foto 3",
-      "en": "Diamond-lined silver hoop earring \u2014 photo 3"
+      "en": "Diamond-lined white gold hoop earring \u2014 photo 3"
      }
     },
     {
@@ -2868,7 +2868,7 @@
      "src": "/media/products/Earrings/Earring_silver_diamond-lined_hoop/Silver Diamond Hoop Pair on Gray-7.png",
      "alt": {
       "id": "Anting Hoop \u2014 foto 7",
-      "en": "Silver Diamond Hoop Pair on Gray \u2014 photo 7"
+      "en": "White Gold Diamond Hoop Pair on Gray \u2014 photo 7"
      }
     },
     {
@@ -2884,7 +2884,7 @@
      "src": "/media/products/Earrings/Earring_silver_diamond-lined_hoop/Slim Silver Diamond Hoop on Silk-8.png",
      "alt": {
       "id": "Anting Hoop \u2014 foto 9",
-      "en": "Slim Silver Diamond Hoop on Silk \u2014 photo 9"
+      "en": "Slim White Gold Diamond Hoop on Silk \u2014 photo 9"
      }
     }
    ],
@@ -2923,8 +2923,8 @@
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": false,
    "featured": true,
@@ -2935,7 +2935,7 @@
      "src": "/media/products/Earrings/Earring_silver_pave_huggie/Pav\u00e9 silver huggie ear close-up-6.png",
      "alt": {
       "id": "Anting Huggie \u2014 foto 1",
-      "en": "Pav\u00e9 silver huggie ear close-up \u2014 photo 1"
+      "en": "Pav\u00e9 white gold huggie ear close-up \u2014 photo 1"
      }
     },
     {
@@ -2943,7 +2943,7 @@
      "src": "/media/products/Earrings/Earring_silver_pave_huggie/Pav\u00e9 Silver Huggie on Ivory Silk-8.png",
      "alt": {
       "id": "Anting Huggie \u2014 foto 2",
-      "en": "Pav\u00e9 Silver Huggie on Ivory Silk \u2014 photo 2"
+      "en": "Pav\u00e9 White Gold Huggie on Ivory Silk \u2014 photo 2"
      }
     },
     {
@@ -2951,7 +2951,7 @@
      "src": "/media/products/Earrings/Earring_silver_pave_huggie/Elegant portrait with pav\u00e9 silver huggies-1.png",
      "alt": {
       "id": "Anting Huggie \u2014 foto 3",
-      "en": "Elegant portrait with pav\u00e9 silver huggies \u2014 photo 3"
+      "en": "Elegant portrait with pav\u00e9 white gold huggies \u2014 photo 3"
      }
     },
     {
@@ -2975,7 +2975,7 @@
      "src": "/media/products/Earrings/Earring_silver_pave_huggie/Pav\u00e9 silver huggie close-up-23.png",
      "alt": {
       "id": "Anting Huggie \u2014 foto 6",
-      "en": "Pav\u00e9 silver huggie close-up \u2014 photo 6"
+      "en": "Pav\u00e9 white gold huggie close-up \u2014 photo 6"
      }
     },
     {
@@ -2983,7 +2983,7 @@
      "src": "/media/products/Earrings/Earring_silver_pave_huggie/Pav\u00e9 Silver Huggie Earring Close-Up-5.png",
      "alt": {
       "id": "Anting Huggie \u2014 foto 7",
-      "en": "Pav\u00e9 Silver Huggie Earring Close-Up \u2014 photo 7"
+      "en": "Pav\u00e9 White Gold Huggie Earring Close-Up \u2014 photo 7"
      }
     },
     {
@@ -2991,7 +2991,7 @@
      "src": "/media/products/Earrings/Earring_silver_pave_huggie/Pav\u00e9 silver huggie hoops-7.png",
      "alt": {
       "id": "Anting Huggie \u2014 foto 8",
-      "en": "Pav\u00e9 silver huggie hoops \u2014 photo 8"
+      "en": "Pav\u00e9 white gold huggie hoops \u2014 photo 8"
      }
     },
     {
@@ -2999,7 +2999,7 @@
      "src": "/media/products/Earrings/Earring_silver_pave_huggie/Silver pav\u00e9 huggie portrait-2.png",
      "alt": {
       "id": "Anting Huggie \u2014 foto 9",
-      "en": "Silver pav\u00e9 huggie portrait \u2014 photo 9"
+      "en": "White gold pav\u00e9 huggie portrait \u2014 photo 9"
      }
     }
    ],
@@ -3038,8 +3038,8 @@
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": false,
    "featured": true,
@@ -3050,7 +3050,7 @@
      "src": "/media/products/Earrings/Earring_silver_elegant_teardrop/Elegant Silver Teardrop Earring Portrait-25.png",
      "alt": {
       "id": "Anting Drop \u2014 foto 1",
-      "en": "Elegant Silver Teardrop Earring Portrait \u2014 photo 1"
+      "en": "Elegant White Gold Teardrop Earring Portrait \u2014 photo 1"
      }
     },
     {
@@ -3098,7 +3098,7 @@
      "src": "/media/products/Earrings/Earring_silver_elegant_teardrop/Paired Silver Teardrop Diamond Earrings-6.png",
      "alt": {
       "id": "Anting Drop \u2014 foto 7",
-      "en": "Paired Silver Teardrop Diamond Earrings \u2014 photo 7"
+      "en": "Paired White Gold Teardrop Diamond Earrings \u2014 photo 7"
      }
     },
     {
@@ -3106,7 +3106,7 @@
      "src": "/media/products/Earrings/Earring_silver_elegant_teardrop/Silver Teardrop Diamond Earrings on Plinth-5.png",
      "alt": {
       "id": "Anting Drop \u2014 foto 8",
-      "en": "Silver Teardrop Diamond Earrings on Plinth \u2014 photo 8"
+      "en": "White Gold Teardrop Diamond Earrings on Plinth \u2014 photo 8"
      }
     },
     {
@@ -3114,7 +3114,7 @@
      "src": "/media/products/Earrings/Earring_silver_elegant_teardrop/Silver teardrop diamond earrings, editorial portrait-3.png",
      "alt": {
       "id": "Anting Drop \u2014 foto 9",
-      "en": "Silver teardrop diamond earrings, editorial portrait \u2014 photo 9"
+      "en": "White gold teardrop diamond earrings, editorial portrait \u2014 photo 9"
      }
     }
    ],
@@ -3153,8 +3153,8 @@
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": false,
    "featured": true,
@@ -3173,7 +3173,7 @@
      "src": "/media/products/Earrings/Earring_silver_french_hook_diamond/Silver French-hook diamond earrings on plinth-6.png",
      "alt": {
       "id": "Anting Kait \u2014 foto 2",
-      "en": "Silver French-hook diamond earrings on plinth \u2014 photo 2"
+      "en": "White Gold French-hook diamond earrings on plinth \u2014 photo 2"
      }
     },
     {
@@ -3197,7 +3197,7 @@
      "src": "/media/products/Earrings/Earring_silver_french_hook_diamond/Delicate Silver Hook Earrings-5.png",
      "alt": {
       "id": "Anting Kait \u2014 foto 5",
-      "en": "Delicate Silver Hook Earrings \u2014 photo 5"
+      "en": "Delicate White Gold Hook Earrings \u2014 photo 5"
      }
     },
     {
@@ -3213,7 +3213,7 @@
      "src": "/media/products/Earrings/Earring_silver_french_hook_diamond/Petite silver diamond hook earrings-8.png",
      "alt": {
       "id": "Anting Kait \u2014 foto 7",
-      "en": "Petite silver diamond hook earrings \u2014 photo 7"
+      "en": "Petite white gold diamond hook earrings \u2014 photo 7"
      }
     },
     {
@@ -3221,7 +3221,7 @@
      "src": "/media/products/Earrings/Earring_silver_french_hook_diamond/Polished silver diamond hook earring-7.png",
      "alt": {
       "id": "Anting Kait \u2014 foto 8",
-      "en": "Polished silver diamond hook earring \u2014 photo 8"
+      "en": "Polished white gold diamond hook earring \u2014 photo 8"
      }
     },
     {
@@ -3268,8 +3268,8 @@
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": false,
    "featured": true,
@@ -3280,7 +3280,7 @@
      "src": "/media/products/Earrings/Earring_silver_elegant_diamond_ear-climber/Elegant silver diamond ear climber-27.png",
      "alt": {
       "id": "Anting Climber \u2014 foto 1",
-      "en": "Elegant silver diamond ear climber \u2014 photo 1"
+      "en": "Elegant white gold diamond ear climber \u2014 photo 1"
      }
     },
     {
@@ -3288,7 +3288,7 @@
      "src": "/media/products/Earrings/Earring_silver_elegant_diamond_ear-climber/Macro silver diamond ear climber-6.png",
      "alt": {
       "id": "Anting Climber \u2014 foto 2",
-      "en": "Macro silver diamond ear climber \u2014 photo 2"
+      "en": "Macro white gold diamond ear climber \u2014 photo 2"
      }
     },
     {
@@ -3304,7 +3304,7 @@
      "src": "/media/products/Earrings/Earring_silver_elegant_diamond_ear-climber/Elegant woman wearing silver diamond ear climbers-1.png",
      "alt": {
       "id": "Anting Climber \u2014 foto 4",
-      "en": "Elegant woman wearing silver diamond ear climbers \u2014 photo 4"
+      "en": "Elegant woman wearing white gold diamond ear climbers \u2014 photo 4"
      }
     },
     {
@@ -3344,7 +3344,7 @@
      "src": "/media/products/Earrings/Earring_silver_elegant_diamond_ear-climber/Silver diamond ear climber profile-2.png",
      "alt": {
       "id": "Anting Climber \u2014 foto 9",
-      "en": "Silver diamond ear climber profile \u2014 photo 9"
+      "en": "White gold diamond ear climber profile \u2014 photo 9"
      }
     }
    ],
@@ -3383,8 +3383,8 @@
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": false,
    "featured": true,
@@ -3395,7 +3395,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower/Five-petal silver flower earring on ear-7.png",
      "alt": {
       "id": "Anting Bunga \u2014 foto 1",
-      "en": "Five-petal silver flower earring on ear \u2014 photo 1"
+      "en": "Five-petal white gold flower earring on ear \u2014 photo 1"
      }
     },
     {
@@ -3403,7 +3403,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower/Delicate silver flower earrings overhead-4.png",
      "alt": {
       "id": "Anting Bunga \u2014 foto 2",
-      "en": "Delicate silver flower earrings overhead \u2014 photo 2"
+      "en": "Delicate white gold flower earrings overhead \u2014 photo 2"
      }
     },
     {
@@ -3411,7 +3411,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower/Elegant silver flower earring portrait-1.png",
      "alt": {
       "id": "Anting Bunga \u2014 foto 3",
-      "en": "Elegant silver flower earring portrait \u2014 photo 3"
+      "en": "Elegant white gold flower earring portrait \u2014 photo 3"
      }
     },
     {
@@ -3419,7 +3419,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower/Delicate Silver Flower Earring Portrait-28.png",
      "alt": {
       "id": "Anting Bunga \u2014 foto 4",
-      "en": "Delicate Silver Flower Earring Portrait \u2014 photo 4"
+      "en": "Delicate White Gold Flower Earring Portrait \u2014 photo 4"
      }
     },
     {
@@ -3427,7 +3427,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower/Elegant side-profile silver earring portrait-3.png",
      "alt": {
       "id": "Anting Bunga \u2014 foto 5",
-      "en": "Elegant side-profile silver earring portrait \u2014 photo 5"
+      "en": "Elegant side-profile white gold earring portrait \u2014 photo 5"
      }
     },
     {
@@ -3435,7 +3435,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower/Luxury Silver Flower Earring Portrait-5.png",
      "alt": {
       "id": "Anting Bunga \u2014 foto 6",
-      "en": "Luxury Silver Flower Earring Portrait \u2014 photo 6"
+      "en": "Luxury White Gold Flower Earring Portrait \u2014 photo 6"
      }
     },
     {
@@ -3443,7 +3443,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower/Polished silver flower earring on silk-8.png",
      "alt": {
       "id": "Anting Bunga \u2014 foto 7",
-      "en": "Polished silver flower earring on silk \u2014 photo 7"
+      "en": "Polished white gold flower earring on silk \u2014 photo 7"
      }
     },
     {
@@ -3451,7 +3451,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower/Silver flower earring portrait-2.png",
      "alt": {
       "id": "Anting Bunga \u2014 foto 8",
-      "en": "Silver flower earring portrait \u2014 photo 8"
+      "en": "White gold flower earring portrait \u2014 photo 8"
      }
     },
     {
@@ -3459,7 +3459,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower/Silver flower earrings on pale stone-6.png",
      "alt": {
       "id": "Anting Bunga \u2014 foto 9",
-      "en": "Silver flower earrings on pale stone \u2014 photo 9"
+      "en": "White gold flower earrings on pale stone \u2014 photo 9"
      }
     }
    ],
@@ -3498,8 +3498,8 @@
    "collectionIds": [],
    "saleType": "ready_stock",
    "materials": {
-    "id": "Tampilan silver \u00b7 material demo belum terverifikasi",
-    "en": "Silver appearance \u00b7 demo material not yet verified"
+    "id": "Emas putih 18K, berlapis rhodium",
+    "en": "18K white gold, rhodium-plated"
    },
    "engravingAvailable": false,
    "featured": true,
@@ -3526,7 +3526,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower_mod2/Delicate silver daisy earring portrait-2.png",
      "alt": {
       "id": "Anting Bunga Kawat \u2014 foto 3",
-      "en": "Delicate silver daisy earring portrait \u2014 photo 3"
+      "en": "Delicate white gold daisy earring portrait \u2014 photo 3"
      }
     },
     {
@@ -3534,7 +3534,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower_mod2/Delicate silver daisy earrings on a model-4.png",
      "alt": {
       "id": "Anting Bunga Kawat \u2014 foto 4",
-      "en": "Delicate silver daisy earrings on a model \u2014 photo 4"
+      "en": "Delicate white gold daisy earrings on a model \u2014 photo 4"
      }
     },
     {
@@ -3542,7 +3542,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower_mod2/Delicate silver flower earring portrait-29.png",
      "alt": {
       "id": "Anting Bunga Kawat \u2014 foto 5",
-      "en": "Delicate silver flower earring portrait \u2014 photo 5"
+      "en": "Delicate white gold flower earring portrait \u2014 photo 5"
      }
     },
     {
@@ -3574,7 +3574,7 @@
      "src": "/media/products/Earrings/Earring_silver_delicate_flower_mod2/Petite silver diamond flower huggie on silk-7.png",
      "alt": {
       "id": "Anting Bunga Kawat \u2014 foto 9",
-      "en": "Petite silver diamond flower huggie on silk \u2014 photo 9"
+      "en": "Petite white gold diamond flower huggie on silk \u2014 photo 9"
      }
     }
    ],
@@ -3634,8 +3634,8 @@
     "en": "Aurora Heritage"
    },
    "story": {
-    "id": "Siluet klasik yang dihidupkan kembali dengan sentuhan kontemporer: garis bersih, proporsi presisi, dan kilau silver yang tenang.",
-    "en": "Classic silhouettes reimagined with a contemporary touch: clean lines, precise proportions, and a quiet silver glow."
+    "id": "Siluet klasik yang dihidupkan kembali dengan sentuhan kontemporer: garis bersih, proporsi presisi, dan kilau emas putih yang tenang.",
+    "en": "Classic silhouettes reimagined with a contemporary touch: clean lines, precise proportions, and the quiet glow of white gold."
    },
    "banner": "/media/collections/aurora.jpg",
    "productIds": [
@@ -3659,8 +3659,8 @@
     "en": "Noir Mineral"
    },
    "story": {
-    "id": "Material campuran dan batu alami bertekstur gelap, dirancang untuk yang menyukai keanggunan yang lebih berani.",
-    "en": "Mixed materials and dark-toned natural stones, designed for those who favor a bolder elegance."
+    "id": "Emas putih dengan batu alami bertekstur gelap, dirancang untuk yang menyukai keanggunan yang lebih berani.",
+    "en": "White gold set with dark-toned natural stones, designed for those who favor a bolder elegance."
    },
    "banner": "/media/collections/noir.jpg",
    "productIds": [

@@ -8,7 +8,7 @@ export default function JewelryCollection({ location }: { location: 'store' | 's
   const [active, setActive] = useState(false);
   return <section className="jewelry-collection" aria-labelledby={`${location}-3d-title`}>
     <header className="jewelry-collection__header">
-      <p className="eyebrow">AURELLE · SILVER EDITION · 360°</p>
+      <p className="eyebrow">AURELLE · WHITE GOLD · 360°</p>
       <h2 id={`${location}-3d-title`}>{id ? 'Koleksi dalam setiap sudut' : 'The collection, from every angle'}</h2>
       <p>{id ? '7 cincin · 7 gelang · 7 kalung · 8 anting' : '7 rings · 7 bracelets · 7 necklaces · 8 earrings'}</p>
     </header>

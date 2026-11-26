@@ -105,6 +105,16 @@ function CareGuideDialog({ onClose }: { onClose: () => void }) {
           </section>
         ))}
       </div>
+      <section className="care-guide__note" aria-labelledby="care-rhodium">
+        <div>
+          <p className="guide-dialog__label">{text(careGuide.rhodium.label)}</p>
+          <h3 id="care-rhodium">{text(careGuide.rhodium.title)}</h3>
+        </div>
+        <div>
+          <p>{text(careGuide.rhodium.body)}</p>
+          <p>{text(careGuide.rhodium.tip)}</p>
+        </div>
+      </section>
       <div className="care-guide__cta">
         <div>
           <p className="care-guide__cta-title">{text(careGuide.ctaTitle)}</p>

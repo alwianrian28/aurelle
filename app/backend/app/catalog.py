@@ -45,6 +45,10 @@ def seed_catalog(db: Database) -> None:
                 [(c["id"], pid, n) for n, pid in enumerate(c["productIds"]) if pid in known],
             )
         db.execute("INSERT INTO settings (name, value) VALUES ('collections_seeded', '1')")
+    # A catalog seeded before the metal was confirmed still says "silver appearance".
+    from .wording import migrate as reword_catalog
+
+    reword_catalog(db)
 
 
 def _seed_products(db: Database, seed: dict) -> None:

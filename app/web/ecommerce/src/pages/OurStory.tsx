@@ -2,6 +2,7 @@ import type { MouseEvent } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { products } from '../mocks/catalog';
+import { brandStory, brandText } from '../data/brandStory';
 import { useLocalePath } from '../hooks/useLocale';
 import { useGuideStore } from '../store/guideStore';
 import { ScrollSmoother } from '../lib/gsap';
@@ -24,13 +25,22 @@ const STEPS = [
 ] as const;
 
 /**
- * F-19 Our Story. FR-19-02: brand claims must come from approved brand material, and the PRD
- * (§8.1) treats "silver" as the look of the metal, not a verified material. Facts that are
- * not confirmed yet stay as bracketed placeholders in the copy (`story.*` in the locale files).
+ * F-19 Our Story. FR-19-02: brand claims must come from approved brand material. The metal is
+ * 18K white gold, rhodium-plated. Facts only the brand can supply (founding year and city, the
+ * founder, the maker, the hallmark) live in `data/brandStory.ts`; a block that needs one is
+ * left out until the fact is filled in, so no placeholder is ever shown.
  */
 export default function OurStory() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const path = useLocalePath();
+  const fact = (value: Parameters<typeof brandText>[0]) => brandText(value, i18n.language);
+  const year = fact(brandStory.foundedYear);
+  const city = fact(brandStory.foundedCity);
+  const origin = fact(brandStory.originStory);
+  const founder = fact(brandStory.founderName);
+  const quote = fact(brandStory.founderQuote);
+  const madeBy = fact(brandStory.madeBy);
+  const hallmark = fact(brandStory.hallmark);
   const openCare = useGuideStore((s) => s.openCare);
 
   // The page scrolls through ScrollSmoother, so the in-page jump goes through it when it is active.
@@ -46,7 +56,7 @@ export default function OurStory() {
   return (
     <article className="story">
       <title>{`${t('nav.ourStory')} | Aurelle`}</title>
-      <meta name="description" content={t('story.heroBody')} />
+      <meta name="description" content={t('story.metaDescription')} />
 
       <header className="story__band story-hero">
         <div className="container story__inner story-hero__grid">
@@ -70,12 +80,14 @@ export default function OurStory() {
             <h2 id="story-began-title">{t('story.beganTitle')}</h2>
           </div>
           <div className="story-began__text">
-            <p>{t('story.beganOne')}</p>
-            <p>{t('story.beganTwo')}</p>
-            <figure>
-              <blockquote>{t('story.founderQuote')}</blockquote>
-              <figcaption>{t('story.founderName')}</figcaption>
-            </figure>
+            {year && city && origin && <p>{t('story.beganOrigin', { year, city, story: origin })}</p>}
+            <p>{t('story.beganDistinct')}</p>
+            {quote && founder && (
+              <figure>
+                <blockquote>{`“${quote}”`}</blockquote>
+                <figcaption>{t('story.founderCaption', { name: founder })}</figcaption>
+              </figure>
+            )}
           </div>
         </div>
       </section>
@@ -88,10 +100,10 @@ export default function OurStory() {
             <h2 id="story-material-title">{t('story.materialTitle')}</h2>
             <p className="story-material__body">{t('story.materialBody')}</p>
             <dl className="story-material__facts">
-              {FACTS.map((fact) => (
-                <div key={fact}>
-                  <dt>{t(`story.facts.${fact}.title`)}</dt>
-                  <dd>{t(`story.facts.${fact}.body`)}</dd>
+              {FACTS.map((key) => (
+                <div key={key}>
+                  <dt>{t(`story.facts.${key}.title`)}</dt>
+                  <dd>{t(`story.facts.${key}.body`)}{key === 'metal' && hallmark ? t('story.facts.metal.hallmark', { hallmark }) : ''}</dd>
                 </div>
               ))}
             </dl>
@@ -107,7 +119,7 @@ export default function OurStory() {
               <p className="story__eyebrow">{t('story.madeEyebrow')}</p>
               <h2 id="story-made-title">{t('story.madeTitle')}</h2>
             </div>
-            <p>{t('story.madeNote')}</p>
+            <p>{madeBy ? t('story.madeNoteBy', { madeBy }) : t('story.madeNote')}</p>
           </div>
           <ol className="story-made__steps">
             {STEPS.map((step) => (
