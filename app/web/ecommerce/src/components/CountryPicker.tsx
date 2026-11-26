@@ -7,18 +7,22 @@ export function Flag({ iso }: { iso: string }) {
   return src ? <img className="country-flag" src={src} alt="" width={22} height={15} loading="lazy" /> : <span className="country-flag country-flag--none" aria-hidden="true" />;
 }
 
+/** No flag is drawn for a choice without an ISO code (a province, a city, a postal code). */
+const flag = (iso: string) => (iso ? <Flag iso={iso} /> : null);
+
 const plain = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /**
- * A country dropdown with flags and a search box. `pinned` values are listed first, above a
+ * A dropdown with a search box; countries show their flag (also used for the lists that follow
+ * from a country: province, city, postal code). `pinned` values are listed first, above a
  * line (the countries most customers pick). `compact` shows only the flag and the hint on the
  * button, for the phone number's country code.
  * Keyboard: type to search, arrows to move, Enter to choose, Escape to close.
  */
-export default function CountryPicker({ id, labelledBy, describedBy, invalid, choices, pinned = [], value, onChange, placeholder, searchLabel, emptyLabel, compact = false }: {
+export default function CountryPicker({ id, labelledBy, describedBy, invalid, choices, pinned = [], value, onChange, placeholder, searchLabel, emptyLabel, compact = false, disabled = false }: {
   id: string; labelledBy: string; describedBy?: string; invalid?: boolean;
   choices: CountryChoice[]; pinned?: string[]; value: string; onChange: (value: string) => void;
-  placeholder: string; searchLabel: string; emptyLabel: string; compact?: boolean;
+  placeholder: string; searchLabel: string; emptyLabel: string; compact?: boolean; disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -33,9 +37,10 @@ export default function CountryPicker({ id, labelledBy, describedBy, invalid, ch
   // Pinned first while browsing; a search looks through everything once.
   const rows = useMemo(() => {
     const q = plain(query.trim());
-    // "62" or "+62" looks up a calling code; anything else looks in the names.
+    // "62" or "+62" looks up a calling code or a postal code; anything else looks in the names
+    // and in what is written beside them (a postal code's district).
     const code = /^\+?\d+$/.test(q) ? q.replace('+', '') : null;
-    if (q) return choices.filter((c) => (code ? (c.hint ?? '').replace('+', '').startsWith(code) : plain(c.label).includes(q) || c.iso.toLowerCase() === q));
+    if (q) return choices.filter((c) => (code ? (c.hint ?? '').replace('+', '').startsWith(code) || c.label.startsWith(code) : plain(c.label).includes(q) || plain(c.hint ?? '').includes(q) || c.iso.toLowerCase() === q));
     const top = pinned.map((p) => choices.find((c) => c.value === p)).filter((c): c is CountryChoice => !!c);
     return [...top, ...choices.filter((c) => !pinned.includes(c.value))];
   }, [choices, pinned, query]);
@@ -69,11 +74,11 @@ export default function CountryPicker({ id, labelledBy, describedBy, invalid, ch
     <div className={`country-picker${compact ? ' country-picker--compact' : ''}${open ? ' is-open' : ''}`} ref={root}>
       <button
         ref={trigger} id={id} type="button" className="country-picker__button" aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? listId : undefined}
-        aria-labelledby={`${labelledBy} ${id}`} aria-describedby={describedBy} aria-invalid={invalid || undefined} aria-required="true"
+        aria-labelledby={`${labelledBy} ${id}`} aria-describedby={describedBy} aria-invalid={invalid || undefined} aria-required="true" disabled={disabled}
         onClick={() => (open ? setOpen(false) : show())}
         onKeyDown={(e) => { if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); show(); } }}
       >
-        {selected ? <><Flag iso={selected.iso} /><span className="country-picker__value">{compact ? selected.hint : selected.label}</span></> : <span className="country-picker__value is-empty">{placeholder}</span>}
+        {selected ? <>{flag(selected.iso)}<span className="country-picker__value">{compact ? selected.hint : selected.label}</span></> : <span className="country-picker__value is-empty">{placeholder}</span>}
         <svg className="country-picker__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
       </button>
 
@@ -94,7 +99,7 @@ export default function CountryPicker({ id, labelledBy, describedBy, invalid, ch
                 className={i === divider ? 'has-divider' : undefined}
                 onPointerMove={() => setActive(i)} onClick={() => choose(choice)}
               >
-                <Flag iso={choice.iso} /><span className="country-picker__name">{choice.label}</span>{choice.hint && <span className="country-picker__hint">{choice.hint}</span>}
+                {flag(choice.iso)}<span className="country-picker__name">{choice.label}</span>{choice.hint && <span className="country-picker__hint">{choice.hint}</span>}
               </li>
             ))}
             {rows.length === 0 && <li className="country-picker__empty" role="presentation">{emptyLabel}</li>}

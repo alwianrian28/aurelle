@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Address } from '../types/domain';
 import { COUNTRIES, getCountry } from '../utils/countries';
@@ -7,6 +7,10 @@ import CountryPicker from './CountryPicker';
 import Required from './Required';
 import { countryName, dialChoices } from '../utils/countryChoices';
 import { validateAddress, type AddressDraft, type AddressErrors } from '../utils/address';
+import { loadIdRegions, type IdRegions } from '../utils/idRegions';
+
+/** A saved address may spell a name in another case ("JAWA BARAT"): the list's own spelling. */
+const sameName = (names: string[], typed: string) => names.find((n) => n.toLowerCase() === typed.trim().toLowerCase());
 
 const EMPTY: AddressDraft = {
   recipient: '',
@@ -30,6 +34,8 @@ interface Props {
 /**
  * Form alamat internasional (F-02, FR-02-02).
  * Validasi per field; telepon wajib berkode negara (AC-02-03).
+ * Untuk Indonesia, provinsi, kota dan kode pos dipilih dari daftar yang saling mengikuti:
+ * kota mengikuti provinsi, kode pos mengikuti kota. Negara lain tetap diketik.
  */
 export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
   const { t } = useTranslation();
@@ -49,6 +55,31 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
   // The country being shipped to, then the ones the store serves, lead the list.
   const dialPinned = [...new Set([...(country ? [country.iso] : []), 'ID', 'SG', 'MY', 'US', 'AU'])];
 
+  // Indonesia's provinces, cities and postal codes, fetched once an Indonesian address is being
+  // filled in. Until they arrive (or if they cannot be had) the three fields are typed.
+  const [idRegions, setIdRegions] = useState<IdRegions | null>(null);
+  const isIndonesia = draft.country === 'Indonesia';
+  useEffect(() => {
+    if (!isIndonesia || idRegions) return;
+    let cancelled = false;
+    void loadIdRegions().then((data) => {
+      if (cancelled || !data) return;
+      setIdRegions(data);
+      setDraft((d) => {
+        const state = sameName(Object.keys(data), d.state);
+        const city = state && sameName(Object.keys(data[state]), d.city);
+        return { ...d, state: state ?? d.state, city: city ?? d.city, postalCode: d.postalCode.trim() };
+      });
+    });
+    return () => { cancelled = true; };
+  }, [isIndonesia, idRegions]);
+  const regions = isIndonesia ? idRegions : null;
+  const cities = regions?.[draft.state];
+  const postalCodes = cities?.[draft.city];
+  const stateChoices = useMemo(() => Object.keys(regions ?? {}).map((name) => ({ value: name, iso: '', label: name })), [regions]);
+  const cityChoices = useMemo(() => Object.keys(cities ?? {}).map((name) => ({ value: name, iso: '', label: name })), [cities]);
+  const postalChoices = useMemo(() => (postalCodes ?? []).map(([code, district]) => ({ value: code, iso: '', label: code, hint: district })), [postalCodes]);
+
   const update = <K extends keyof AddressDraft>(key: K, value: AddressDraft[K]) => {
     setDraft((d) => ({ ...d, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
@@ -56,9 +87,20 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
 
   const handleCountry = (name: string) => {
     const c = getCountry(name);
-    setDraft((d) => ({ ...d, country: name, phoneCountryCode: c?.dialCode ?? d.phoneCountryCode }));
+    // Another country: its province, city and postal code are not the ones filled in so far.
+    setDraft((d) => ({ ...d, country: name, phoneCountryCode: c?.dialCode ?? d.phoneCountryCode, ...(name !== d.country ? { state: '', city: '', postalCode: '' } : {}) }));
     if (c) setDialIso(c.iso); // most people's phone is from the country they live in; it can still be changed
-    setErrors((e) => ({ ...e, country: undefined, phoneCountryCode: undefined, postalCode: undefined }));
+    setErrors((e) => ({ ...e, country: undefined, phoneCountryCode: undefined, state: undefined, city: undefined, postalCode: undefined }));
+  };
+
+  // A city belongs to its province and a postal code to its city: choosing one clears what follows.
+  const handleState = (name: string) => {
+    setDraft((d) => (name === d.state ? d : { ...d, state: name, city: '', postalCode: '' }));
+    setErrors((e) => ({ ...e, state: undefined, city: undefined, postalCode: undefined }));
+  };
+  const handleCity = (name: string) => {
+    setDraft((d) => (name === d.city ? d : { ...d, city: name, postalCode: '' }));
+    setErrors((e) => ({ ...e, city: undefined, postalCode: undefined }));
   };
 
   const handleDial = (iso: string) => {
@@ -69,6 +111,13 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const next = validateAddress(draft);
+    // An address saved before the lists existed may hold a name or code that is not on them:
+    // the dropdown then shows nothing chosen, and it has to be chosen.
+    if (regions) {
+      if (!cities) next.state ??= 'address.errors.required';
+      else if (!postalCodes) next.city ??= 'address.errors.required';
+      else if (!postalCodes.some(([code]) => code === draft.postalCode)) next.postalCode ??= 'address.errors.postal';
+    }
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     onSubmit({ ...draft, line2: draft.line2?.trim() || undefined });
@@ -137,39 +186,76 @@ export default function AddressForm({ initial, onSubmit, onCancel }: Props) {
         </label>
       </div>
 
-      <div className="form-row">
-        <label className="field" htmlFor="addr-state">
-          <span>{t('address.state')}<Required /></span>
-          <input
-            {...fieldProps('state')}
-            value={draft.state}
-            onChange={(e) => update('state', e.target.value)}
-            autoComplete="address-level1"
-          />
-          {err('state')}
-        </label>
-        <label className="field" htmlFor="addr-city">
-          <span>{t('address.city')}<Required /></span>
-          <input
-            {...fieldProps('city')}
-            value={draft.city}
-            onChange={(e) => update('city', e.target.value)}
-            autoComplete="address-level2"
-          />
-          {err('city')}
-        </label>
-      </div>
+      {regions ? (
+        <>
+          {/* Not <label>s, for the same reason as the country above. */}
+          <div className="form-row">
+            <div className="field">
+              <span id="addr-state-label">{t('address.state')}<Required /></span>
+              <CountryPicker
+                id="addr-state" labelledBy="addr-state-label" describedBy={errors.state ? 'addr-state-error' : undefined} invalid={!!errors.state}
+                choices={stateChoices} value={draft.state} onChange={handleState}
+                placeholder={t('address.selectState')} searchLabel={t('address.searchState')} emptyLabel={t('address.noMatch')}
+              />
+              {err('state')}
+            </div>
+            <div className="field">
+              <span id="addr-city-label">{t('address.city')}<Required /></span>
+              <CountryPicker
+                id="addr-city" labelledBy="addr-city-label" describedBy={errors.city ? 'addr-city-error' : undefined} invalid={!!errors.city}
+                choices={cityChoices} value={draft.city} onChange={handleCity} disabled={!cities}
+                placeholder={t(cities ? 'address.selectCity' : 'address.stateFirst')} searchLabel={t('address.searchCity')} emptyLabel={t('address.noMatch')}
+              />
+              {err('city')}
+            </div>
+          </div>
+          <div className="field">
+            <span id="addr-postalCode-label">{t('address.postalCode')}<Required /></span>
+            <CountryPicker
+              id="addr-postalCode" labelledBy="addr-postalCode-label" describedBy={errors.postalCode ? 'addr-postalCode-error' : undefined} invalid={!!errors.postalCode}
+              choices={postalChoices} value={draft.postalCode} onChange={(code) => update('postalCode', code)} disabled={!postalCodes}
+              placeholder={t(postalCodes ? 'address.selectPostal' : 'address.cityFirst')} searchLabel={t('address.searchPostal')} emptyLabel={t('address.noMatch')}
+            />
+            {err('postalCode')}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="form-row">
+            <label className="field" htmlFor="addr-state">
+              <span>{t('address.state')}<Required /></span>
+              <input
+                {...fieldProps('state')}
+                value={draft.state}
+                onChange={(e) => update('state', e.target.value)}
+                autoComplete="address-level1"
+              />
+              {err('state')}
+            </label>
+            <label className="field" htmlFor="addr-city">
+              <span>{t('address.city')}<Required /></span>
+              <input
+                {...fieldProps('city')}
+                value={draft.city}
+                onChange={(e) => update('city', e.target.value)}
+                autoComplete="address-level2"
+              />
+              {err('city')}
+            </label>
+          </div>
 
-      <label className="field" htmlFor="addr-postalCode">
-        <span>{country?.postalOptional ? t('address.postalOptional') : <>{t('address.postalCode')}<Required /></>}</span>
-        <input
-          {...fieldProps('postalCode')}
-          value={draft.postalCode}
-          onChange={(e) => update('postalCode', e.target.value)}
-          autoComplete="postal-code"
-        />
-        {err('postalCode')}
-      </label>
+          <label className="field" htmlFor="addr-postalCode">
+            <span>{country?.postalOptional ? t('address.postalOptional') : <>{t('address.postalCode')}<Required /></>}</span>
+            <input
+              {...fieldProps('postalCode')}
+              value={draft.postalCode}
+              onChange={(e) => update('postalCode', e.target.value)}
+              autoComplete="postal-code"
+            />
+            {err('postalCode')}
+          </label>
+        </>
+      )}
 
       <label className="field" htmlFor="addr-line1">
         <span>{t('address.line1')}<Required /></span>

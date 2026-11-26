@@ -4,6 +4,8 @@
 .country-picker__button:hover { border-color: var(--c-slate); }
 .country-picker__button:focus-visible, .country-picker.is-open .country-picker__button { outline: none; border-color: var(--c-slate); box-shadow: 0 0 0 3px rgba(184, 193, 204, 0.18); }
 .country-picker__button[aria-invalid='true'] { border-color: var(--c-error); }
+/* Waiting for the field before it (a city needs its province first). */
+.country-picker__button:disabled { border-color: var(--c-line-strong); background: var(--svc-stone, #f1f1ee); color: var(--c-muted); cursor: not-allowed; }
 .country-picker__value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .country-picker__value.is-empty { color: var(--c-muted); }
 .country-picker__chevron { flex: none; transition: transform var(--dur-fast) var(--ease-out); }
@@ -32,7 +34,7 @@
 .country-picker__panel li.has-divider + li { position: relative; margin-top: 13px; }
 .country-picker__panel li.has-divider + li::before { content: ''; position: absolute; top: -7px; left: 4px; right: 4px; border-top: 1px solid var(--c-line, #e7e8eb); }
 .country-picker__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.country-picker__hint { flex: none; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.country-picker__hint { flex: none; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-muted); font-variant-numeric: tabular-nums; }
 .country-picker__panel li.country-picker__empty { justify-content: center; color: var(--c-muted); cursor: default; }
 
 @media (max-width: 560px) {
