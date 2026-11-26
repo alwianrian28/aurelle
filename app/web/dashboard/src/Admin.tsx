@@ -1,3 +1,4 @@
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 import Overview from './Overview';
@@ -23,11 +24,12 @@ const NAV: { view: Route['view']; label: string; icon: IconName }[] = [
   { view: 'collections', label: 'Collections', icon: 'layers' },
 ];
 
-/** The address bar holds the place (#/orders/ord-1?q=…), so reload and Back keep it. */
+/** The address bar holds the place (/orders/ord-1?q=…), so reload and Back keep it. */
 function readRoute(): Route {
-  const [path, query = ''] = window.location.hash.replace(/^#\/?/, '').split('?');
-  const [view, id] = path.split('/');
-  const params = new URLSearchParams(query);
+  // Links saved when the place was kept after a "#" (/#/orders/ord-1) still open the same place.
+  if (window.location.hash.startsWith('#/')) window.history.replaceState(null, '', window.location.hash.slice(1));
+  const [view, id] = window.location.pathname.replace(/^\/+/, '').split('/');
+  const params = new URLSearchParams(window.location.search);
   return {
     view: VIEWS.includes(view as Route['view']) ? (view as Route['view']) : 'overview',
     id: id ? decodeURIComponent(id) : undefined, q: params.get('q') ?? undefined, tab: params.get('tab') ?? undefined,
@@ -38,7 +40,7 @@ function writeRoute(r: Route): string {
   if (r.q) params.set('q', r.q);
   if (r.tab) params.set('tab', r.tab);
   const query = params.toString();
-  return `#/${r.view}${r.id ? `/${encodeURIComponent(r.id)}` : ''}${query ? `?${query}` : ''}`;
+  return `/${r.view}${r.id ? `/${encodeURIComponent(r.id)}` : ''}${query ? `?${query}` : ''}`;
 }
 
 interface Note { id: string; icon: IconName; tone: 'green' | 'grey' | 'red'; title: string; text: string; at?: string; to: Route }
@@ -66,13 +68,27 @@ export default function Admin({ user, onUser, onLogout }: { user: User; onUser: 
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
-    const onHash = () => { setRoute(readRoute()); setNavOpen(false); };
+    const onMove = () => { setRoute(readRoute()); setNavOpen(false); };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setNavOpen(false); };
-    window.addEventListener('hashchange', onHash);
+    window.addEventListener('popstate', onMove);
     document.addEventListener('keydown', onKey);
-    return () => { window.removeEventListener('hashchange', onHash); document.removeEventListener('keydown', onKey); };
+    return () => { window.removeEventListener('popstate', onMove); document.removeEventListener('keydown', onKey); };
   }, []);
-  const go: Go = useCallback((next) => { window.location.hash = writeRoute(next); }, []);
+  const go: Go = useCallback((next) => {
+    const url = writeRoute(next);
+    if (url !== window.location.pathname + window.location.search) window.history.pushState(null, '', url);
+    setRoute(readRoute());
+    setNavOpen(false);
+  }, []);
+  /** A navigation link: a plain click moves within the dashboard, anything else (new tab, etc.) is the browser's. */
+  const link = (to: Route) => ({
+    href: writeRoute(to),
+    onClick: (e: ReactMouseEvent) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      go(to);
+    },
+  });
 
   const loadOrders = useCallback(async () => {
     const res = await api<{ orders: AdminOrder[] }>('/admin/orders');
@@ -121,7 +137,7 @@ export default function Admin({ user, onUser, onLogout }: { user: User; onUser: 
     <div className="admin">
       <header className="top">
         <button type="button" id="admin-menu" className="top__icon top__menu" aria-label="Menu" aria-expanded={navOpen} aria-controls="admin-nav" onClick={() => setNavOpen((v) => !v)}><Icon name={navOpen ? 'x' : 'menu'} size={20} /></button>
-        <a className="top__brand" href="#/overview" aria-label="Aurelle admin, overview">AURELLE<small>Admin</small></a>
+        <a className="top__brand" {...link({ view: 'overview' })} aria-label="Aurelle admin, overview">AURELLE<small>Admin</small></a>
         <GlobalSearch orders={orders} products={products} customers={customers} go={go} />
         <div className="top__end">
           <a className="top__link" id="admin-view-store" href={shopUrl} target="_blank" rel="noreferrer"><Icon name="external" />View store</a>
@@ -159,13 +175,13 @@ export default function Admin({ user, onUser, onLogout }: { user: User; onUser: 
         <nav className="side" id="admin-nav" aria-label="Dashboard sections">
           <p className="side__label">Store</p>
           {NAV.map((n) => (
-            <a key={n.view} id={`admin-view-${n.view}`} href={`#/${n.view}`} aria-current={route.view === n.view ? 'page' : undefined} onClick={() => setNavOpen(false)}>
+            <a key={n.view} id={`admin-view-${n.view}`} {...link({ view: n.view })} aria-current={route.view === n.view ? 'page' : undefined}>
               <Icon name={n.icon} size={18} />{n.label}
               {n.view === 'orders' && toShip > 0 && <span className="side__count" aria-label={`${toShip} to ship`}>{toShip}</span>}
             </a>
           ))}
           <div className="side__foot">
-            <a id="admin-view-settings" href="#/settings" aria-current={route.view === 'settings' ? 'page' : undefined} onClick={() => setNavOpen(false)}><Icon name="settings" size={18} />Settings</a>
+            <a id="admin-view-settings" {...link({ view: 'settings' })} aria-current={route.view === 'settings' ? 'page' : undefined}><Icon name="settings" size={18} />Settings</a>
             <a className="side__store" href={shopUrl} target="_blank" rel="noreferrer"><Icon name="external" size={18} />View store</a>
             <p className={`side__live${state === 'offline' ? ' is-down' : ''}`}><i />{state === 'offline' ? 'Server unreachable' : 'Store is live'}</p>
           </div>

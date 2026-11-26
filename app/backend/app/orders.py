@@ -63,13 +63,23 @@ class AddressIn(BaseModel):
     line2: str | None = Field(default=None, max_length=200)
 
 
+class RateIn(BaseModel):
+    """A courier service picked from the live rates (shipping.py), with the price the customer saw."""
+
+    courier: str = Field(min_length=2, max_length=40, pattern=r"^[a-z0-9_]+$")
+    service: str = Field(min_length=1, max_length=40, pattern=r"^[A-Za-z0-9_]+$")
+    expectedPriceIdr: Annotated[StrictInt, Field(ge=0, le=10**9)]
+
+
 class OrderIn(BaseModel):
     """Checkout request: what to buy and where to send it. Prices, costs and stock are the server's."""
 
     id: str = Field(pattern=r"^ord-[\w-]{8,64}$")
     items: list[ItemIn] = Field(min_length=1, max_length=50)
     address: AddressIn
-    shippingServiceId: str = Field(max_length=80)
+    # One of the two: a service from the store's own list, or a live courier rate.
+    shippingServiceId: str = Field(default="", max_length=80)
+    shippingRate: RateIn | None = None
     paymentMethod: Literal["card", "qris"]
     currency: Literal["IDR", "USD"]
 
@@ -142,12 +152,26 @@ def _to_order(db: Database, row: Row, with_actor: bool = False, trails: tuple[di
     events, points = all_events.get(row["id"], []), all_points.get(row["id"], [])
     order = json.loads(row["data"])
     order.pop("midtrans", None)  # Snap token and attempt counter stay on the server
+    order.pop("biteship", None)  # where the first version kept the shipment; it lives in columns now
+    checked = row.get("shipping_updated_at")
     order.update(
         id=row["id"], number=row["number"], userId=row["user_id"], status=row["status"], paymentStatus=row["payment_status"],
         createdAt=row["created_at"], updatedAt=row["updated_at"],
         history=[{"status": e["status"], "paymentStatus": e["payment_status"], "at": e["at"], **({"actor": e["actor"]} if with_actor else {})} for e in events],
-        tracking={"courier": row["courier"], "trackingNumber": row["tracking_number"], "points": [{k: v for k, v in p.items() if k != "order_id"} for p in points]},
+        tracking={
+            "courier": row["courier"], "trackingNumber": row["tracking_number"], "points": [{k: v for k, v in p.items() if k != "order_id"} for p in points],
+            # From the courier, through Biteship (shipping.py): the latest status and the courier's own
+            # tracking page. The scans themselves are read live: GET /api/orders/{id}/tracking.
+            "status": row.get("shipping_status"), "link": row.get("tracking_link"),
+            "updatedAt": checked.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z") if checked else None,
+        },
     )
+    if with_actor and (row.get("biteship_order_id") or row.get("shipping_error")):
+        # Staff also see what was booked, what it cost, and why a booking failed.
+        order["biteship"] = {
+            "orderId": row["biteship_order_id"], "trackingId": row["tracking_id"], "courier": row["courier_company"], "service": row["courier_type"],
+            "priceIdr": row["shipping_cost"], "insuranceIdr": row["insurance_fee"], "reference": row["shipping_reference"], "error": row["shipping_error"],
+        }
     if row["status"] == "cancelled" and row["payment_status"] == "expired":
         order["cancelReason"] = "payment_expired"
     return order
@@ -218,6 +242,16 @@ def create_order(body: OrderIn, user: User, db: Db, response: Response):
     if body.address.country not in served_countries(db):
         raise HTTPException(400, "country_not_served")
 
+    # A live courier rate is priced again by the courier now, before anything is locked (it is
+    # a call to another company). A retry of an order that exists skips it.
+    live_service = None
+    if body.shippingRate and not _get(db, body.id):
+        from .shipping import quote_rate  # late import: shipping builds on this module
+
+        live_service = quote_rate(db, [(i.variantId, i.qty) for i in body.items], body.address.country, body.address.postalCode, body.shippingRate.courier, body.shippingRate.service)
+        if live_service["costIdr"] != body.shippingRate.expectedPriceIdr:
+            raise HTTPException(409, {"error": "shipping_changed", "priceIdr": live_service["costIdr"]})
+
     # Lock the variants being bought (always in the same order, so two checkouts cannot
     # deadlock). Until this transaction commits, no other checkout can reserve them: the stock
     # check and the reservation are atomic, and the last unit cannot be sold twice (AC-04).
@@ -232,9 +266,11 @@ def create_order(body: OrderIn, user: User, db: Db, response: Response):
         response.status_code = 200
         return {"order": _to_order(db, existing)}
 
-    service = db.execute("SELECT * FROM shipping_services WHERE id = ?", (body.shippingServiceId,)).fetchone()
-    if not service:
-        raise HTTPException(400, "invalid_order")
+    if not live_service:
+        service = db.execute("SELECT * FROM shipping_services WHERE id = ?", (body.shippingServiceId,)).fetchone()
+        if not service:
+            raise HTTPException(400, "invalid_order")
+    chosen = live_service or shipping_service(service)
 
     expire_stale(db)
     held = held_stock(db)
@@ -264,13 +300,13 @@ def create_order(body: OrderIn, user: User, db: Db, response: Response):
         raise HTTPException(409, {"error": "out_of_stock", "variantIds": short})
 
     now = now_iso()
-    costs = cost_breakdown(sum(l["qty"] * l["unitPriceIdr"] for l in lines), service["cost_idr"])
+    costs = cost_breakdown(sum(l["qty"] * l["unitPriceIdr"] for l in lines), chosen["costIdr"])
     expires = datetime.now(timezone.utc) + timedelta(minutes=reservation_minutes(db))
     data = {
         "type": "ready_stock", "items": lines, "costs": costs,
         # Snapshots: later edits to the address book or the catalog never change this order.
         "addressSnapshot": {"id": "snapshot", "isDefault": False, **body.address.model_dump()},
-        "shippingService": shipping_service(service),
+        "shippingService": chosen,
         "paymentMethod": body.paymentMethod, "currency": body.currency,
         "lockedRate": {"usdToIdr": usd_to_idr(db), "at": now} if body.currency == "USD" else None,
         "termsVersion": TERMS_VERSION,
@@ -283,6 +319,11 @@ def create_order(body: OrderIn, user: User, db: Db, response: Response):
         )
     except IntegrityError:  # the same id (or number) was inserted a moment ago: let the client retry
         raise HTTPException(409, "conflict") from None
+    wanted = chosen.get("biteship") or {}
+    db.execute(
+        "UPDATE orders SET courier_company = ?, courier_type = ?, shipping_cost = ?, insurance_fee = ? WHERE id = ?",
+        (wanted.get("courier"), wanted.get("service"), chosen["costIdr"], chosen.get("insuranceIdr"), body.id),
+    )
     db.executemany("INSERT INTO order_items (order_id, variant_id, qty) VALUES (?, ?, ?)", [(body.id, l["variantId"], l["qty"]) for l in lines])
     _add_event(db, body.id, "awaiting_payment", "unpaid", "customer", now)
     return {"order": _to_order(db, _get(db, body.id))}
@@ -337,6 +378,10 @@ def demo_payment(order_id: str, body: DemoPaymentIn, user: User, db: Db):
     # Reporting the same state twice changes nothing (duplicate callbacks, AC-09).
     if row["payment_status"] != body.paymentStatus:
         _add_event(db, row["id"], DEMO_PAYMENT[body.paymentStatus], body.paymentStatus, "demo-gateway")
+        if body.paymentStatus == "paid":
+            from .shipping import auto_book  # late import: shipping builds on this module
+
+            auto_book(db, row["id"])
     return {"order": _to_order(db, _get(db, order_id))}
 
 

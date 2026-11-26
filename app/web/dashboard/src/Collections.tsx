@@ -8,8 +8,8 @@ type Notice = { tone: 'ok' | 'error'; text: string } | null;
 
 /**
  * Collections: curated groups of products, each with a story and a banner, shown on the
- * shop's Collections page in the order set here. `#/collections/new` and
- * `#/collections/<id>` open the editor; without an id this is the list.
+ * shop's Collections page in the order set here. `/collections/new` and
+ * `/collections/<id>` open the editor; without an id this is the list.
  */
 export default function Collections({ collections, products, loaded, setCatalog, route, go }: {
   collections: Collection[]; products: AdminProduct[]; loaded: boolean; setCatalog: SetCatalog; route: Route; go: Go;

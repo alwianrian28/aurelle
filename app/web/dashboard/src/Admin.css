@@ -530,3 +530,13 @@
 @media (prefers-reduced-motion: reduce) {
   .toggle, .toggle span, .chart__bar, .side { transition: none; }
 }
+
+/* Courier booking inside the order drawer (Shipment.tsx). */
+.shipment { margin-bottom: 18px; }
+.shipment__state { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 12px; }
+.shipment__rates { display: grid; gap: 8px; margin: 0 0 12px; padding: 0; border: 0; }
+.shipment__rates label { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
+.shipment__rates label.is-selected { border-color: var(--ink); }
+.shipment__rates label > span:nth-of-type(1) { flex: 1; min-width: 0; display: grid; }
+.shipment__rates small { color: var(--faint); font-size: 12.5px; }
+.shipment__collect { display: grid; gap: 6px; margin-bottom: 12px; font-size: 13px; font-weight: 500; }

@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, catalog, media, orders, payments
+from . import auth, catalog, media, orders, payments, shipping
 from .config import app_origins, is_prod, media_dir
 from .db import close_pool, init_db
 
@@ -56,6 +56,9 @@ def create_app() -> FastAPI:
     app.include_router(orders.customer)
     app.include_router(orders.admin)
     app.include_router(payments.router)
+    app.include_router(shipping.router)
+    app.include_router(shipping.orders_router)
+    app.include_router(shipping.admin)
     app.include_router(media.router)
     app.include_router(media.admin)
     # Product photos for the mobile app in development. In production they belong on object

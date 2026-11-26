@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCartStore, resolveCartItem } from '../../store/cartStore';
@@ -8,6 +8,7 @@ import { usePreferenceStore } from '../../store/preferenceStore';
 import { RESERVATION_MINUTES } from '../../store/orderStore';
 import { placeOrder, type PlaceOrderResult } from '../../lib/orderSync';
 import { useCatalogVersion } from '../../lib/catalogSync';
+import { canQuoteLive, loadCourierRates, type CourierRate } from '../../lib/shipping';
 import { shippingServices } from '../../mocks/catalog';
 import { useLocalePath, useLocalized, usePrice } from '../../hooks/useLocale';
 import { computeCostBreakdown, SERVED_COUNTRIES } from '../../utils/checkout';
@@ -27,7 +28,9 @@ const FOOT_LINKS = ['shipping', 'payment', 'revision-return', 'privacy', 'terms'
  * F-08 Checkout ready stock (alur §7.1), on its own page chrome: no site navigation, so
  * nothing pulls the customer away mid-purchase.
  * 1. Pilih alamat → cek negara layanan & kelengkapan (FR-02-03, AC-02-05).
- * 2. Pilih layanan kirim → rincian biaya terpisah (BR-15, AC-08-02).
+ * 2. Pilih layanan kirim → rincian biaya terpisah (BR-15, AC-08-02). Within Indonesia the
+ *    services and prices are the couriers' own, live (Biteship); elsewhere, or when those
+ *    cannot be had, the store's own list of services is offered.
  * 3. Pilih metode bayar (hanya lunas, FR-08-02) & setujui ketentuan (FR-08-07).
  * 4. Validasi ulang harga/stok → order awaiting_payment + reservasi (FR-08-04/05).
  */
@@ -57,7 +60,27 @@ export default function Checkout() {
 
   // Jika alamat terpilih dihapus, otomatis kembali ke default (diturunkan saat render).
   const address = addresses.find((a) => a.id === addressId) ?? defaultAddr;
-  const service = shippingServices.find((s) => s.id === serviceId);
+
+  // Live courier rates for this cart and postal code. `rates: null` = not available, use the store's list.
+  const liveKey = isAddressComplete(address) && canQuoteLive(address?.country, address?.postalCode)
+    ? `${address!.postalCode!.trim()}|${items.map((i) => `${i.variantId}:${i.qty}`).join(',')}` : '';
+  const [live, setLive] = useState<{ key: string; rates: CourierRate[] | null } | null>(null);
+  const [ratesAsked, setRatesAsked] = useState(0);
+  useEffect(() => {
+    if (!liveKey) return;
+    let cancelled = false;
+    void loadCourierRates(items, liveKey.split('|')[0]).then((rates) => { if (!cancelled) setLive({ key: `${liveKey}#${ratesAsked}`, rates }); });
+    return () => { cancelled = true; };
+    // `items` is covered by liveKey, which lists every variant and quantity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveKey, ratesAsked]);
+  const ratesLoading = !!liveKey && live?.key !== `${liveKey}#${ratesAsked}`;
+  const liveRates = liveKey && !ratesLoading ? live?.rates ?? null : null;
+  const options: DeliveryOption[] = liveRates
+    ? liveRates.map((r) => ({ id: `biteship:${r.courier}:${r.service}`, courier: r.courierName, name: r.serviceName, eta: r.eta ? t(r.etaUnit === 'hours' ? 'checkout.etaHours' : 'checkout.etaLive', { range: r.eta }) : r.description, costIdr: r.priceIdr, rate: r }))
+    : shippingServices.map((s) => ({ id: s.id, courier: s.courier, name: localized(s.name), eta: t('checkout.eta', { days: s.etaDays }), costIdr: s.costIdr }));
+  // The first option (the cheapest live rate) stands in until the customer picks one.
+  const service = ratesLoading ? undefined : options.find((o) => o.id === serviceId) ?? options[0];
 
   // FR-03-07: QRIS hanya didukung untuk IDR (asumsi kerja; OD-11 masih terbuka).
   const qrisAvailable = currency === 'IDR';
@@ -87,12 +110,17 @@ export default function Checkout() {
     setSubmitting(true);
     setSubmitError(null);
 
-    const result = await placeOrder({ items, expectedPrices: openedPrices, address, shippingServiceId: service.id, paymentMethod: method, currency });
+    const result = await placeOrder({
+      items, expectedPrices: openedPrices, address, paymentMethod: method, currency,
+      ...(service.rate ? { shippingRate: { courier: service.rate.courier, service: service.rate.service, expectedPriceIdr: service.costIdr } } : { shippingServiceId: service.id }),
+    });
 
     if (!result.ok) {
       setSubmitting(false);
       // On a price change the refreshed catalog shows the new price; submitting again confirms it.
       if (result.reason === 'price_changed') setOpenedPrices(snapshotPrices(items));
+      // The courier's price moved since it was shown: fetch the rates again, the total follows.
+      if (result.reason === 'shipping_changed') setRatesAsked((n) => n + 1);
       setSubmitError(result.reason);
       return;
     }
@@ -201,18 +229,20 @@ export default function Checkout() {
         {address && addressComplete && countryServed && (
           <section className="co-section" aria-labelledby="co-delivery-title">
             <h2 id="co-delivery-title">{t('checkout.delivery')}</h2>
-            <fieldset className="co-options" aria-label={t('checkout.shippingService')}>
-              {shippingServices.map((s) => (
-                <label key={s.id} className={`co-option${s.id === serviceId ? ' is-selected' : ''}`}>
-                  <input type="radio" name="service" value={s.id} checked={s.id === serviceId} onChange={() => setServiceId(s.id)} />
-                  <span className="co-option__body">
-                    <strong>{s.courier} · {localized(s.name)}</strong>
-                    <span>{t('checkout.eta', { days: s.etaDays })}</span>
-                  </span>
-                  <span className="co-option__aside">{price(s.costIdr)}</span>
-                </label>
-              ))}
-            </fieldset>
+            {ratesLoading ? <p className="co-note" role="status">{t('checkout.ratesLoading')}</p> : (
+              <fieldset className="co-options" aria-label={t('checkout.shippingService')}>
+                {options.map((s) => (
+                  <label key={s.id} className={`co-option${s.id === service?.id ? ' is-selected' : ''}`}>
+                    <input type="radio" name="service" value={s.id} checked={s.id === service?.id} onChange={() => setServiceId(s.id)} />
+                    <span className="co-option__body">
+                      <strong>{s.courier} · {s.name}</strong>
+                      <span>{s.eta}</span>
+                    </span>
+                    <span className="co-option__aside">{price(s.costIdr)}</span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
             <p className="co-note">{t('checkout.deliveryNote')}</p>
           </section>
         )}
@@ -291,7 +321,7 @@ export default function Checkout() {
 
         {submitError && (
           <p className="co-alert" role="alert">
-            {t(submitError === 'price_changed' ? 'checkout.priceChanged' : submitError === 'out_of_stock' ? 'checkout.outOfStock' : submitError === 'unverified' ? 'checkout.verifyRequired' : submitError === 'network' ? 'authPage.networkError' : 'checkout.orderFailed')}{' '}
+            {t(submitError === 'price_changed' ? 'checkout.priceChanged' : submitError === 'shipping_changed' ? 'checkout.shippingChanged' : submitError === 'out_of_stock' ? 'checkout.outOfStock' : submitError === 'unverified' ? 'checkout.verifyRequired' : submitError === 'network' ? 'authPage.networkError' : 'checkout.orderFailed')}{' '}
             <NavLink to={path('/cart')}>{t('checkout.reviewCart')}</NavLink>
           </p>
         )}
@@ -320,6 +350,9 @@ export default function Checkout() {
     </div>,
   );
 }
+
+/** A way to ship, as checkout lists it: from the store's own services or a live courier rate. */
+interface DeliveryOption { id: string; courier: string; name: string; eta: string; costIdr: number; rate?: CourierRate }
 
 /** Harga katalog terkini per varian di keranjang. */
 function snapshotPrices(items: CartItem[]): Record<string, number> {

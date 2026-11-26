@@ -5,6 +5,7 @@ import { ACTION, PAGE, PAYMENT, STATUS, dateTime, fulfillment, idr, plural, date
 import type { Stage } from './lib';
 import type { Report } from './export';
 import type { AdminOrder, Go, Route } from './types';
+import Shipment from './Shipment';
 
 // The map library is large and only needed once an order is opened.
 const TrackingMap = lazy(() => import('./TrackingMap'));
@@ -14,7 +15,7 @@ type Pay = 'all' | 'paid' | 'awaiting' | 'failed';
 type Range = 'today' | '7' | '30' | 'all' | 'custom';
 const TABS: [Tab, string][] = [['all', 'All'], ['awaiting', 'Awaiting payment'], ['toship', 'To ship'], ['shipped', 'Shipped'], ['delivered', 'Delivered'], ['cancelled', 'Cancelled']];
 const RANGE: Record<Exclude<Range, 'custom'>, string> = { today: 'today', 7: 'in the last 7 days', 30: 'in the last 30 days', all: 'in total' };
-const actor = (a?: string) => (!a ? '' : a.startsWith('admin:') ? 'Admin' : a === 'customer' ? 'Customer' : a === 'system' ? 'System' : 'Payment gateway');
+const actor = (a?: string) => (!a ? '' : a.startsWith('admin:') ? 'Admin' : a === 'customer' ? 'Customer' : a === 'system' ? 'System' : a === 'biteship' ? 'Courier (Biteship)' : 'Payment gateway');
 const place = (o: AdminOrder) => [o.addressSnapshot.city, o.addressSnapshot.country].filter(Boolean).join(', ');
 
 /**
@@ -157,14 +158,15 @@ export default function Orders({ orders, setOrders, reload, route, go }: {
         <Pager id="orders" page={page} total={shown.length} size={size} onPage={setPage} onSize={(n) => { setSize(n); setPage(0); setPicked([]); }} />
       </section>
 
-      {selected && <OrderPanel key={selected.id} order={selected} notice={notice?.tone === 'error' ? notice.text : ''} act={act} step={step} onClose={() => open(undefined)} />}
+      {selected && <OrderPanel key={selected.id} order={selected} notice={notice?.tone === 'error' ? notice.text : ''} act={act} step={step} onClose={() => open(undefined)}
+        onOrder={(next) => { setOrders((list) => list.map((o) => (o.id === next.id ? next : o))); void reload(); }} />}
     </>
   );
 }
 
 /** Everything about one order, in a drawer over the list: next step, customer, items, shipment, history. */
-function OrderPanel({ order, notice, act, step, onClose }: {
-  order: AdminOrder; notice: string; onClose: () => void;
+function OrderPanel({ order, notice, act, step, onClose, onOrder }: {
+  order: AdminOrder; notice: string; onClose: () => void; onOrder: (order: AdminOrder) => void;
   act: (path: string, method: string, body?: unknown) => Promise<boolean>;
   step: (o: AdminOrder, status: AdminOrder['status']) => void;
 }) {
@@ -225,6 +227,7 @@ function OrderPanel({ order, notice, act, step, onClose }: {
 
         <section>
           <h3>Shipping & tracking</h3>
+          <Shipment order={order} onOrder={(next) => { setCourier(next.tracking.courier ?? ''); setAwb(next.tracking.trackingNumber ?? ''); onOrder(next); }} />
           <form className="row" onSubmit={(e) => { e.preventDefault(); void act(`${base}/shipment`, 'PUT', { courier, trackingNumber: awb }); }}>
             <label>Courier<input id="admin-courier" value={courier} onChange={(e) => setCourier(e.target.value)} placeholder="e.g. DHL" /></label>
             <label>Tracking no.<input id="admin-awb" value={awb} onChange={(e) => setAwb(e.target.value)} /></label>

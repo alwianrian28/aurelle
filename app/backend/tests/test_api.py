@@ -11,6 +11,9 @@ def api():
 
     auth.login_limiter._entries.clear()
     orders.track_limiter._entries.clear()
+    from app import shipping
+
+    shipping.rate_limiter._entries.clear()
     auth._last_sent.clear()
     with TestClient(create_app()) as client:
         yield client
@@ -941,3 +944,342 @@ def test_failed_payment_gets_a_new_attempt_and_sync_reads_midtrans(api, monkeypa
     paid = api.post("/api/payments/ord-12345678/sync").json()["order"]
     assert (paid["status"], paid["paymentStatus"]) == ("confirmed", "paid")
     assert api.post("/api/payments/ord-12345678/snap").status_code == 409  # nothing left to pay
+
+
+# ---------------------------------------------------------------- Biteship
+
+
+class FakeBiteship:
+    """Stands in for api.biteship.com: remembers what was asked and answers like the real API."""
+
+    def __init__(self):
+        self.calls, self.orders, self.down, self.refuse = [], {}, False, None
+        self.history = []
+
+    def booked(self, reference=None):
+        return [o for o in self.orders.values() if reference is None or o["reference_id"] == reference]
+
+    def answer(self, order):
+        return {"success": True, "id": order["id"], "status": order["status"], "price": order["price"], "reference_id": order["reference_id"],
+                "courier": {"tracking_id": order["tracking"], "waybill_id": order["waybill"], "company": order["company"], "type": order["type"],
+                            "link": f"https://track.test/{order['waybill']}", "insurance": {"amount": order["insured"], "fee": 6500}, "history": self.history}}
+
+    def __call__(self, method, path, body=None):
+        from fastapi import HTTPException
+
+        self.calls.append((method, path, body))
+        if self.down:
+            raise HTTPException(502, "shipping_provider_unreachable")
+        if path == "/v1/rates/couriers":
+            common = {"shipment_duration_unit": "days", "available_collection_method": ["pickup"], "insurance_fee": 6500}
+            return 200, {"success": True, "pricing": [
+                {**common, "courier_code": "sicepat", "courier_name": "SiCepat", "courier_service_code": "best", "courier_service_name": "Besok Sampai", "price": 31500, "shipment_duration_range": "1 - 1", "shipping_type": "parcel"},
+                {**common, "courier_code": "jne", "courier_name": "JNE", "courier_service_code": "jtr", "courier_service_name": "JNE Trucking", "price": 9000, "shipment_duration_range": "3 - 4", "shipping_type": "freight"},
+                {**common, "courier_code": "jne", "courier_name": "JNE", "courier_service_code": "reg", "courier_service_name": "Reguler", "description": "Layanan reguler", "price": 24500, "shipment_duration_range": "2 - 3", "shipping_type": "parcel", "available_collection_method": ["pickup", "drop_off"]},
+            ]}
+        if (method, path) == ("POST", "/v1/orders"):
+            if self.refuse:
+                return 400, {"success": False, "code": self.refuse, "error": "Your balance is not enough"}
+            if self.booked(body["reference_id"]):
+                return 400, {"success": False, "code": 40002060, "error": "reference id used", "details": {"order_id": self.booked(body["reference_id"])[0]["id"]}}
+            n = len(self.orders) + 1
+            self.orders[f"bs-order-{n}"] = {"id": f"bs-order-{n}", "status": "confirmed", "price": 24500, "reference_id": body["reference_id"], "tracking": f"bs-track-{n}",
+                                            "waybill": f"JNE000{n}", "company": body["courier_company"], "type": body["courier_type"], "insured": body["courier_insurance"]}
+            return 200, self.answer(self.orders[f"bs-order-{n}"])
+        if method == "GET" and path.startswith("/v1/orders/") and path.rsplit("/", 1)[1] in self.orders:
+            return 200, self.answer(self.orders[path.rsplit("/", 1)[1]])
+        if method == "GET" and path.startswith("/v1/trackings/"):
+            order = next((o for o in self.orders.values() if o["tracking"] == path.rsplit("/", 1)[1]), None)
+            if order:
+                return 200, {"success": True, "id": order["tracking"], "waybill_id": order["waybill"], "status": order["status"], "link": f"https://track.test/{order['waybill']}", "history": self.history,
+                             "courier": {"company": order["company"], "driver_name": "Budi", "driver_phone": "0812000111", "driver_plate_number": "B 1234 XY", "driver_photo_url": None}}
+        return 404, {"success": False, "error": "not found"}
+
+
+def biteship(monkeypatch):
+    monkeypatch.setenv("BITESHIP_API_KEY", "biteship_test.key")
+    monkeypatch.setenv("BITESHIP_COURIERS", "jne, sicepat")
+    for name, value in (("NAME", "Aurelle Store"), ("PHONE", "0811111111"), ("ADDRESS", "Jl. Toko 1, Jakarta"), ("POSTAL_CODE", "12190")):
+        monkeypatch.setenv(f"BITESHIP_ORIGIN_{name}", value)
+    for name in ("BITESHIP_WEBHOOK_SECRET", "BITESHIP_WEBHOOK_TOKEN", "BITESHIP_AUTO_BOOK", "ORIGIN_POSTAL_CODE"):
+        monkeypatch.delenv(name, raising=False)
+    fake = FakeBiteship()
+    monkeypatch.setattr("app.shipping._biteship", fake)
+    return fake
+
+
+JNE_REG = {"courier": "jne", "service": "reg", "expectedPriceIdr": 24500}
+
+
+def live_order(api, oid="ord-12345678"):
+    """Checkout with the JNE Reguler rate the fake offers."""
+    body = {k: v for k, v in order_body(oid).items() if k != "shippingServiceId"}
+    return api.post("/api/orders", json={**body, "shippingRate": JNE_REG})
+
+
+def shipping_columns(oid="ord-12345678"):
+    from app.db import connect
+
+    db = connect()
+    row = db.execute("SELECT courier_company, courier_type, shipping_cost, insurance_fee, biteship_order_id, waybill_id, tracking_id, tracking_link, shipping_status, shipping_error, shipping_reference FROM orders WHERE id = ?", (oid,)).fetchone()
+    db.close()
+    return dict(row)
+
+
+def test_biteship_is_called_with_a_bearer_key_and_a_timeout(monkeypatch):
+    from app import shipping
+
+    seen = {}
+
+    class Answer:
+        status_code = 200
+
+        def json(self):
+            return {"success": True}
+
+    monkeypatch.setenv("BITESHIP_API_KEY", "biteship_test.key")
+    monkeypatch.setattr(shipping.requests, "request", lambda method, url, **kw: (seen.update(method=method, url=url, **kw), Answer())[1])
+    assert shipping._biteship("GET", "/v1/trackings/abc") == (200, {"success": True})
+    assert seen["url"] == "https://api.biteship.com/v1/trackings/abc" and seen["timeout"] == 15
+    assert seen["headers"]["Authorization"] == "Bearer biteship_test.key"
+
+
+def test_courier_rates_come_from_biteship(api, monkeypatch):
+    fake = biteship(monkeypatch)
+    body = {"items": [{"variantId": RING, "qty": 2}], "postalCode": "40115"}
+    assert api.post("/api/shipping/rates", json=body).status_code == 401  # signed-in customers only
+    register(api)
+    rates = api.post("/api/shipping/rates", json=body).json()["rates"]
+    # Parcel services only (no trucking), cheapest first, insurance included in the price.
+    assert [(r["courier"], r["service"], r["priceIdr"]) for r in rates] == [("jne", "reg", 24500), ("sicepat", "best", 31500)]
+    assert rates[0] == {"courier": "jne", "courierName": "JNE", "service": "reg", "serviceName": "Reguler", "description": "Layanan reguler", "priceIdr": 24500, "insuranceIdr": 6500, "eta": "2 - 3", "etaUnit": "days", "collection": ["pickup", "drop_off"]}
+    assert rates[1]["eta"] == "1"
+    sent = fake.calls[-1][2]
+    # The server's own price and the store's postal code are what Biteship is told; the goods are insured in full.
+    assert (sent["origin_postal_code"], sent["destination_postal_code"], sent["couriers"], sent["courier_insurance"]) == (12190, 40115, "jne,sicepat", 6_500_000)
+    assert sent["items"] == [{"name": "Oval Ring", "category": "fashion", "value": 3_250_000, "quantity": 2, "weight": 100}]
+    assert api.post("/api/shipping/rates", json={**body, "postalCode": "ABCDE"}).json() == {"error": "postal_code_required"}
+    assert api.post("/api/shipping/rates", json={**body, "country": "Singapore"}).json() == {"error": "country_not_served"}
+    assert api.post("/api/shipping/rates", json={**body, "items": [{"variantId": "nope", "qty": 1}]}).status_code == 400
+
+
+def test_rates_need_configuration(api, monkeypatch):
+    register(api)
+    body = {"items": [{"variantId": RING, "qty": 1}], "postalCode": "40115"}
+    for name in ("BITESHIP_ORIGIN_POSTAL_CODE", "ORIGIN_POSTAL_CODE"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("BITESHIP_API_KEY", "biteship_test.key")
+    for name in ("NAME", "PHONE", "ADDRESS"):
+        monkeypatch.setenv(f"BITESHIP_ORIGIN_{name}", "x")
+    assert api.post("/api/shipping/rates", json=body).json() == {"error": "shipping_origin_not_configured"}
+    monkeypatch.setenv("ORIGIN_POSTAL_CODE", "12190")  # the shorter name is read too
+    monkeypatch.setenv("BITESHIP_API_KEY", "")
+    assert api.post("/api/shipping/rates", json=body).json() == {"error": "shipping_not_configured"}
+
+
+def test_checkout_with_a_live_courier_rate(api, monkeypatch):
+    fake = biteship(monkeypatch)
+    register(api)
+    body = {k: v for k, v in order_body().items() if k != "shippingServiceId"}
+    # The price the customer saw must be the price the courier gives now.
+    stale = api.post("/api/orders", json={**body, "shippingRate": {**JNE_REG, "expectedPriceIdr": 15000}})
+    assert stale.status_code == 409 and stale.json() == {"error": "shipping_changed", "priceIdr": 24500}
+    assert api.post("/api/orders", json={**body, "shippingRate": {**JNE_REG, "service": "jtr", "expectedPriceIdr": 9000}}).json() == {"error": "shipping_changed"}  # trucking is not offered
+    assert api.post("/api/orders", json=body).json() == {"error": "invalid_order"}  # neither a service nor a rate
+    assert api.post("/api/orders", json={**body, "address": {**ADDRESS, "country": "Singapore"}, "shippingRate": JNE_REG}).status_code == 400
+    assert api.get("/api/orders").json()["orders"] == []
+
+    placed = live_order(api)
+    assert placed.status_code == 201, placed.text
+    order = placed.json()["order"]
+    assert order["shippingService"] == {"id": "biteship:jne:reg", "courier": "JNE", "name": {"en": "Reguler", "id": "Reguler"}, "etaDays": "2-3", "costIdr": 24500, "insuranceIdr": 6500, "biteship": {"courier": "jne", "service": "reg"}}
+    assert order["costs"]["shipping"] == 24500 and order["costs"]["total"] == 6_500_000 + 24500 + order["costs"]["duty"]
+    assert fake.calls[-1][2]["destination_postal_code"] == 12345
+    assert shipping_columns() == {"courier_company": "jne", "courier_type": "reg", "shipping_cost": 24500, "insurance_fee": 6500, "biteship_order_id": None, "waybill_id": None,
+                                  "tracking_id": None, "tracking_link": None, "shipping_status": None, "shipping_error": None, "shipping_reference": None}
+    # Retrying the same checkout returns the order without asking the courier again.
+    asked = len(fake.calls)
+    assert live_order(api).status_code == 200 and len(fake.calls) == asked
+
+
+def test_paid_order_is_booked_by_the_midtrans_notification(api, monkeypatch):
+    fake = biteship(monkeypatch)
+    register(api)
+    order = live_order(api).json()["order"]
+    midtrans(monkeypatch)
+    api.post("/api/payments/ord-12345678/snap")
+    paid = notification(f"{order['number']}-1", "settlement", f"{order['costs']['total']}.00")
+    hook = TestClient(api.app)
+    assert not fake.booked()  # nothing is booked at checkout
+    assert hook.post("/api/payments/midtrans/notification", json=paid).json() == {"ok": True}
+
+    booking = next(c[2] for c in fake.calls if c[:2] == ("POST", "/v1/orders"))
+    assert booking["reference_id"] == order["number"] and (booking["courier_company"], booking["courier_type"], booking["delivery_type"]) == ("jne", "reg", "now")
+    # Insured for the same amount the rate was quoted with.
+    quoted = next(c[2] for c in fake.calls if c[1] == "/v1/rates/couriers")
+    assert booking["courier_insurance"] == quoted["courier_insurance"] == 6_500_000 and booking["items"] == quoted["items"]
+    assert (booking["destination_contact_name"], booking["destination_contact_phone"], booking["destination_postal_code"]) == ("Tester", "+628123456789", 12345)
+    assert booking["destination_address"] == "Jl. Uji 1, Jakarta, DKI Jakarta" and booking["origin_postal_code"] == 12190
+    assert shipping_columns() == {"courier_company": "jne", "courier_type": "reg", "shipping_cost": 24500, "insurance_fee": 6500, "biteship_order_id": "bs-order-1", "waybill_id": "JNE0001",
+                                  "tracking_id": "bs-track-1", "tracking_link": "https://track.test/JNE0001", "shipping_status": "confirmed", "shipping_error": None, "shipping_reference": order["number"]}
+    mine = api.get("/api/orders/ord-12345678").json()["order"]
+    assert (mine["status"], mine["paymentStatus"]) == ("confirmed", "paid") and "biteship" not in mine
+    assert mine["tracking"] == {"courier": "JNE", "trackingNumber": "JNE0001", "points": [], "status": "confirmed", "link": "https://track.test/JNE0001", "updatedAt": mine["tracking"]["updatedAt"]}
+
+    # Midtrans sends the notification again: still one shipment.
+    assert hook.post("/api/payments/midtrans/notification", json=paid).json() == {"ok": True}
+    assert len(fake.booked()) == 1 and sum(1 for c in fake.calls if c[:2] == ("POST", "/v1/orders")) == 1
+
+
+def test_a_failed_booking_does_not_fail_the_payment_and_can_be_retried(api, monkeypatch):
+    fake = biteship(monkeypatch)
+    register(api)
+    order = live_order(api).json()["order"]
+    midtrans(monkeypatch)
+    api.post("/api/payments/ord-12345678/snap")
+    fake.refuse = 40002010
+    hook = TestClient(api.app)
+    answer = hook.post("/api/payments/midtrans/notification", json=notification(f"{order['number']}-1", "settlement", f"{order['costs']['total']}.00"))
+    assert answer.status_code == 200 and answer.json() == {"ok": True}
+    assert api.get("/api/orders/ord-12345678").json()["order"]["paymentStatus"] == "paid"
+    state = shipping_columns()
+    assert state["biteship_order_id"] is None and state["shipping_error"] == "shipping_provider_error 40002010 Your balance is not enough"
+    admin = make_admin(api)
+    seen = admin.get("/api/admin/orders/ord-12345678").json()["order"]
+    assert seen["biteship"]["error"].endswith("Your balance is not enough") and seen["biteship"]["orderId"] is None
+    assert admin.post("/api/admin/orders/ord-12345678/biteship").status_code == 502  # still refused
+
+    # Topped up: the admin books again, with the customer's service unless another is named.
+    fake.refuse = None
+    booked = admin.post("/api/admin/orders/ord-12345678/biteship")
+    assert booked.status_code == 201, booked.text
+    assert booked.json()["order"]["biteship"] == {"orderId": "bs-order-1", "trackingId": "bs-track-1", "courier": "jne", "service": "reg", "priceIdr": 24500, "insuranceIdr": 6500, "reference": order["number"], "error": None}
+    assert admin.post("/api/admin/orders/ord-12345678/biteship").json() == {"error": "already_booked"}
+    # Biteship being unreachable when the payment arrives is the same story.
+    live_order(api, "ord-87654321")
+    fake.down = True
+    assert api.post("/api/orders/ord-87654321/demo-payment", json={"paymentStatus": "paid"}).json()["order"]["paymentStatus"] == "paid"
+    assert shipping_columns("ord-87654321")["shipping_error"] == "shipping_provider_unreachable"
+
+
+def test_a_booking_biteship_already_has_is_taken_over_and_rebooks_get_a_suffix(api, monkeypatch):
+    fake = biteship(monkeypatch)
+    monkeypatch.setenv("BITESHIP_AUTO_BOOK", "false")
+    register(api)
+    order = live_order(api).json()["order"]
+    api.post("/api/orders/ord-12345678/demo-payment", json={"paymentStatus": "paid"})
+    assert not fake.booked() and shipping_columns()["shipping_error"] is None  # switched off: the dashboard books
+    admin = make_admin(api)
+    # Booked before, but the answer never reached us: Biteship refuses the reference (40002060)
+    # and the order it already has becomes this order's shipment.
+    fake.orders["bs-order-1"] = {"id": "bs-order-1", "status": "confirmed", "price": 24500, "reference_id": order["number"], "tracking": "bs-track-1", "waybill": "JNE0001", "company": "jne", "type": "reg", "insured": 6_500_000}
+    taken = admin.post("/api/admin/orders/ord-12345678/biteship", json={"courier": "jne", "service": "reg"})
+    assert taken.status_code == 201 and taken.json()["order"]["tracking"]["trackingNumber"] == "JNE0001" and len(fake.orders) == 1
+    assert shipping_columns()["shipping_reference"] == order["number"]
+
+    # The shipment is cancelled at Biteship: the order may be booked again, under -R1, then -R2.
+    fake.orders["bs-order-1"]["status"] = "cancelled"
+    assert admin.post("/api/admin/orders/ord-12345678/biteship/sync").json()["order"]["tracking"]["status"] == "cancelled"
+    again = admin.post("/api/admin/orders/ord-12345678/biteship", json={"courier": "sicepat", "service": "best"}).json()["order"]
+    assert again["biteship"]["reference"] == f"{order['number']}-R1" and again["biteship"]["orderId"] == "bs-order-2" and again["tracking"]["trackingNumber"] == "JNE0002"
+    assert (again["biteship"]["courier"], again["biteship"]["service"], again["tracking"]["status"]) == ("sicepat", "best", "confirmed")
+    fake.orders["bs-order-2"]["status"] = "courierNotFound"
+    admin.post("/api/admin/orders/ord-12345678/biteship/sync")
+    assert admin.post("/api/admin/orders/ord-12345678/biteship").json()["order"]["biteship"]["reference"] == f"{order['number']}-R2"
+    assert [o["reference_id"] for o in fake.orders.values()] == [order["number"], f"{order['number']}-R1", f"{order['number']}-R2"]
+    # Unpaid orders are not shipped; customers cannot book.
+    api.post("/api/orders", json=order_body("ord-87654321"))
+    assert admin.post("/api/admin/orders/ord-87654321/biteship", json={"courier": "jne", "service": "reg"}).json() == {"error": "not_allowed"}
+    assert api.post("/api/admin/orders/ord-12345678/biteship").status_code == 401
+    assert admin.post("/api/admin/orders/ord-87654321/biteship/sync").json() == {"error": "not_booked"}
+
+
+def test_biteship_webhook_and_tracking(api, monkeypatch):
+    fake = biteship(monkeypatch)
+    register(api)
+    live_order(api)
+    api.post("/api/orders/ord-12345678/demo-payment", json={"paymentStatus": "paid"})
+    assert shipping_columns()["biteship_order_id"] == "bs-order-1"
+    hook, outside = "/api/shipping/biteship/webhook", TestClient(api.app)
+    status = lambda: api.get("/api/orders/ord-12345678").json()["order"]["status"]  # noqa: E731
+    moved = {"event": "order.status", "order_id": "bs-order-1", "status": "dropping_off"}
+
+    # Installing the webhook: an empty body wants a 200. Unknown orders and junk are acknowledged too.
+    assert outside.post(hook, content=b"", headers={"content-type": "application/json"}).status_code == 200
+    assert outside.post(hook, json={"event": "order.status", "order_id": "someone-else", "status": "delivered"}).json() == {"ok": True, "ignored": "unknown_order"}
+    assert outside.post(hook, content=b"not json").json() == {"ok": True, "ignored": "not_json"}
+    # A forged "delivered" changes nothing: the shipment is read from Biteship, which still says confirmed.
+    assert outside.post(hook, json={**moved, "status": "delivered"}).json() == {"ok": True}
+    assert status() == "confirmed"
+
+    # With a token set, the address must carry it (the header of before still works).
+    monkeypatch.setenv("BITESHIP_WEBHOOK_TOKEN", "t0ken")
+    fake.orders["bs-order-1"]["status"] = "droppingOff"
+    fake.history = [{"status": "picked", "note": "Paket dijemput", "updated_at": "2026-11-26T03:00:00Z"}, {"status": "droppingOff", "note": "Menuju alamat", "updated_at": "2026-11-27T02:00:00Z"}]
+    assert outside.post(hook, json=moved).status_code == 401
+    assert outside.post(f"{hook}?token=wrong", json=moved).status_code == 401
+    assert outside.post(hook, content=b"").status_code == 401
+    assert status() == "confirmed"
+    assert outside.post(f"{hook}?token=t0ken", content=b"").status_code == 200
+    assert outside.post(f"{hook}?token=t0ken", json=moved).json() == {"ok": True}
+    assert status() == "shipped" and shipping_columns()["shipping_status"] == "dropping_off"
+    outside.post(f"{hook}?token=t0ken", json=moved)  # Biteship retries: nothing is added
+    assert [e["status"] for e in api.get("/api/orders/ord-12345678").json()["order"]["history"]].count("shipped") == 1
+    monkeypatch.setenv("BITESHIP_WEBHOOK_SECRET", "s3cret")
+    monkeypatch.setenv("BITESHIP_WEBHOOK_HEADER", "X-Aurelle-Hook")
+    assert outside.post(hook, json=moved, headers={"X-Aurelle-Hook": "s3cret"}).status_code == 200
+    assert outside.post(hook, json=moved, headers={"X-Aurelle-Hook": "nope"}).status_code == 401
+
+    # Tracking is read from Biteship when the customer opens it: scans and the driver, nothing stored.
+    for path in ("/api/orders/ord-12345678/tracking", "/api/shipping/orders/ord-12345678/tracking"):
+        tracking = api.get(path).json()["tracking"]
+        assert (tracking["status"], tracking["trackingNumber"], tracking["link"]) == ("dropping_off", "JNE0001", "https://track.test/JNE0001")
+        assert tracking["history"] == [{"status": "picked", "note": "Paket dijemput", "at": "2026-11-26T03:00:00Z"}, {"status": "dropping_off", "note": "Menuju alamat", "at": "2026-11-27T02:00:00Z"}]
+        assert tracking["driver"] == {"name": "Budi", "phone": "0812000111", "plateNumber": "B 1234 XY", "photoUrl": None}
+    assert fake.calls[-1][:2] == ("GET", "/v1/trackings/bs-track-1")
+    other = TestClient(api.app)
+    register(other, "b@example.com")
+    assert other.get("/api/orders/ord-12345678/tracking").status_code == 404  # someone else's order
+    assert outside.get("/api/orders/ord-12345678/tracking").status_code == 401
+    # Opening the tracking also notices a delivery the webhook has not reported yet.
+    fake.orders["bs-order-1"]["status"] = "delivered"
+    assert api.get("/api/orders/ord-12345678/tracking").json()["tracking"]["status"] == "delivered" and status() == "delivered"
+
+    # Biteship cannot be reached: the webhook still answers 200 and takes the message's word;
+    # tracking gives what is stored.
+    fake.down = True
+    assert outside.post(f"{hook}?token=t0ken", json={"event": "order.price", "order_id": "bs-order-1", "status": "delivered", "price": 27000, "courier_waybill_id": "JNE0001"}).json() == {"ok": True}
+    assert shipping_columns()["shipping_cost"] == 27000
+    stored = api.get("/api/orders/ord-12345678/tracking").json()["tracking"]
+    assert (stored["status"], stored["history"], stored["driver"]) == ("delivered", [], None)
+
+
+def test_shipping_migration_runs_again_and_backfills_old_orders(api):
+    import json
+
+    from app.db import SCHEMA, connect
+
+    register(api)
+    api.post("/api/orders", json=order_body())
+    db = connect()
+    # An order as the first version kept it: the shipment inside the order's JSON, no columns.
+    data = json.loads(db.execute("SELECT data FROM orders WHERE id = 'ord-12345678'").fetchone()[0])
+    data["shippingService"]["biteship"] = {"courier": "jne", "service": "reg"}
+    data["biteship"] = {"orderId": "bs-old", "trackingId": "trk-old", "waybillId": "JNE-OLD", "courier": "jne", "service": "reg", "priceIdr": 18000, "link": "https://track.test/old", "status": "picked", "syncedAt": "2026-11-20T04:00:00.000Z"}
+    db.execute("UPDATE orders SET data = ?, biteship_order_id = 'bs-old', shipping_cost = NULL WHERE id = 'ord-12345678'", (json.dumps(data),))
+    db.execute("DELETE FROM settings WHERE name = 'biteship_columns_backfilled'")
+    db.commit()
+    for _ in range(2):  # every cold start runs it; the second run changes nothing
+        db.execute(";\n".join(SCHEMA))
+        db.commit()
+    db.close()
+    assert shipping_columns() == {"courier_company": "jne", "courier_type": "reg", "shipping_cost": 18000, "insurance_fee": None, "biteship_order_id": "bs-old", "waybill_id": "JNE-OLD",
+                                  "tracking_id": "trk-old", "tracking_link": "https://track.test/old", "shipping_status": "picked", "shipping_error": None, "shipping_reference": api.get("/api/orders/ord-12345678").json()["order"]["number"]}
+    tracking = api.get("/api/orders/ord-12345678").json()["order"]["tracking"]
+    assert (tracking["status"], tracking["link"], tracking["updatedAt"]) == ("picked", "https://track.test/old", "2026-11-20T04:00:00.000Z")
+    # The file handed to Supabase is the same migration the backend runs.
+    from pathlib import Path
+
+    from app.db import SHIPPING_MIGRATION
+
+    assert Path(__file__).parents[1].joinpath("migrations", "2026-11-26_biteship_shipping.sql").read_text(encoding="utf-8").split("\n\n", 1)[1].strip() == ";\n\n".join(SHIPPING_MIGRATION) + ";"

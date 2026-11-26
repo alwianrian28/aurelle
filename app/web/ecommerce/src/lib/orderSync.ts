@@ -31,13 +31,15 @@ export interface PlaceOrderInput {
   /** Price per variant as shown when checkout opened; the server refuses a stale one. */
   expectedPrices: Record<string, number>;
   address: Address;
-  shippingServiceId: string;
+  /** One of the two: a service from the store's own list, or a live courier rate with the price shown. */
+  shippingServiceId?: string;
+  shippingRate?: { courier: string; service: string; expectedPriceIdr: number };
   paymentMethod: PaymentMethod;
   currency: Currency;
 }
 export type PlaceOrderResult =
   | { ok: true; order: Order }
-  | { ok: false; reason: 'price_changed' | 'out_of_stock' | 'unverified' | 'country' | 'network' | 'invalid' };
+  | { ok: false; reason: 'price_changed' | 'out_of_stock' | 'shipping_changed' | 'unverified' | 'country' | 'network' | 'invalid' };
 
 /**
  * Checkout: the server validates price and stock, reserves the units and prices the order
@@ -50,7 +52,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       id: `ord-${crypto.randomUUID()}`,
       items: input.items.map((i) => ({ variantId: i.variantId, qty: i.qty, expectedPriceIdr: input.expectedPrices[i.variantId] ?? 0 })),
       address: { ...address, postalCode: address.postalCode ?? '', line2: address.line2 || null },
-      shippingServiceId: input.shippingServiceId,
+      ...(input.shippingRate ? { shippingRate: input.shippingRate } : { shippingServiceId: input.shippingServiceId ?? '' }),
       paymentMethod: input.paymentMethod,
       currency: input.currency,
     },
@@ -60,7 +62,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     applyServer(res.data.order);
     return { ok: true, order: res.data.order };
   }
-  const reason = res.status === 0 ? 'network' : res.error === 'price_changed' || res.error === 'out_of_stock' ? res.error : res.error === 'email_unverified' ? 'unverified' : res.error === 'country_not_served' ? 'country' : 'invalid';
+  const reason = res.status === 0 ? 'network' : res.error === 'price_changed' || res.error === 'out_of_stock' || res.error === 'shipping_changed' ? res.error : res.error === 'email_unverified' ? 'unverified' : res.error === 'country_not_served' ? 'country' : 'invalid';
   return { ok: false, reason };
 }
 

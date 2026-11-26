@@ -174,6 +174,43 @@ SCHEMA = [
     )""",
 ]
 
+# Shipping through Biteship (shipping.py). Runs on every start (each cold start on Vercel), so
+# every statement is safe to repeat. The same statements are kept as a file for Supabase's SQL
+# editor: migrations/2026-11-26_biteship_shipping.sql (a test keeps the two identical).
+SHIPPING_MIGRATION = [
+    """ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS courier_company     TEXT,
+  ADD COLUMN IF NOT EXISTS courier_type        TEXT,
+  ADD COLUMN IF NOT EXISTS shipping_cost       INTEGER,
+  ADD COLUMN IF NOT EXISTS insurance_fee       INTEGER,
+  ADD COLUMN IF NOT EXISTS biteship_order_id   TEXT,
+  ADD COLUMN IF NOT EXISTS waybill_id          TEXT,
+  ADD COLUMN IF NOT EXISTS tracking_id         TEXT,
+  ADD COLUMN IF NOT EXISTS tracking_link       TEXT,
+  ADD COLUMN IF NOT EXISTS shipping_status     TEXT,
+  ADD COLUMN IF NOT EXISTS shipping_updated_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS shipping_error      TEXT,
+  ADD COLUMN IF NOT EXISTS shipping_reference  TEXT""",
+    "DROP INDEX IF EXISTS orders_biteship",
+    "CREATE UNIQUE INDEX IF NOT EXISTS orders_biteship_order ON orders (biteship_order_id)",
+    # Orders placed before these columns existed kept the shipment inside their JSON. Copied
+    # over once: the settings row written below switches this statement off afterwards.
+    """UPDATE orders SET
+  courier_company     = COALESCE(courier_company, data::jsonb #>> '{biteship,courier}', data::jsonb #>> '{shippingService,biteship,courier}'),
+  courier_type        = COALESCE(courier_type, data::jsonb #>> '{biteship,service}', data::jsonb #>> '{shippingService,biteship,service}'),
+  shipping_cost       = COALESCE(shipping_cost, NULLIF(NULLIF(data::jsonb #>> '{biteship,priceIdr}', ''), '0')::INTEGER, (data::jsonb #>> '{costs,shipping}')::INTEGER),
+  insurance_fee       = COALESCE(insurance_fee, (data::jsonb #>> '{shippingService,insuranceIdr}')::INTEGER),
+  waybill_id          = COALESCE(waybill_id, data::jsonb #>> '{biteship,waybillId}'),
+  tracking_id         = COALESCE(tracking_id, data::jsonb #>> '{biteship,trackingId}'),
+  tracking_link       = COALESCE(tracking_link, data::jsonb #>> '{biteship,link}'),
+  shipping_status     = COALESCE(shipping_status, data::jsonb #>> '{biteship,status}'),
+  shipping_updated_at = COALESCE(shipping_updated_at, (data::jsonb #>> '{biteship,syncedAt}')::TIMESTAMPTZ),
+  shipping_reference  = COALESCE(shipping_reference, CASE WHEN biteship_order_id IS NOT NULL THEN number END)
+WHERE NOT EXISTS (SELECT 1 FROM settings WHERE name = 'biteship_columns_backfilled')""",
+    "INSERT INTO settings (name, value) VALUES ('biteship_columns_backfilled', '1') ON CONFLICT (name) DO NOTHING",
+]
+SCHEMA += SHIPPING_MIGRATION
+
 TABLES = ("users", "sessions", "tokens", "products", "variants", "collections", "collection_products", "shipping_services", "settings", "media_files", "orders", "order_items", "order_events", "tracking_points", "catalog_audit")
 
 

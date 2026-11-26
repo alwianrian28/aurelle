@@ -119,6 +119,10 @@ export interface ShippingService {
   name: I18nText;
   etaDays: string;
   costIdr: number;
+  /** The part of `costIdr` that insures the goods, for a live courier rate. */
+  insuranceIdr?: number;
+  /** Set when the service is a live courier rate (Biteship) rather than one from the store's list. */
+  biteship?: { courier: string; service: string };
 }
 
 /** Rincian biaya ready stock (BR-15, FR-08-03). */
@@ -184,6 +188,13 @@ export interface OrderTracking {
   courier: string | null;
   trackingNumber: string | null;
   points: TrackingPoint[];
+  /** From the courier, once a shipment is booked: the latest status and the courier's tracking page. */
+  status?: string | null;
+  link?: string | null;
+  updatedAt?: string | null;
+  /** Only in the answer of GET /orders/{id}/tracking, read from the courier at that moment. */
+  history?: { status: string; note: string; at: string }[];
+  driver?: { name: string; phone: string | null; plateNumber: string | null; photoUrl: string | null } | null;
 }
 
 export interface Order {

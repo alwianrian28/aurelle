@@ -36,6 +36,7 @@ from .auth import Db, User
 from .config import midtrans_client_key, midtrans_is_production, midtrans_own_card_form, midtrans_own_qris, midtrans_notification_url, midtrans_server_key, shop_origin
 from .db import Database, Row
 from .orders import _add_event, _get, _own, _to_order, expire_stale
+from .shipping import auto_book
 
 router = APIRouter(prefix="/api/payments", tags=["payments"])
 
@@ -104,6 +105,8 @@ def _apply(db: Database, row: Row, payload: dict) -> None:
             return
         if row["status"] == "awaiting_payment":
             _add_event(db, row["id"], "confirmed", "paid", actor)
+            # Paid: book the courier the customer chose (shipping.py). It cannot fail the payment.
+            auto_book(db, row["id"])
         elif row["status"] == "cancelled" and row["payment_status"] != "paid":
             # Paid after the reservation ran out and the stock was released: staff decide.
             _add_event(db, row["id"], "pending_decision", "paid", actor)

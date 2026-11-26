@@ -16,11 +16,26 @@ export interface AdminOrder {
   items: { variantId: string; name: Text2; variantLabel?: { id?: string; en?: string }; image?: string; qty: number; unitPriceIdr: number }[];
   costs: { subtotal: number; tax: number; shipping: number; duty: number; other: number; total: number };
   addressSnapshot: Record<string, string | undefined>;
-  shippingService?: { courier: string; name: Text2; etaDays: string };
-  tracking: { courier: string | null; trackingNumber: string | null; points: TrackingPoint[] };
+  shippingService?: { courier: string; name: Text2; etaDays: string; biteship?: { courier: string; service: string } };
+  tracking: {
+    courier: string | null; trackingNumber: string | null; points: TrackingPoint[];
+    /** From the courier, once a shipment is booked at Biteship: the latest status and the courier's tracking page. */
+    status?: string | null; link?: string | null; updatedAt?: string | null;
+  };
+  /** The shipment booked at Biteship, or (with no `orderId`) why the automatic booking failed. */
+  biteship?: { orderId: string | null; trackingId: string | null; courier: string | null; service: string | null; priceIdr: number | null; insuranceIdr: number | null; reference: string | null; error: string | null };
   history: { status: OrderStatus; paymentStatus: string; at: string; actor?: string }[];
   customer: { email: string; name: string; phone: string | null } | null;
   nextStatuses: OrderStatus[];
+}
+
+/** A courier service and what it charges for one order's parcel. */
+export interface CourierRate { courier: string; courierName: string; service: string; serviceName: string; description: string; priceIdr: number; insuranceIdr: number; eta: string; etaUnit: string; collection: string[] }
+/** Read from Biteship when asked for, never stored: the courier's scans and the driver. */
+export interface CourierTracking {
+  status: string | null; link: string | null; trackingNumber: string | null;
+  history: { status: string; note: string; at: string }[];
+  driver: { name: string; phone: string | null; plateNumber: string | null; photoUrl: string | null } | null;
 }
 
 export interface AdminVariant { id: string; sku: string; label: Text2; priceIdr: number; available: number; held: number; sold: number }
