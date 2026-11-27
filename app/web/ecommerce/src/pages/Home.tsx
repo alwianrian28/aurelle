@@ -77,9 +77,10 @@ export default function Home() {
       <HeroSlider slides={HERO_SLIDES}>
         {index => {
           const slide = HERO_SLIDES[index];
-          return <div className="storefront__hero-copy" key={index}>
-            <h1 id="store-title">{text(slide.title)}</h1>
-            <p>{text(slide.body)}</p>
+          // The heading and the paragraph come in again with each slide; the button stays put.
+          return <div className="storefront__hero-copy">
+            <h1 id="store-title" key={`title-${index}`}>{text(slide.title)}</h1>
+            <p key={`body-${index}`}>{text(slide.body)}</p>
             <a id="store-explore" className="storefront__hero-cta" href="#store-collection" onClick={() => setCategory(slide.category)}>{text(slide.cta)}</a>
           </div>;
         }}

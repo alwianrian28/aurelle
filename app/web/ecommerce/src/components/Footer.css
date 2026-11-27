@@ -25,6 +25,9 @@
 .newsletter__consent input { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; accent-color: var(--svc-ink); }
 .newsletter__consent a { color: var(--svc-ink); text-decoration: underline; text-underline-offset: 3px; }
 .newsletter__status { margin-top: 14px; font-size: 13px; color: var(--svc-muted); }
+.newsletter__status.is-ok { color: var(--c-success); }
+.newsletter__status.is-error { color: var(--c-error); }
+.newsletter__field button:disabled { opacity: .6; cursor: default; }
 
 .footer__bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; margin: 0 auto; padding: 40px 0 54px; border-top: 1px solid var(--svc-line); font-size: 16px; color: #3b4250; }
 .footer__bottom nav { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 36px; }

@@ -311,6 +311,7 @@ export const ko = {
       awaiting_payment: '{{number}} 주문이 결제를 기다리고 있습니다',
       pending_decision: '{{number}} 주문을 검토하고 있습니다',
       confirmed: '{{number}} 주문이 확정되었습니다',
+      failed: '구독을 저장하지 못했습니다. 다시 시도해 주세요.',
       preparing: '{{number}} 주문을 준비하고 있습니다',
       ready_to_ship: '{{number}} 주문의 발송 준비가 완료되었습니다',
       shipped: '{{number}} 주문이 배송 중입니다',
@@ -729,6 +730,7 @@ export const ko = {
     lastScan: '최근 스캔 · {{time}}',
     deliveredChip: '배송 완료 · {{city}} · {{time}}',
     mapPending: '이 주문에 택배사가 배정되면 이곳에 지도가 표시됩니다.',
+    mapUnavailable: '이 배송의 지도를 지금은 표시할 수 없습니다.',
     history: '주문 이력',
     viewOn: '{{courier}}에서 보기',
     col: {

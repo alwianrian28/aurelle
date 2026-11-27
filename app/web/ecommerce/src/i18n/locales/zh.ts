@@ -311,6 +311,7 @@ export const zh = {
       awaiting_payment: '{{number}} 等待付款',
       pending_decision: '{{number}} 审核中',
       confirmed: '{{number}} 已确认',
+      failed: '订阅未能保存，请重试。',
       preparing: '{{number}} 备货中',
       ready_to_ship: '{{number}} 待发货',
       shipped: '{{number}} 运送中',
@@ -729,6 +730,7 @@ export const zh = {
     lastScan: '最近扫描 · {{time}}',
     deliveredChip: '已送达 · {{city}} · {{time}}',
     mapPending: '为此订单预约快递后，地图将显示在这里。',
+    mapUnavailable: '此配送的地图暂时无法显示。',
     history: '订单记录',
     viewOn: '在 {{courier}} 查看',
     col: {

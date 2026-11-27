@@ -32,9 +32,9 @@
   left: var(--space-3);
 }
 
+/* Top left: the wishlist heart has the top right corner. */
 .product-card__badge--stock {
-  left: auto;
-  right: var(--space-3);
+  max-width: calc(100% - 64px);
   background: rgba(21, 25, 34, 0.78);
   color: var(--c-pearl);
 }
@@ -105,5 +105,9 @@
     right: var(--space-2);
     width: 40px;
     height: 40px;
+  }
+  .product-card__badge--stock {
+    top: var(--space-2);
+    left: var(--space-2);
   }
 }

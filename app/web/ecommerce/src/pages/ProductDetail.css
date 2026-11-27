@@ -111,6 +111,11 @@
   .pdp__thumbs button { flex: 0 0 64px; }
   .pdp__add { padding: 0 12px; letter-spacing: .12em; }
 }
+/* Phones: the button has a row to itself, so a long label ("Tambah ke Keranjang") is never cut. */
+@media (max-width: 480px) {
+  .pdp__buy { flex-wrap: wrap; justify-content: space-between; }
+  .pdp__add { order: 3; flex: 1 0 100%; }
+}
 @media (prefers-reduced-motion: reduce) {
   .pdp :is(button, a) { transition: none; }
 }

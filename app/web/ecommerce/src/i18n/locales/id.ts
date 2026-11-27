@@ -309,6 +309,7 @@ export const id = {
       awaiting_payment: '{{number}} menunggu pembayaran',
       pending_decision: '{{number}} sedang ditinjau',
       confirmed: '{{number}} sudah dikonfirmasi',
+      failed: 'Langganan belum tersimpan. Silakan coba lagi.',
       preparing: '{{number}} sedang disiapkan',
       ready_to_ship: '{{number}} siap dikirim',
       shipped: '{{number}} dalam perjalanan',
@@ -727,6 +728,7 @@ export const id = {
     lastScan: 'Scan terakhir · {{time}}',
     deliveredChip: 'Diterima · {{city}} · {{time}}',
     mapPending: 'Peta tampil di sini setelah kurir dipesan untuk pesanan ini.',
+    mapUnavailable: 'Peta untuk pengiriman ini belum tersedia saat ini.',
     history: 'Riwayat pesanan',
     viewOn: 'Lihat di {{courier}}',
     col: {

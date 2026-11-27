@@ -314,6 +314,7 @@ export const en = {
       awaiting_payment: '{{number}} is waiting for payment',
       pending_decision: '{{number}} is under review',
       confirmed: '{{number}} is confirmed',
+      failed: 'We could not save your subscription. Please try again.',
       preparing: '{{number}} is being prepared',
       ready_to_ship: '{{number}} is ready to ship',
       shipped: '{{number}} is on its way',
@@ -732,6 +733,7 @@ export const en = {
     lastScan: 'Last scan · {{time}}',
     deliveredChip: 'Delivered · {{city}} · {{time}}',
     mapPending: 'The map appears here once a courier has been booked for this order.',
+    mapUnavailable: 'The map is not available for this shipment right now.',
     history: 'Order history',
     viewOn: 'View on {{courier}}',
     col: {

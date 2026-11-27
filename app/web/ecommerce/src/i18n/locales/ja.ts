@@ -311,6 +311,7 @@ export const ja = {
       awaiting_payment: '{{number}}はお支払い待ちです',
       pending_decision: '{{number}}は確認中です',
       confirmed: '{{number}}が確定しました',
+      failed: '登録を保存できませんでした。もう一度お試しください。',
       preparing: '{{number}}を準備しております',
       ready_to_ship: '{{number}}の発送準備が整いました',
       shipped: '{{number}}を配送中です',
@@ -729,6 +730,7 @@ export const ja = {
     lastScan: '最終スキャン · {{time}}',
     deliveredChip: 'お届け済み · {{city}} · {{time}}',
     mapPending: 'このご注文の配送業者が手配されると、こちらに地図が表示されます。',
+    mapUnavailable: 'この配送の地図は現在表示できません。',
     history: 'ご注文の履歴',
     viewOn: '{{courier}}で見る',
     col: {

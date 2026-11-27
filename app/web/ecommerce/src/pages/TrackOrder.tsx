@@ -384,7 +384,7 @@ export function Result({ order, detailPath, contactPath }: { order: Shown; detai
                   </ul>
                 )}
               </>
-            ) : <p className="trk-panel__empty">{t('track.mapPending')}</p>}
+            ) : <p className="trk-panel__empty">{t(tracking?.status || tracking?.trackingNumber ? 'track.mapUnavailable' : 'track.mapPending')}</p>}
           </section>
 
           <section className="trk-panel" aria-labelledby="track-history-title">
