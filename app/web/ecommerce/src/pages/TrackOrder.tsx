@@ -161,6 +161,8 @@ export default function TrackOrder() {
                 </li>
               ))}
             </ul>
+            {/* The row holds the latest few; the rest are a page away, not more rows here. */}
+            {myOrders.length > 3 && <NavLink id="track-all-orders" className="trk-mine__all" to={path('/account/orders')}>{t('acct.allOrders')} ({myOrders.length})</NavLink>}
           </nav>
         ) : !order && (
           <p className="trk__hint">
