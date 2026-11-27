@@ -1,19 +1,30 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { I18nText, Locale } from '../types/domain';
+import type { ContentLocale, I18nText, Locale } from '../types/domain';
+import { intlLocale, localizeText, toLocale } from '../i18n';
 import { usePreferenceStore } from '../store/preferenceStore';
 import { formatPriceFromIdr } from '../utils/currency';
 
-/** Locale aktif yang dinormalisasi ke 'id' | 'en'. */
+/** The storefront's language now: one of the five it speaks. */
 export function useLocale(): Locale {
   const { i18n } = useTranslation();
-  return i18n.language?.startsWith('id') ? 'id' : 'en';
+  return toLocale(i18n.language);
 }
 
-/** Memilih teks bilingual sesuai locale aktif. */
+/** The language to show the store's own two-language writing in: Indonesian, or English for every other language. */
+export function useContentLocale(): ContentLocale {
+  return useLocale() === 'id' ? 'id' : 'en';
+}
+
+/** The locale to hand `Intl` and `toLocaleString` (dates, numbers) in the storefront's language. */
+export function useIntlLocale(): string {
+  return intlLocale(useLocale());
+}
+
+/** The store's own writing in the storefront's language (see `localizeText`). */
 export function useLocalized() {
   const locale = useLocale();
-  return useCallback((text: I18nText | undefined) => (text ? text[locale] || text.en : ''), [locale]);
+  return useCallback((text: I18nText | undefined) => localizeText(text, locale), [locale]);
 }
 
 /** Format harga basis IDR ke mata uang aktif (BR-08). */

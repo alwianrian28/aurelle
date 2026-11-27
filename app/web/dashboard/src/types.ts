@@ -90,6 +90,11 @@ export interface StoreSettings {
   usdToIdr: number;
   servedCountries: string[];
   reservationMinutes: number;
+  /** Storefront languages on offer (codes, in the order the shop lists them) and the one a first visit opens in. */
+  languages: string[];
+  defaultLanguage: string;
+  /** Every language the storefront has a dictionary for. */
+  allLanguages: string[];
   shippingServices: { id: string; courier: string; name: Text2; etaDays: string; costIdr: number }[];
 }
 

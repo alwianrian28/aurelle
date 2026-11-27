@@ -11,6 +11,8 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 /** DEV-ONLY: studio render untuk membuat gambar produk sementara (dibuang dari build produksi). */
 const RenderStudio = import.meta.env.DEV ? lazy(() => import('./dev/RenderStudio')) : null;
+/** DEV-ONLY: the parcel journey in every shipment state, with made-up data. */
+const ShipmentPreview = import.meta.env.DEV ? lazy(() => import('./dev/ShipmentPreview')) : null;
 import Layout from './components/Layout';
 const Entrance = lazy(() => import('./pages/Entrance'));
 const Home = lazy(() => import('./pages/Home'));
@@ -48,6 +50,7 @@ function App() {
     <Suspense fallback={<div style={{ minHeight: '100svh', background: '#0E1116' }} />}><Routes>
       <Route path="/" element={<Suspense fallback={null}><Entrance /></Suspense>} />
       {RenderStudio && <Route path="/__render" element={<Suspense fallback={null}><RenderStudio /></Suspense>} />}
+      {ShipmentPreview && <Route path="/__shipment" element={<Suspense fallback={null}><ShipmentPreview /></Suspense>} />}
       {["id", "en", "eng"].map(locale => <Route key={locale} path={`/${locale}/*`} element={<LegacyLocaleRedirect />} />)}
       {/* Auth pages are full-screen: no site header or footer. */}
       <Route path="auth/login" element={<Login />} />

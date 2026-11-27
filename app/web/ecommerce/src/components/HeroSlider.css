@@ -15,8 +15,13 @@
 .hero-slider__dot:focus-visible { outline: 1px solid #fff; outline-offset: 3px; border-radius: 4px; }
 @keyframes hero-slider-progress { to { transform: scaleX(1); } }
 
+/* Touch widths: a 40px tall touch area; the row shifts 8px so the lines stay where they were. */
+@media (max-width: 960px) {
+  .hero-slider__dots { bottom: 10px; }
+  .hero-slider__dot { height: 40px; }
+}
 @media (max-width: 700px) {
-  .hero-slider__dots { top: 18px; right: 18px; bottom: auto; }
+  .hero-slider__dots { top: 10px; right: 18px; bottom: auto; }
   .hero-slider__dot { width: 24px; }
 }
 @media (prefers-reduced-motion: reduce) {

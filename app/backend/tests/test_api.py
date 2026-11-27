@@ -288,6 +288,16 @@ def test_admin_edits_store_settings_and_shipping(api):
     assert (saved["usdToIdr"], saved["reservationMinutes"], saved["servedCountries"]) == (16_250, 45, ["Indonesia", "Japan"])
     shop = api.get("/api/catalog").json()
     assert (shop["usdToIdr"], shop["servedCountries"]) == (16_250, ["Indonesia", "Japan"])
+    # Storefront languages: every one is offered and a first visit opens in English, until an admin says otherwise.
+    assert (saved["languages"], saved["defaultLanguage"], saved["allLanguages"]) == (["en", "id", "zh", "ko", "ja"], "en", ["en", "id", "zh", "ko", "ja"])
+    for bad in ({"languages": []}, {"languages": ["fr"]}, {"defaultLanguage": "de"}, {"languages": ["en", "id"], "defaultLanguage": "ja"}):
+        assert admin.patch("/api/admin/settings", json=bad).status_code == 400, bad
+    chosen = admin.patch("/api/admin/settings", json={"languages": ["ja", "id", "en"], "defaultLanguage": "id"}).json()
+    assert (chosen["languages"], chosen["defaultLanguage"]) == (["en", "id", "ja"], "id")
+    shop = api.get("/api/catalog").json()
+    assert (shop["languages"], shop["defaultLanguage"]) == (["en", "id", "ja"], "id")
+    # Taking the default language off the list moves the default to the first one left.
+    assert admin.patch("/api/admin/settings", json={"languages": ["en", "ja"]}).json()["defaultLanguage"] == "en"
     # Checkout follows at once: Singapore is no longer served, and the new window is the one that runs.
     assert api.post("/api/orders", json={**order_body("ord-nosg0000"), "address": {**ADDRESS, "country": "Singapore"}}).json() == {"error": "country_not_served"}
     order = api.post("/api/orders", json=order_body("ord-window00", qty=1)).json()["order"]
@@ -703,9 +713,10 @@ def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypa
     assert api.get("/api/orders/ord-12345678").json()["order"]["paymentMethod"] == "card"
     assert api.post("/api/payments/ord-12345678/snap").json()["token"] == "snap-token-2"  # no method given: the current one
     assert api.post("/api/payments/ord-12345678/snap", json={"method": "bank"}).status_code == 400
-    # QRIS stays an IDR-only method, also when switching.
+    # QRIS is open to every order, whatever currency its prices were shown in: the charge is in rupiah either way.
     usd = api.post("/api/orders", json={**order_body("ord-usd00000", qty=1), "paymentMethod": "card", "currency": "USD"})
-    assert usd.status_code == 201 and api.post("/api/payments/ord-usd00000/snap", json={"method": "qris"}).status_code == 400
+    assert usd.status_code == 201 and api.post("/api/payments/ord-usd00000/snap", json={"method": "qris"}).json()["method"] == "qris"
+    assert api.post("/api/orders", json={**order_body("ord-usd00001", qty=1), "currency": "USD"}).status_code == 201  # checkout with QRIS too
     assert TestClient(api.app).post("/api/payments/ord-12345678/snap").status_code == 401
 
 
@@ -818,9 +829,9 @@ def test_own_qris_code_is_one_per_attempt(api, monkeypatch):
     api.post("/api/payments/midtrans/notification", json=notification(f"{order['number']}-2", "settlement", gross=f"{total}.00"))
     assert api.get("/api/orders/ord-12345678").json()["order"]["paymentStatus"] == "paid"
     assert api.post("/api/payments/ord-12345678/qris").status_code == 409
-    # QRIS stays an IDR-only method.
+    # An order whose prices were shown in US dollars is paid by QRIS like any other.
     api.post("/api/orders", json={**order_body("ord-usdqris0", qty=1), "paymentMethod": "card", "currency": "USD"})
-    assert api.post("/api/payments/ord-usdqris0/qris").status_code == 400
+    assert api.post("/api/payments/ord-usdqris0/qris").json()["qrString"] == qr(len(made))
 
 
 def test_payment_under_way_is_closed_at_midtrans_when_the_hold_runs_out(api, monkeypatch):
@@ -1003,6 +1014,8 @@ def biteship(monkeypatch):
         monkeypatch.setenv(f"BITESHIP_ORIGIN_{name}", value)
     for name in ("BITESHIP_WEBHOOK_SECRET", "BITESHIP_WEBHOOK_TOKEN", "BITESHIP_AUTO_BOOK", "ORIGIN_POSTAL_CODE"):
         monkeypatch.delenv(name, raising=False)
+    # Every look at a shipment asks the fake; test_tracking_map covers the reuse of an answer.
+    monkeypatch.setenv("BITESHIP_TRACKING_CACHE_SECONDS", "0")
     fake = FakeBiteship()
     monkeypatch.setattr("app.shipping._biteship", fake)
     return fake
@@ -1246,12 +1259,12 @@ def test_biteship_webhook_and_tracking(api, monkeypatch):
     assert api.get("/api/orders/ord-12345678/tracking").json()["tracking"]["status"] == "delivered" and status() == "delivered"
 
     # Biteship cannot be reached: the webhook still answers 200 and takes the message's word;
-    # tracking gives what is stored.
     fake.down = True
     assert outside.post(f"{hook}?token=t0ken", json={"event": "order.price", "order_id": "bs-order-1", "status": "delivered", "price": 27000, "courier_waybill_id": "JNE0001"}).json() == {"ok": True}
     assert shipping_columns()["shipping_cost"] == 27000
+    # tracking gives the last scans Biteship did answer with.
     stored = api.get("/api/orders/ord-12345678/tracking").json()["tracking"]
-    assert (stored["status"], stored["history"], stored["driver"]) == ("delivered", [], None)
+    assert (stored["status"], [h["status"] for h in stored["history"]], stored["driver"]["name"]) == ("delivered", ["picked", "dropping_off"], "Budi")
 
 
 def test_shipping_migration_runs_again_and_backfills_old_orders(api):
@@ -1283,3 +1296,26 @@ def test_shipping_migration_runs_again_and_backfills_old_orders(api):
     from app.db import SHIPPING_MIGRATION
 
     assert Path(__file__).parents[1].joinpath("migrations", "2026-11-26_biteship_shipping.sql").read_text(encoding="utf-8").split("\n\n", 1)[1].strip() == ";\n\n".join(SHIPPING_MIGRATION) + ";"
+    from app.db import SHIPMENT_MAP_MIGRATION
+
+    assert Path(__file__).parents[1].joinpath("migrations", "2026-11-27_shipment_map.sql").read_text(encoding="utf-8").split("\n\n", 1)[1].strip() == ";\n\n".join(SHIPMENT_MAP_MIGRATION) + ";"
+
+
+def test_newsletter_signup_is_kept_once_and_listed_for_staff(api, monkeypatch):
+    from pathlib import Path
+
+    from app import newsletter
+    from app.db import NEWSLETTER_MIGRATION
+
+    assert Path(__file__).parents[1].joinpath("migrations", "2026-11-27_newsletter.sql").read_text(encoding="utf-8").split("\n\n", 1)[1].strip() == ";\n\n".join(NEWSLETTER_MIGRATION) + ";"
+    monkeypatch.setattr(newsletter, "signup_limiter", newsletter.Limiter(4, 60))
+    form = {"email": " Reader@Example.com ", "consent": True, "consentVersion": "v1", "locale": "ja", "source": "footer"}
+    assert api.post("/api/newsletter", json=form).json() == {"status": "subscribed"}
+    # A second sign-up answers the same and changes nothing; no consent or no address is refused.
+    assert api.post("/api/newsletter", json={**form, "locale": "en", "consentVersion": "v2"}).json() == {"status": "subscribed"}
+    assert api.post("/api/newsletter", json={**form, "consent": False}).json() == {"error": "consent_required"}
+    assert api.post("/api/newsletter", json={**form, "email": "not-an-email"}).status_code == 400
+    assert api.post("/api/newsletter", json=form).status_code == 429  # the fifth from one address in a minute
+    assert api.get("/api/admin/newsletter").status_code == 401
+    listed = make_admin(api).get("/api/admin/newsletter").json()["subscribers"]
+    assert [(s["email"], s["locale"], s["consentVersion"], s["unsubscribedAt"]) for s in listed] == [("reader@example.com", "ja", "v1", None)]

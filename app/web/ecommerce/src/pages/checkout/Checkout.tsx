@@ -82,9 +82,8 @@ export default function Checkout() {
   // The first option (the cheapest live rate) stands in until the customer picks one.
   const service = ratesLoading ? undefined : options.find((o) => o.id === serviceId) ?? options[0];
 
-  // FR-03-07: QRIS hanya didukung untuk IDR (asumsi kerja; OD-11 masih terbuka).
-  const qrisAvailable = currency === 'IDR';
-  const method: PaymentMethod = qrisAvailable ? selectedMethod : 'card';
+  // Card and QRIS are both offered to everyone, whatever the language or the currency shown.
+  const method: PaymentMethod = selectedMethod;
 
   const resolved = items.map((item) => ({ item, ...resolveCartItem(item) }));
   const cartBlocked = resolved.some((r) => r.unavailable || r.exceedsStock);
@@ -259,16 +258,14 @@ export default function Checkout() {
               </span>
               <span className="co-brands" aria-hidden="true"><img src="/media/icons/visa.png" alt="" width={40} height={26} /><img src="/media/icons/mastercard.png" alt="" width={40} height={26} /></span>
             </label>
-            {qrisAvailable ? (
-              <label className={`co-option${method === 'qris' ? ' is-selected' : ''}`}>
-                <input id="checkout-method-qris" type="radio" name="method" checked={method === 'qris'} onChange={() => setMethod('qris')} />
-                <span className="co-option__body">
-                  <strong>{t('checkout.qris')}</strong>
-                  <span>{t('checkout.qrisBody')}</span>
-                </span>
-                <span className="co-brands" aria-hidden="true"><img className="co-brands__qr" src="/media/icons/qris-scan.png" alt="" width={26} height={26} /></span>
-              </label>
-            ) : <p className="co-note">{t('checkout.qrisIdrOnly')}</p>}
+            <label className={`co-option${method === 'qris' ? ' is-selected' : ''}`}>
+              <input id="checkout-method-qris" type="radio" name="method" checked={method === 'qris'} onChange={() => setMethod('qris')} />
+              <span className="co-option__body">
+                <strong>{t('checkout.qris')}</strong>
+                <span>{t('checkout.qrisBody')}</span>
+              </span>
+              <span className="co-brands" aria-hidden="true"><img className="co-brands__qr" src="/media/icons/qris-scan.png" alt="" width={26} height={26} /></span>
+            </label>
           </fieldset>
         </section>
       </div>

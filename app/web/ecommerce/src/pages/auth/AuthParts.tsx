@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocalePath } from '../../hooks/useLocale';
 import { api } from '../../lib/api';
+import { htmlLang, toLocale } from '../../i18n';
 import './Auth.css';
 
 /** Editorial photo behind the brand panel. */
@@ -30,7 +31,7 @@ export function AuthShell({ photo, sideTitle, side, back = 'shop', legal = true,
   const { t, i18n } = useTranslation();
   const path = useLocalePath();
   // These routes sit outside Layout, which normally keeps <html lang> in sync.
-  useEffect(() => { document.documentElement.lang = i18n.language.startsWith('id') ? 'id' : 'en'; }, [i18n.language]);
+  useEffect(() => { document.documentElement.lang = htmlLang(toLocale(i18n.language)); }, [i18n.language]);
 
   return (
     <div className="auth-shell">

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale, useLocalePath } from '../hooks/useLocale';
-import { LANGUAGES, setLanguage } from '../i18n';
+import { LANGUAGES, setLanguage, useLanguages } from '../i18n';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { useWishlistStore } from '../store/wishlistStore';
@@ -72,6 +72,7 @@ export default function Header() {
               {item.label}
             </NavLink>
           ))}
+          <NavMenuExtras isAuthenticated={isAuthenticated} onNavigate={() => setMenuOpen(false)} />
         </nav>
 
         <div className="header__actions">
@@ -188,9 +189,62 @@ function AccountMenu() {
 }
 
 /**
- * Language switch: a small menu with the two languages the storefront speaks. Open to
- * everyone, signed in or not. Changing it also changes how prices are shown (US dollars in
- * English, rupiah in Indonesian). Closes on Escape, on a click outside, and on a choice.
+ * Phone only (CSS shows it at 760px and below, where the bar keeps just burger, wordmark and bag):
+ * the entries that leave the bar, listed under the nav links in the burger panel. Search, the
+ * account entry (log in when signed out; account and log out when signed in) and the language
+ * choice as wrapping pills, one per entry of `LANGUAGES`.
+ */
+function NavMenuExtras({ isAuthenticated, onNavigate }: { isAuthenticated: boolean; onNavigate: () => void }) {
+  const { t } = useTranslation();
+  const path = useLocalePath();
+  const navigate = useNavigate();
+  const locale = useLocale();
+  const languages = useLanguages();
+  const linkClass = ({ isActive }: { isActive: boolean }) => `header__link header__link--icon ${isActive ? 'is-active' : ''}`;
+
+  const handleLogout = () => {
+    onNavigate();
+    signOut();
+    navigate(path('/store'));
+  };
+
+  return (
+    <div className="header__nav-extras">
+      <NavLink id="nav-search" to={path('/search')} className={linkClass} onClick={onNavigate}>
+        <SearchIcon />{t('common.search')}
+      </NavLink>
+      {isAuthenticated ? (
+        <>
+          <NavLink id="nav-account" to={path('/account')} className={linkClass} onClick={onNavigate}>
+            <UserIcon />{t('common.account')}
+          </NavLink>
+          <button id="nav-logout" type="button" className="header__link header__link--icon" onClick={handleLogout}>
+            <LogoutIcon />{t('common.logout')}
+          </button>
+        </>
+      ) : (
+        <NavLink id="nav-account" to={path('/auth/login')} className={linkClass} onClick={onNavigate}>
+          <UserIcon />{t('common.login')}
+        </NavLink>
+      )}
+      <div className="header__nav-lang" role="group" aria-labelledby="nav-language-label">
+        <span id="nav-language-label" className="header__nav-lang-label"><GlobeIcon />{t('common.language')}</span>
+        <div className="header__nav-lang-list">
+          {languages.map((language) => (
+            <button key={language.code} id={`nav-language-${language.code}`} type="button" className="header__nav-lang-btn" aria-pressed={language.code === locale} lang={language.code} onClick={() => setLanguage(language.code)}>
+              {language.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Language switch: a small menu with the languages the storefront speaks. Open to
+ * everyone, signed in or not. Changing it changes the language only: prices are always
+ * shown in rupiah. Closes on Escape, on a click outside, and on a choice.
  */
 function LanguageMenu() {
   const { t } = useTranslation();
@@ -198,6 +252,8 @@ function LanguageMenu() {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  // The languages the store offers (dashboard > Settings); the current one is named even if it was switched off.
+  const languages = useLanguages();
   const current = LANGUAGES.find((l) => l.code === locale) ?? LANGUAGES[0];
 
   useEffect(() => {
@@ -223,7 +279,7 @@ function LanguageMenu() {
       </button>
       <div id="language-menu" className={`account-menu__panel${open ? ' is-open' : ''}`} inert={!open}>
         <ul role="menu" aria-label={t('common.language')}>
-          {LANGUAGES.map((language) => (
+          {languages.map((language) => (
             <li key={language.code} role="none">
               <button id={`language-${language.code}`} type="button" role="menuitemradio" aria-checked={language.code === locale} lang={language.code} onClick={() => { setLanguage(language.code); setOpen(false); trigger.current?.focus(); }}>
                 <span>{language.label}</span>{language.code === locale && <CheckIcon />}

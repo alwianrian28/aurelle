@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { useLocale, useLocalePath, useLocalized } from '../hooks/useLocale';
+import { useLocalePath, useLocalized } from '../hooks/useLocale';
 import { useGuideStore } from '../store/guideStore';
 import { consultCopy, sizeGuideCopy, trustPoints, trustPolicyLink } from '../content/service';
 import { BRAND_CONTACT, BRAND_PENDING } from '../config/brand';
@@ -10,12 +10,11 @@ import './StoreService.css';
 /** Storefront close: consultation + size guide (flat, two columns), then the trust bar. */
 export default function StoreService() {
   const text = useLocalized();
-  const locale = useLocale();
   const path = useLocalePath();
   const { openSize, openCare } = useGuideStore();
   // Service hours appear only once the official ones are set.
-  const hours = BRAND_CONTACT.isPlaceholder ? null : BRAND_CONTACT.hours[locale];
-  const warranty = BRAND_CONTACT.warrantyPeriod?.[locale] ?? BRAND_PENDING.warranty;
+  const hours = BRAND_CONTACT.isPlaceholder ? null : text(BRAND_CONTACT.hours);
+  const warranty = BRAND_CONTACT.warrantyPeriod ? text(BRAND_CONTACT.warrantyPeriod) : BRAND_PENDING.warranty;
 
   return (
     <>
@@ -43,7 +42,7 @@ export default function StoreService() {
         </section>
       </div>
 
-      <ul className="store-trust" aria-label={locale === 'id' ? 'Jaminan Aurelle' : 'Aurelle promises'}>
+      <ul className="store-trust" aria-label={text({ id: 'Jaminan Aurelle', en: 'Aurelle promises' })}>
         {trustPoints.map((point) => (
           <li key={point.icon}>
             <span className="guide-icon"><Icon name={point.icon} size={28} /></span>

@@ -261,9 +261,6 @@ def create_snap_transaction(order_id: str, user: User, db: Db, body: SnapIn | No
         raise HTTPException(409, "not_allowed")
 
     method = (body.method if body else None) or data["paymentMethod"]
-    # FR-03-07: QRIS is offered for IDR only (the same rule checkout applies).
-    if method == "qris" and data["currency"] != "IDR":
-        raise HTTPException(400, "invalid_order")
     previous = data.get("midtrans") or {}
     same_method = previous.get("method", data["paymentMethod"]) == method
     # A failed attempt needs a new Midtrans order id, and so does the other method (a Snap
@@ -392,9 +389,6 @@ def create_qris(order_id: str, user: User, db: Db):
     if row["status"] != "awaiting_payment":
         raise HTTPException(409, "not_allowed")
     data = json.loads(row["data"])
-    # FR-03-07: QRIS is offered for IDR only (the same rule checkout applies).
-    if data["currency"] != "IDR":
-        raise HTTPException(400, "invalid_order")
     minutes_left = _minutes_left(data)
     if minutes_left < 1:
         raise HTTPException(409, "not_allowed")

@@ -112,6 +112,9 @@
   .co-bar .co__inner { height: 64px; gap: 8px; }
   .co-bar__logo { font-size: 22px; }
   .co-bar__back, .co-bar__secure { gap: 6px; font-size: 13px; }
+  /* The side tracks are about 90px at 360px: the back label may take two lines, kept tight, in a 44px target. */
+  .co-bar__back { min-height: 44px; line-height: 1.25; }
+  .co-bar__back svg { flex: none; }
   .co-bar__secure { font-size: 0; }
   .co-section { padding: 28px 0 32px; }
   .co-option { padding: 16px; gap: 4px 12px; }
@@ -246,6 +249,9 @@ span.card-input input { flex: 1; min-width: 0; height: 100%; padding: 0; border:
   .card-row { grid-template-columns: minmax(0, 1fr); }
   .qris { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .qris__code { width: 100%; }
+  /* The 220px code never pushes past its box on the narrowest phones. */
+  .qris__code img, .qris__loading { max-width: 100%; }
+  .qris__code img { height: auto; aspect-ratio: 1; }
   .qris__download { width: 100%; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {

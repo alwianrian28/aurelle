@@ -6,6 +6,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useMyOrders } from '../../hooks/useMyOrders';
 import { useCountdown, formatDuration } from '../../hooks/useCountdown';
 import { useLocale, useLocalePath, useLocalized } from '../../hooks/useLocale';
+import { intlLocale } from '../../i18n';
 import { formatOrderMoney } from '../../utils/currency';
 import { confirmWithBank, hidePaymentForm, loadPaymentConfig, loadQrisCode, payWithCard, qrPicture, showPaymentForm, syncPayment, type PayProblem, type QrisCode, type SnapOutcome } from '../../lib/payments';
 import { BRAND_CONTACT, buildWhatsAppLink } from '../../config/brand';
@@ -111,13 +112,12 @@ export default function Payment() {
   const simulate = (outcome: 'success' | 'failed') => { setRetrying(false); startPayment(order.id, method); handleGatewayRedirect(order.id, outcome); };
 
   const other: PaymentMethod = method === 'card' ? 'qris' : 'card';
-  // FR-03-07: QRIS is offered for IDR only.
-  const canSwitch = other === 'card' || order.currency === 'IDR';
+  // Either method can be switched to the other, for every order.
   const held = <p className="pay-hold" role="timer"><ClockIcon /><span>{t('payment.held')} <strong>{t('payment.minutes', { time: formatDuration(remaining) })}</strong>.</span></p>;
   const firstName = (user?.username ?? '').trim().split(/\s+/)[0];
   const paidAt = order.history.find((h) => h.paymentStatus === 'paid')?.at;
   const step = STEP[order.status];
-  const when = (iso: string) => new Date(iso).toLocaleString(locale === 'id' ? 'id-ID' : 'en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const when = (iso: string) => new Date(iso).toLocaleString(intlLocale(locale), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const timeline: [string, string][] = [
     [t('payment.next.paid'), paidAt ? when(paidAt) : ''],
     [t('payment.next.prepare'), t('payment.next.prepareHint')],
@@ -169,7 +169,7 @@ export default function Payment() {
               )}
               <div className="pay-foot">
                 {method === 'qris' && gateway === 'midtrans' ? <p className="pay-waiting"><i aria-hidden="true" />{t('payment.waiting')}</p> : <span />}
-                {canSwitch && <button id="payment-switch" type="button" className="pay-link" onClick={() => showForm(other)}>{t(other === 'qris' ? 'payment.switchQris' : 'payment.switchCard')}</button>}
+                {<button id="payment-switch" type="button" className="pay-link" onClick={() => showForm(other)}>{t(other === 'qris' ? 'payment.switchQris' : 'payment.switchCard')}</button>}
               </div>
             </>
           )}
@@ -192,7 +192,7 @@ export default function Payment() {
               {held}
               <div className="pay-actions">
                 <button id="payment-retry" type="button" className="guide-btn" onClick={() => showForm(method)}>{t('payment.tryAgain')}</button>
-                {canSwitch && <button id="payment-other" type="button" className="guide-btn guide-btn--outline" onClick={() => showForm(other)}>{t(other === 'qris' ? 'payment.payWithQris' : 'payment.payByCard')}</button>}
+                {<button id="payment-other" type="button" className="guide-btn guide-btn--outline" onClick={() => showForm(other)}>{t(other === 'qris' ? 'payment.payWithQris' : 'payment.payByCard')}</button>}
               </div>
               {help}
             </>

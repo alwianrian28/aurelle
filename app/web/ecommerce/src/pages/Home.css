@@ -10,11 +10,12 @@
 .storefront__hero-cta:hover, .storefront__hero-cta:focus-visible { background: #fff; border-color: #fff; color: #151922; }
 .storefront__hero-cta:focus-visible { outline: 1px solid #fff; outline-offset: 4px; }
 /* Copy swaps with each slide; staggered rise keeps the change calm. */
-.storefront__hero-copy > * { animation: hero-copy-in .7s var(--ease-out) both; }
-.storefront__hero-copy > :nth-child(2) { animation-delay: .06s; }
-.storefront__hero-copy > :nth-child(3) { animation-delay: .12s; }
+.storefront__hero-copy > :is(h1, p) { animation: hero-copy-in .7s var(--ease-out) both; }
+.storefront__hero-copy > p { animation-delay: .06s; }
+/* The button keeps one width whatever its label, so it does not shift from slide to slide. */
+.storefront__hero-cta { justify-content: center; min-width: 208px; white-space: nowrap; }
 @keyframes hero-copy-in { from { opacity: 0; transform: translateY(10px); } }
-@media (prefers-reduced-motion: reduce) { .storefront__hero-cta { transition: none; } .storefront__hero-copy > * { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .storefront__hero-cta { transition: none; } .storefront__hero-copy > :is(h1, p) { animation: none; } }
 .storefront__benefits { display: flex; justify-content: space-around; gap: 16px; margin-top: 16px; border-radius: clamp(18px, 2vw, 30px); padding: 17px 12px; background: #f5f5f3; font-size: 11px; }
 .storefront__benefits span::before { content: '✦'; padding-right: 16px; font-size: 9px; }
 .storefront__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 44px 0 30px; padding: 14px 0; border-block: 1px solid #e7e7e3; }
@@ -49,4 +50,6 @@
 .storefront__end a:focus-visible { outline: 1px solid #151922; outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) { .storefront__end a { transition: none; } }
 body:has(.storefront) .header { background: #fff; backdrop-filter: none; border-color: #e7e7e3; }
-@media(max-width: 700px) { .storefront { padding-top: 12px; } .storefront__hero { height: 450px; } /* Copy spans the photo on phones: a deeper scrim from the bottom keeps it readable over the jewelry. */ .storefront__hero::after { background: linear-gradient(0deg, rgba(0,0,0,.72), rgba(0,0,0,.38) 55%, transparent 85%); } .storefront__hero-copy { left: 7%; right: 7%; bottom: 8%; } .storefront__hero-copy h1 { font-size: 36px; } .storefront__hero-copy h1 + p { font-size: 13px; margin: 14px 0 24px; } .storefront__benefits { flex-wrap: wrap; justify-content: center; gap: 8px 20px; font-size: 10px; } .storefront__benefits span::before { padding-right: 8px; } .storefront__grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .storefront__toolbar { flex-direction: column; align-items: stretch; gap: 4px; margin-top: 28px; padding-bottom: 6px; } .storefront__toolbar .sort-menu { align-self: flex-end; } .storefront__toolbar .sort-menu__panel { min-width: 200px; } }
+/* Touch widths: 40px targets for the category tabs and the sort trigger; the bar gives back the padding they gain. */
+@media (max-width: 960px) { .storefront__toolbar { padding-block: 9px; } .storefront__tabs button { padding: 13px 0; } .storefront__tabs button::after { bottom: 5px; } .storefront__toolbar .sort-menu__trigger { min-height: 40px; } }
+@media(max-width: 700px) { .storefront { padding-top: 12px; } .storefront__hero { height: 450px; } /* Copy spans the photo on phones: a deeper scrim from the bottom keeps it readable over the jewelry. */ .storefront__hero::after { background: linear-gradient(0deg, rgba(0,0,0,.72), rgba(0,0,0,.38) 55%, transparent 85%); } .storefront__hero-copy { left: 7%; right: 7%; bottom: 8%; } .storefront__hero-copy h1 { font-size: 36px; } .storefront__hero-copy h1 + p { font-size: 13px; margin: 14px 0 24px; } .storefront__benefits { flex-wrap: wrap; justify-content: center; gap: 8px 20px; font-size: 10px; } .storefront__benefits span::before { padding-right: 8px; } .storefront__grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .storefront__toolbar { flex-direction: column; align-items: stretch; gap: 4px; margin-top: 28px; padding-bottom: 6px; } .storefront__toolbar .sort-menu { align-self: flex-end; } .storefront__toolbar .sort-menu__panel { min-width: 200px; } .storefront__toolbar { padding-top: 6px; padding-bottom: 2px; } }

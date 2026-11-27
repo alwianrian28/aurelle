@@ -1,0 +1,24 @@
+/* Parcel journey: status, map, driver and checkpoints (Track order and order detail). */
+.journey { display: grid; gap: 16px; }
+.journey__status { padding: 14px 16px; border: 1px solid var(--svc-line); border-left-width: 3px; border-radius: 8px; background: var(--svc-paper); }
+.journey__status p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--svc-muted); }
+.journey__status p:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: var(--svc-ink); }
+.journey__status p + p { margin-top: 4px; }
+.journey__status strong { font-size: 15px; font-weight: 600; }
+.journey__dot { flex: none; width: 9px; height: 9px; border-radius: 50%; }
+.journey__stage { margin-left: auto; font-size: 12px; color: var(--svc-soft); }
+.journey__notes { display: grid; gap: 4px; margin: -4px 0 0; padding: 0; list-style: none; font-size: 13px; line-height: 1.5; color: var(--svc-muted); }
+.journey__driver { margin: 0; font-size: 14px; }
+.journey__driver span { color: var(--svc-muted); }
+.journey__list { margin: 8px 0 0; padding: 0; list-style: none; }
+.journey__list li { position: relative; display: grid; gap: 2px; padding: 0 0 22px 28px; }
+.journey__list li::before { content: ''; position: absolute; top: 6px; left: 0; width: 9px; height: 9px; border: 1px solid #b9b9b3; border-radius: 50%; background: #fff; }
+.journey__list li::after { content: ''; position: absolute; top: 20px; bottom: 2px; left: 5px; width: 1px; background: var(--svc-line); }
+.journey__list li:last-child { padding-bottom: 0; }
+.journey__list li:last-child::after { display: none; }
+.journey__list li.is-latest::before { border-color: var(--svc-ink); background: var(--svc-ink); }
+.journey__list strong { font-size: 15px; font-weight: 500; }
+.journey__list li.is-latest strong { font-weight: 600; }
+.journey__list li span { font-size: 14px; line-height: 1.5; color: var(--svc-muted); overflow-wrap: anywhere; }
+.journey__list small { font-size: 13px; color: var(--svc-soft); }
+.journey__empty { margin: 0; padding: 20px; border: 1px dashed #d8d5cb; border-radius: 8px; font-size: 14px; line-height: 1.6; color: var(--svc-muted); }

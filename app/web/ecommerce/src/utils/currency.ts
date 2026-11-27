@@ -1,4 +1,5 @@
-import type { Currency } from '../types/domain';
+import type { Currency, Locale } from '../types/domain';
+import { intlLocale } from '../i18n';
 
 /**
  * Konversi dan format mata uang — PRD BR-08 [R1] & §13.2.
@@ -10,9 +11,8 @@ export function convertFromIdr(priceIdr: number, currency: Currency, usdToIdr: n
   return priceIdr / usdToIdr;
 }
 
-export function formatMoney(amount: number, currency: Currency, locale: 'id' | 'en'): string {
-  const intlLocale = locale === 'id' ? 'id-ID' : 'en-US';
-  return new Intl.NumberFormat(intlLocale, {
+export function formatMoney(amount: number, currency: Currency, locale: Locale): string {
+  return new Intl.NumberFormat(intlLocale(locale), {
     style: 'currency',
     currency,
     maximumFractionDigits: currency === 'IDR' ? 0 : 2,
@@ -24,7 +24,7 @@ export function formatPriceFromIdr(
   priceIdr: number,
   currency: Currency,
   usdToIdr: number,
-  locale: 'id' | 'en',
+  locale: Locale,
 ): string {
   return formatMoney(convertFromIdr(priceIdr, currency, usdToIdr), currency, locale);
 }
@@ -36,7 +36,7 @@ export function formatPriceFromIdr(
 export function formatOrderMoney(
   amountIdr: number,
   order: { currency: Currency; lockedRate?: { usdToIdr: number } },
-  locale: 'id' | 'en',
+  locale: Locale,
 ): string {
   if (order.currency === 'USD' && order.lockedRate) {
     return formatMoney(amountIdr / order.lockedRate.usdToIdr, 'USD', locale);

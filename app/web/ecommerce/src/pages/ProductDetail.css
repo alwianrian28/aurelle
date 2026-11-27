@@ -98,6 +98,11 @@
   .pdp__title { font-size: 34px; }
   .pdp__pairs { margin-top: 36px; padding-top: 32px; }
   .pdp__pairs-head h2 { font-size: 28px; }
+  /* 40px touch targets: photo/3D toggle and the quantity steppers. */
+  .pdp__toggle button { min-height: 40px; }
+  .pdp__qty { padding: 0 4px; }
+  .pdp__qty button { width: 40px; height: 44px; }
+  .pdp__qty span { min-width: 20px; }
 }
 @media (max-width: 620px) {
   /* Thumbnails drop under the photo as one scrolling row. */
@@ -105,6 +110,11 @@
   .pdp__thumbs { order: 2; flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
   .pdp__thumbs button { flex: 0 0 64px; }
   .pdp__add { padding: 0 12px; letter-spacing: .12em; }
+}
+/* Phones: the button has a row to itself, so a long label ("Tambah ke Keranjang") is never cut. */
+@media (max-width: 480px) {
+  .pdp__buy { flex-wrap: wrap; justify-content: space-between; }
+  .pdp__add { order: 3; flex: 1 0 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .pdp :is(button, a) { transition: none; }
