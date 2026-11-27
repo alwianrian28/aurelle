@@ -253,9 +253,25 @@ SHIPMENT_MAP_MIGRATION = [
 ]
 SCHEMA += SHIPMENT_MAP_MIGRATION
 
+# Newsletter sign-ups from the storefront (newsletter.py). Runs on every start like the
+# migrations above, and is kept as migrations/2026-11-27_newsletter.sql (a test keeps the two
+# identical).
+NEWSLETTER_MIGRATION = [
+    """CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  email           VARCHAR(254) PRIMARY KEY,
+  locale          VARCHAR(5)   NOT NULL,
+  source          VARCHAR(20)  NOT NULL,
+  consent_version VARCHAR(60)  NOT NULL,
+  subscribed_at   TIMESTAMPTZ  NOT NULL,
+  unsubscribed_at TIMESTAMPTZ
+)""",
+    "ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY",
+]
+SCHEMA += NEWSLETTER_MIGRATION
+
 TABLES = (
     "users", "sessions", "tokens", "products", "variants", "collections", "collection_products", "shipping_services", "settings", "media_files", "orders", "order_items",
-    "order_events", "tracking_points", "catalog_audit", "geo_areas", "shipment_routes", "shipment_tracking_cache",
+    "order_events", "tracking_points", "catalog_audit", "geo_areas", "shipment_routes", "shipment_tracking_cache", "newsletter_subscribers",
 )
 
 

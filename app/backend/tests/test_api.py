@@ -1299,3 +1299,23 @@ def test_shipping_migration_runs_again_and_backfills_old_orders(api):
     from app.db import SHIPMENT_MAP_MIGRATION
 
     assert Path(__file__).parents[1].joinpath("migrations", "2026-11-27_shipment_map.sql").read_text(encoding="utf-8").split("\n\n", 1)[1].strip() == ";\n\n".join(SHIPMENT_MAP_MIGRATION) + ";"
+
+
+def test_newsletter_signup_is_kept_once_and_listed_for_staff(api, monkeypatch):
+    from pathlib import Path
+
+    from app import newsletter
+    from app.db import NEWSLETTER_MIGRATION
+
+    assert Path(__file__).parents[1].joinpath("migrations", "2026-11-27_newsletter.sql").read_text(encoding="utf-8").split("\n\n", 1)[1].strip() == ";\n\n".join(NEWSLETTER_MIGRATION) + ";"
+    monkeypatch.setattr(newsletter, "signup_limiter", newsletter.Limiter(4, 60))
+    form = {"email": " Reader@Example.com ", "consent": True, "consentVersion": "v1", "locale": "ja", "source": "footer"}
+    assert api.post("/api/newsletter", json=form).json() == {"status": "subscribed"}
+    # A second sign-up answers the same and changes nothing; no consent or no address is refused.
+    assert api.post("/api/newsletter", json={**form, "locale": "en", "consentVersion": "v2"}).json() == {"status": "subscribed"}
+    assert api.post("/api/newsletter", json={**form, "consent": False}).json() == {"error": "consent_required"}
+    assert api.post("/api/newsletter", json={**form, "email": "not-an-email"}).status_code == 400
+    assert api.post("/api/newsletter", json=form).status_code == 429  # the fifth from one address in a minute
+    assert api.get("/api/admin/newsletter").status_code == 401
+    listed = make_admin(api).get("/api/admin/newsletter").json()["subscribers"]
+    assert [(s["email"], s["locale"], s["consentVersion"], s["unsubscribedAt"]) for s in listed] == [("reader@example.com", "ja", "v1", None)]

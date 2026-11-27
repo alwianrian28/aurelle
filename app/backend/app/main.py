@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, catalog, media, orders, payments, shipping
+from . import auth, catalog, media, newsletter, orders, payments, shipping
 from .config import app_origins, is_prod, media_dir
 from .db import close_pool, init_db
 
@@ -61,6 +61,8 @@ def create_app() -> FastAPI:
     app.include_router(shipping.admin)
     app.include_router(media.router)
     app.include_router(media.admin)
+    app.include_router(newsletter.router)
+    app.include_router(newsletter.admin)
     # Product photos for the mobile app in development. In production they belong on object
     # storage / a CDN (PRD §9), so nothing is mounted there.
     if not is_prod() and os.path.isdir(media_dir()):
