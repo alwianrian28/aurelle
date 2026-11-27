@@ -540,3 +540,10 @@
 .shipment__rates label > span:nth-of-type(1) { flex: 1; min-width: 0; display: grid; }
 .shipment__rates small { color: var(--faint); font-size: 12.5px; }
 .shipment__collect { display: grid; gap: 6px; margin-bottom: 12px; font-size: 13px; font-weight: 500; }
+
+/* A short list of checkboxes inside a form (Settings: storefront languages). */
+.choice-list { margin: 0; padding: 0; border: 0; min-width: 0; }
+.choice-list legend { padding: 0; margin-bottom: 4px; font-size: 13.5px; font-weight: 500; }
+.choice-list .choice { display: flex; align-items: center; gap: 10px; min-height: 36px; font-weight: 400; cursor: pointer; }
+.field.choice-list .choice input[type=checkbox] { flex: none; width: 16px; height: 16px; margin: 0; padding: 0; accent-color: var(--ink); }
+.choice-list + .form-grid { margin-top: 16px; }

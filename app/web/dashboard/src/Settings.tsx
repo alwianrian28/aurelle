@@ -10,8 +10,8 @@ const Note = ({ notice }: { notice: Notice }) => (notice ? <p className={`notice
 
 /**
  * The signed-in admin's own account, and the rules checkout applies: how long unpaid orders
- * keep their stock, the exchange rate, where the store ships, and the shipping services on
- * offer. Every section shows its values first; Edit (or Add) opens the form for that section
+ * keep their stock, the languages the shop is offered in, where the store ships, and the
+ * shipping services on offer. Every section shows its values first; Edit (or Add) opens the form for that section
  * only. Changes apply to what happens next: orders already placed keep what they were placed with.
  */
 export default function Settings({ user, onUser }: { user: User; onUser: (user: User) => void }) {
@@ -30,7 +30,7 @@ export default function Settings({ user, onUser }: { user: User; onUser: (user: 
         <Account user={user} onUser={onUser} />
         <Password />
         {failed && <p className="empty" role="alert">Could not load the store settings.</p>}
-        {data && <><Rules data={data} onSaved={setData} /><ShippingServices services={data.shippingServices} onSaved={setData} /></>}
+        {data && <><Languages data={data} onSaved={setData} /><Rules data={data} onSaved={setData} /><ShippingServices services={data.shippingServices} onSaved={setData} /></>}
       </div>
     </>
   );
@@ -141,25 +141,23 @@ function Password() {
 function Rules({ data, onSaved }: { data: StoreSettings; onSaved: (next: StoreSettings) => void }) {
   const [editing, setEditing] = useState(false);
   const [minutes, setMinutes] = useState('');
-  const [rate, setRate] = useState('');
   const [countries, setCountries] = useState<string[]>([]);
   const [adding, setAdding] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
-  const open = () => { setMinutes(String(data.reservationMinutes)); setRate(String(data.usdToIdr)); setCountries(data.servedCountries); setAdding(''); setNotice(null); setEditing(true); };
+  const open = () => { setMinutes(String(data.reservationMinutes)); setCountries(data.servedCountries); setAdding(''); setNotice(null); setEditing(true); };
 
   const minutesOk = minutes !== '' && Number(minutes) >= 5 && Number(minutes) <= 1440;
-  const rateOk = rate !== '' && Number(rate) >= 1000 && Number(rate) <= 100_000;
   const name = adding.trim();
   const canAdd = name.length >= 2 && !/[<>"]/.test(name) && !countries.some((c) => c.toLowerCase() === name.toLowerCase());
   const add = () => { if (canAdd) { setCountries([...countries, name]); setAdding(''); setNotice(null); } };
 
   const save = async () => {
-    if (!minutesOk || !rateOk || countries.length === 0 || busy) return;
+    if (!minutesOk || countries.length === 0 || busy) return;
     setBusy(true);
     // A country typed but not yet added is what the admin meant to add.
     const list = canAdd ? [...countries, name] : countries;
-    const res = await api<StoreSettings>('/admin/settings', { method: 'PATCH', body: { reservationMinutes: Number(minutes), usdToIdr: Number(rate), servedCountries: list } });
+    const res = await api<StoreSettings>('/admin/settings', { method: 'PATCH', body: { reservationMinutes: Number(minutes), servedCountries: list } });
     setBusy(false);
     if (res.ok) { onSaved(res.data); setEditing(false); }
     setNotice(res.ok ? { tone: 'ok', text: 'Checkout rules saved. They apply to orders placed from now on.' } : { tone: 'error', text: saveError(res.error) });
@@ -175,10 +173,6 @@ function Rules({ data, onSaved }: { data: StoreSettings; onSaved: (next: StoreSe
             <label className="field">Stock reservation for unpaid orders
               <span className={`money${minutesOk ? '' : ' is-invalid'}`}><input id="settings-minutes" inputMode="numeric" value={minutes} onChange={(e) => { setMinutes(digits(e.target.value).slice(0, 4)); setNotice(null); }} aria-invalid={!minutesOk} /><span>minutes</span></span>
               <small className={minutesOk ? 'field__note' : 'field__error'}>5 to 1,440 minutes (24 hours). After this an unpaid order is cancelled and its stock goes back on sale.</small>
-            </label>
-            <label className="field">Exchange rate, 1 USD
-              <span className={`money${rateOk ? '' : ' is-invalid'}`}><span>Rp</span><input id="settings-rate" inputMode="numeric" value={grouped(rate)} onChange={(e) => { setRate(digits(e.target.value).slice(0, 6)); setNotice(null); }} aria-invalid={!rateOk} /></span>
-              <small className={rateOk ? 'field__note' : 'field__error'}>Rp 1.000 to Rp 100.000. Used to show prices in USD; an order locks the rate it was placed at.</small>
             </label>
           </div>
           <div className="field">
@@ -198,13 +192,12 @@ function Rules({ data, onSaved }: { data: StoreSettings; onSaved: (next: StoreSe
           </div>
           <div className="form-actions">
             <button type="button" className="btn" onClick={() => { setEditing(false); setNotice(null); }}>Cancel</button>
-            <button type="submit" id="settings-rules-save" className="btn btn--primary" disabled={!minutesOk || !rateOk || busy}>{busy ? 'Saving…' : 'Save'}</button>
+            <button type="submit" id="settings-rules-save" className="btn btn--primary" disabled={!minutesOk || busy}>{busy ? 'Saving…' : 'Save'}</button>
           </div>
         </form>
       ) : (
         <dl className="summary">
           <div><dt>Stock reservation for unpaid orders</dt><dd>{data.reservationMinutes} minutes</dd></div>
-          <div><dt>Exchange rate</dt><dd>1 USD = {idr(data.usdToIdr)}</dd></div>
           <div><dt>Ships to</dt><dd>{data.servedCountries.join(', ')}</dd></div>
         </dl>
       )}
@@ -212,6 +205,81 @@ function Rules({ data, onSaved }: { data: StoreSettings; onSaved: (next: StoreSe
   );
 }
 
+/** What each storefront language is called, in English and in the language itself. */
+const LANGUAGE_NAMES: Record<string, string> = { en: 'English', id: 'Indonesian (Bahasa Indonesia)', zh: 'Chinese, Simplified (简体中文)', ko: 'Korean (한국어)', ja: 'Japanese (日本語)' };
+const languageName = (code: string) => LANGUAGE_NAMES[code] ?? code.toUpperCase();
+
+/**
+ * The languages the shop can be read in, and the one a first visit opens in. A language only
+ * changes the words: prices stay in rupiah and both payment methods stay on offer.
+ */
+function Languages({ data, onSaved }: { data: StoreSettings; onSaved: (next: StoreSettings) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [offered, setOffered] = useState<string[]>([]);
+  const [first, setFirst] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+  const open = () => { setOffered(data.languages); setFirst(data.defaultLanguage); setNotice(null); setEditing(true); };
+
+  const toggle = (code: string) => {
+    const next = offered.includes(code) ? offered.filter((c) => c !== code) : data.allLanguages.filter((c) => c === code || offered.includes(c));
+    setOffered(next);
+    // The default must be one of the languages on offer.
+    if (!next.includes(first)) setFirst(next[0] ?? '');
+    setNotice(null);
+  };
+
+  const save = async () => {
+    if (offered.length === 0 || !first || busy) return;
+    setBusy(true);
+    const res = await api<StoreSettings>('/admin/settings', { method: 'PATCH', body: { languages: offered, defaultLanguage: first } });
+    setBusy(false);
+    if (res.ok) { onSaved(res.data); setEditing(false); }
+    setNotice(res.ok ? { tone: 'ok', text: 'Languages saved. The shop shows the change the next time a page is opened.' } : { tone: 'error', text: saveError(res.error) });
+  };
+
+  return (
+    <section className="card">
+      <div className="card__head"><h2>Storefront languages</h2>{!editing && <button type="button" id="settings-languages-edit" className="btn btn--small" onClick={open}><Icon name="edit" />Edit</button>}</div>
+      <Note notice={notice} />
+      {editing ? (
+        <form onSubmit={(e) => { e.preventDefault(); void save(); }} noValidate>
+          <fieldset className="field choice-list">
+            <legend>Languages customers can choose</legend>
+            {data.allLanguages.map((code) => (
+              <label key={code} className="choice">
+                <input id={`settings-language-${code}`} type="checkbox" checked={offered.includes(code)} disabled={offered.length === 1 && offered.includes(code)} onChange={() => toggle(code)} />
+                <span>{languageName(code)}</span>
+              </label>
+            ))}
+            <small className="field__note">At least one language is needed. A customer whose language is switched off sees the shop in the default language.</small>
+          </fieldset>
+          <div className="form-grid">
+            <label className="field">Language for a first visit
+              <select id="settings-language-default" value={first} onChange={(e) => { setFirst(e.target.value); setNotice(null); }}>
+                {offered.map((code) => <option key={code} value={code}>{languageName(code)}</option>)}
+              </select>
+              <small className="field__note">Shown until the customer picks a language; their choice is then remembered on their device.</small>
+            </label>
+          </div>
+          <div className="form-actions">
+            <button type="button" className="btn" onClick={() => { setEditing(false); setNotice(null); }}>Cancel</button>
+            <button type="submit" id="settings-languages-save" className="btn btn--primary" disabled={offered.length === 0 || busy}>{busy ? 'Saving…' : 'Save'}</button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <dl className="summary">
+            <div><dt>Languages customers can choose</dt><dd id="settings-languages-value">{data.languages.map(languageName).join(', ')}</dd></div>
+            <div><dt>Language for a first visit</dt><dd>{languageName(data.defaultLanguage)}</dd></div>
+            <div><dt>Prices and payment</dt><dd>Rupiah, by card or QRIS, in every language</dd></div>
+          </dl>
+          <p className="muted">Choosing a language changes the shop's wording only. Product names, descriptions and policies you write in English are shown as written wherever a translation is not available.</p>
+        </>
+      )}
+    </section>
+  );
+}
 /** The services checkout offers, as a list. One form at a time: for a new service, or for the one being edited. */
 function ShippingServices({ services, onSaved }: { services: Service[]; onSaved: (next: StoreSettings) => void }) {
   // The id of the service being edited, 'new' while adding one, or nothing.
