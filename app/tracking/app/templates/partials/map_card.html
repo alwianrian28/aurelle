@@ -1,0 +1,29 @@
+{% import "partials/_ui.html" as ui %}
+{# Baris 3 kanan: peta Leaflet. Posisi kendaraan adalah ESTIMASI dari status + waktu, bukan GPS. #}
+<section class="flex flex-col rounded-xl border border-slate-100 bg-white shadow-sm">
+  <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-slate-100 px-4 py-3">
+    {{ ui.card_title("Live Tracking") }}
+    <ul class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500" aria-label="Legenda peta">
+      <li class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 ring-1 ring-emerald-500"></span>Titik Muat</li>
+      <li class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full rounded-bl-none -rotate-45 bg-red-500"></span>Titik Bongkar</li>
+      <li class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-blue-200"></span>Kendaraan (estimasi)</li>
+      <li class="flex items-center gap-1"><span class="h-1 w-5 rounded bg-emerald-600"></span>Sudah Dilewati</li>
+      <li class="flex items-center gap-1"><span class="h-1 w-5 rounded bg-blue-600"></span>Dalam Perjalanan</li>
+      <li class="flex items-center gap-1"><span class="w-5 border-t-2 border-dotted border-slate-600"></span>Sisa Perjalanan</li>
+    </ul>
+  </div>
+  <div class="p-3">
+    {% if t.map.available %}
+      <div id="map-wrap" class="relative overflow-hidden rounded-lg bg-slate-100">
+        <div id="tracking-map" class="h-60 w-full" role="application" aria-label="Peta perkiraan posisi pengiriman"></div>
+      </div>
+      <script id="map-data" type="application/json">{{ t.map.model_dump(mode="json")|tojson }}</script>
+    {% else %}
+      <div class="flex h-60 items-center justify-center rounded-lg bg-slate-100 text-sm text-slate-400">Koordinat titik muat / bongkar belum tersedia.</div>
+    {% endif %}
+    <p class="mt-2 flex items-start gap-1.5 text-[11px] text-slate-500">
+      {{ ui.icon("info", "mt-px h-3.5 w-3.5 shrink-0") }}
+      <span>Posisi kendaraan adalah perkiraan berdasarkan status pengiriman, bukan GPS real-time.</span>
+    </p>
+  </div>
+</section>
