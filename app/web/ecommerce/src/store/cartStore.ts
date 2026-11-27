@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CartItem } from '../types/domain';
+import type { CartItem, Order } from '../types/domain';
 import { products } from '../mocks/catalog';
 import { getAvailableStock } from './orderStore';
 
@@ -15,6 +15,13 @@ interface CartState {
   remove: (variantId: string) => void;
   setQty: (variantId: string, qty: number) => { ok: boolean; reason?: string };
   clear: () => void;
+  /** Orders made from this bag that are not paid yet: their pieces come back if they never are. */
+  held: string[];
+  /** The number of the unpaid order whose pieces were last put back, until the notice is closed. */
+  returned: string | null;
+  /** Checkout placed the order: the bag is emptied and the order is remembered. */
+  hold: (orderId: string) => void;
+  dismissReturned: () => void;
   mergeGuestIntoAccount: () => void; // no-op placeholder untuk FR-01-08/FR-07-04
 }
 
@@ -63,6 +70,10 @@ export const useCartStore = create<CartState>()(
         return { ok: true };
       },
       clear: () => set({ items: [] }),
+      held: [],
+      returned: null,
+      hold: (orderId) => set((state) => ({ items: [], returned: null, held: [...state.held.filter((id) => id !== orderId), orderId] })),
+      dismissReturned: () => set({ returned: null }),
       mergeGuestIntoAccount: () => {
         /* Pada implementasi backend nyata, ini memanggil API penggabungan keranjang (AC-07-03). */
       },
@@ -80,4 +91,32 @@ export function resolveCartItem(item: CartItem) {
   const unavailable = !product || !product.active || !variant || available <= 0;
   const exceedsStock = !unavailable && item.qty > available;
   return { product, variant, priceChanged, unavailable, available, exceedsStock };
+}
+
+const NEVER_PAID = ['unpaid', 'pending', 'failed', 'expired'];
+
+/**
+ * An order placed from this bag that ended without being paid (the payment window ran out, or
+ * it was cancelled) gives its pieces back to the bag, once. A paid order is simply forgotten.
+ * Stock and price are not checked here: the bag page marks a changed price and what can no
+ * longer be bought.
+ */
+export function returnUnpaidToBag(orders: Order[], userId: string | undefined): void {
+  const { held, items } = useCartStore.getState();
+  if (held.length === 0 || !userId) return;
+  const mine = orders.filter((o) => o.userId === userId && held.includes(o.id));
+  const paid = mine.filter((o) => o.status !== 'cancelled' && o.status !== 'awaiting_payment' && o.status !== 'pending_decision');
+  const unpaid = mine.filter((o) => o.status === 'cancelled' && NEVER_PAID.includes(o.paymentStatus));
+  const done = new Set([...paid, ...mine.filter((o) => o.status === 'cancelled')].map((o) => o.id));
+  if (done.size === 0) return;
+  const next = [...items];
+  for (const line of unpaid.flatMap((o) => o.items)) {
+    const at = next.findIndex((i) => i.variantId === line.variantId);
+    if (at >= 0) next[at] = { ...next[at], qty: next[at].qty + line.qty };
+    else next.push({ productId: line.productId, variantId: line.variantId, qty: line.qty, priceIdrAtAdd: line.unitPriceIdr });
+  }
+  useCartStore.setState((state) => ({
+    held: state.held.filter((id) => !done.has(id)),
+    ...(unpaid.length > 0 ? { items: next, returned: unpaid[unpaid.length - 1].number } : {}),
+  }));
 }

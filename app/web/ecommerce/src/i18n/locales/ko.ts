@@ -177,6 +177,7 @@ export const ko = {
     activeFilters: '적용된 필터',
   },
   cart: {
+    returned: '주문 {{number}}이(가) 결제되지 않아 상품을 쇼핑백에 다시 담았습니다.',
     empty: '쇼핑백이 비어 있습니다.',
     priceChanged: '쇼핑백에 담은 이후 가격이 변경되었습니다.',
     unavailable: '구매할 수 없는 상품입니다. 계속하려면 삭제해 주세요.',

@@ -1,6 +1,7 @@
 import { api } from './api';
 import { useAuthStore } from '../store/authStore';
 import { useOrderStore } from '../store/orderStore';
+import { returnUnpaidToBag } from '../store/cartStore';
 import { loadCatalog } from './catalogSync';
 import type { Address, CartItem, Currency, Order, PaymentMethod } from '../types/domain';
 
@@ -84,9 +85,12 @@ export async function pullOrders(): Promise<void> {
 /** Call once at startup. */
 export function startOrderSync(): void {
   for (const o of useOrderStore.getState().orders) sent.set(o.id, o.history.length);
+  // Pieces of an order that was never paid go back to the bag, however the order ended.
+  returnUnpaidToBag(useOrderStore.getState().orders, useAuthStore.getState().user?.id);
   useOrderStore.subscribe((state) => {
-    if (applying) return;
     const userId = useAuthStore.getState().user?.id;
+    returnUnpaidToBag(state.orders, userId);
+    if (applying) return;
     for (const order of state.orders) {
       if (order.userId !== userId) continue;
       const known = sent.get(order.id);

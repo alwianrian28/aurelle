@@ -42,7 +42,7 @@ export default function Checkout() {
   const navigate = useNavigate();
 
   const user = useAuthStore((s) => s.user);
-  const { items, clear } = useCartStore();
+  const { items, hold } = useCartStore();
   const { addresses, addAddress } = useAddressStore();
   const { currency, usdToIdr } = usePreferenceStore();
   useCatalogVersion(); // re-render when server prices or stock refresh
@@ -123,7 +123,7 @@ export default function Checkout() {
       setSubmitError(result.reason);
       return;
     }
-    clear();
+    hold(result.order.id); // the bag is emptied; an order that is never paid gives its pieces back
     // `pay` opens the payment popup on arrival, so the customer does not click twice.
     navigate(path(`/checkout/payment/${result.order.id}`), { replace: true, state: { pay: true } });
   };

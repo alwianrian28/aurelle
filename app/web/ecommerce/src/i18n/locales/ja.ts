@@ -177,6 +177,7 @@ export const ja = {
     activeFilters: '適用中の絞り込み',
   },
   cart: {
+    returned: 'ご注文 {{number}} はお支払いが完了しなかったため、商品をバッグに戻しました。',
     empty: 'ショッピングバッグは空です。',
     priceChanged: 'バッグに追加された後、価格が変更されました。',
     unavailable: 'この商品は現在お取り扱いできません。続けるには削除してください。',

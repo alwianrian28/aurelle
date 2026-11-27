@@ -177,6 +177,7 @@ export const zh = {
     activeFilters: '已选筛选条件',
   },
   cart: {
+    returned: '订单 {{number}} 未付款，商品已放回您的购物袋。',
     empty: '您的购物袋是空的。',
     priceChanged: '自加入购物袋后，价格已有变动。',
     unavailable: '商品已无法购买，请移除后继续。',

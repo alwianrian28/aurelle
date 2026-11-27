@@ -180,6 +180,7 @@ export const en = {
     activeFilters: "Active filters",
   },
   cart: {
+    returned: 'Order {{number}} was not paid, so we put its pieces back in your bag.',
     empty: 'Your cart is empty.',
     priceChanged: 'Price has changed since this was added.',
     unavailable: 'Item unavailable. Remove it to continue.',

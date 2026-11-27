@@ -177,6 +177,7 @@ export const id = {
     editCta: 'Lihat tampilannya',
   },
   cart: {
+    returned: 'Pesanan {{number}} belum dibayar, jadi itemnya kami kembalikan ke tas Anda.',
     empty: 'Keranjang Anda masih kosong.',
     priceChanged: 'Harga telah berubah sejak ditambahkan.',
     unavailable: 'Item tidak tersedia. Hapus untuk melanjutkan.',

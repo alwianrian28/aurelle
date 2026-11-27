@@ -24,7 +24,7 @@ export default function Cart() {
   const localized = useLocalized();
   const price = usePrice();
   const navigate = useNavigate();
-  const { items, remove, setQty } = useCartStore();
+  const { items, remove, setQty, returned, dismissReturned } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   useCatalogVersion(); // re-render when server stock or prices refresh
 
@@ -96,6 +96,13 @@ export default function Cart() {
             {t('cart.continueShopping')}
           </NavLink>
         </header>
+
+        {returned && (
+          <p className="cart__returned" role="status">
+            <span>{t('cart.returned', { number: returned })}</span>
+            <button id="cart-returned-close" type="button" onClick={dismissReturned} aria-label={t('common.close')}>×</button>
+          </p>
+        )}
 
         <div className="cart__layout">
           <ul className="cart__list">

@@ -143,3 +143,7 @@
 @media (prefers-reduced-motion: reduce) {
   .cart :is(button, a) { transition: none; }
 }
+
+/* Pieces of an unpaid order were put back in the bag. */
+.cart__returned { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin: 0 0 24px; padding: 14px 18px; border: 1px solid var(--svc-line); border-radius: 12px; background: var(--svc-stone); font-size: 14px; line-height: 1.55; color: var(--svc-ink); }
+.cart__returned button { flex: none; width: 28px; height: 28px; margin: -3px -6px 0 0; border: 0; border-radius: 50%; background: none; color: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
