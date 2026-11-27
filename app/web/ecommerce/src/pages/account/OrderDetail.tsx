@@ -2,6 +2,7 @@ import { NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useCourierTracking } from '../../hooks/useCourierTracking';
 import { useTranslation } from 'react-i18next';
 import { useLocale, useLocalePath, useLocalized } from '../../hooks/useLocale';
+import { intlLocale } from '../../i18n';
 import { useMyOrders } from '../../hooks/useMyOrders';
 import { useCountdown, formatDuration } from '../../hooks/useCountdown';
 import { canPay } from '../../store/orderStore';
@@ -46,7 +47,7 @@ export default function OrderDetail() {
   const paidIdr = order.paymentStatus === 'paid' ? order.costs.total : 0;
   const remainingIdr = order.status === 'cancelled' ? 0 : order.costs.total - paidIdr;
   const fmtDate = (iso: string) =>
-    new Date(iso).toLocaleString(locale === 'id' ? 'id-ID' : 'en-US', {
+    new Date(iso).toLocaleString(intlLocale(locale), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',

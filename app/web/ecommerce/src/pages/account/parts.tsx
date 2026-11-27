@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { Order, ReadyStockOrderStatus } from '../../types/domain';
 import { useLocale } from '../../hooks/useLocale';
+import { intlLocale } from '../../i18n';
 import SmartImage from '../../components/SmartImage';
 
 /** Shared pieces of the account pages: status badge, thumbnails, icons, dates. */
@@ -36,7 +37,7 @@ export function Thumb({ src, size = 48 }: { src?: string; size?: number }) {
 export function useShortDate() {
   const locale = useLocale();
   return (iso: string, year = false) =>
-    new Date(iso).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-GB', { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) });
+    new Date(iso).toLocaleDateString(intlLocale(locale), { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) });
 }
 
 /** Text link with a trailing arrow, used at the edge of cards and headings. */

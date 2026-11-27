@@ -9,6 +9,7 @@ import ErrorBoundary from './ErrorBoundary';
 import GuideDialogs from './GuideDialogs';
 import { pullOrders } from '../lib/orderSync';
 import { loadCatalog } from '../lib/catalogSync';
+import { htmlLang, toLocale } from '../i18n';
 
 /** Rute transaksi tidak memakai smoothing agar input tidak tertunda (§14.3, baris "Alur transaksi" [U]). */
 const NO_SMOOTH_PATTERN = /^\/(cart|checkout|auth|account)/;
@@ -23,7 +24,7 @@ export default function Layout() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { document.documentElement.lang = i18n.language.startsWith("id") ? "id" : "en"; }, [i18n.language]);
+  useEffect(() => { document.documentElement.lang = htmlLang(toLocale(i18n.language)); }, [i18n.language]);
   const smoothEnabled = !NO_SMOOTH_PATTERN.test(location.pathname);
   /** Checkout and its payment step render their own slim bar and footer: no site navigation mid-purchase. */
   const bare = /^\/checkout(\/|$)/.test(location.pathname);

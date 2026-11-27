@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { useLocale, useLocalePath } from '../../hooks/useLocale';
+import { intlLocale } from '../../i18n';
 import { signOut } from '../../lib/signOut';
 import './Account.css';
 
@@ -35,7 +36,7 @@ export default function AccountLayout() {
 
   const firstName = (user?.username ?? '').trim().split(/\s+/)[0];
   const memberSince = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', { month: 'long', year: 'numeric' })
+    ? new Date(user.createdAt).toLocaleDateString(intlLocale(locale), { month: 'long', year: 'numeric' })
     : null;
 
   return (

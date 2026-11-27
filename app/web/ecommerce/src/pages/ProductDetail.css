@@ -98,6 +98,11 @@
   .pdp__title { font-size: 34px; }
   .pdp__pairs { margin-top: 36px; padding-top: 32px; }
   .pdp__pairs-head h2 { font-size: 28px; }
+  /* 40px touch targets: photo/3D toggle and the quantity steppers. */
+  .pdp__toggle button { min-height: 40px; }
+  .pdp__qty { padding: 0 4px; }
+  .pdp__qty button { width: 40px; height: 44px; }
+  .pdp__qty span { min-width: 20px; }
 }
 @media (max-width: 620px) {
   /* Thumbnails drop under the photo as one scrolling row. */

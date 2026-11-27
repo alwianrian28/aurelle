@@ -95,6 +95,11 @@
   .shop__group-head h2 { font-size: 28px; }
   .shop__progress { margin-top: 48px; }
 }
+/* Touch widths: the sort trigger fills its pill, "clear filters" gets a 40px tall hit area. */
+@media (max-width: 960px) {
+  .shop .sort-menu__trigger { min-height: 40px; }
+  .shop__link { min-height: 40px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .shop :is(button, a, img) { transition: none; }
 }

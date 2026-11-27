@@ -171,8 +171,14 @@ button.link:hover {
   .form-row {
     grid-template-columns: 1fr;
   }
+  /* 100px cut the dial code off ("+6…"): flag + code + chevron need about 112px. */
   .form-row--phone {
-    grid-template-columns: 100px minmax(0, 1fr);
+    grid-template-columns: 116px minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+  .form-row--phone .country-picker--compact .country-picker__button {
+    gap: 6px;
+    padding-inline: 0.625rem;
   }
 }
 

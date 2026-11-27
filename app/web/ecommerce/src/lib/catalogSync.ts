@@ -3,6 +3,7 @@ import { api } from './api';
 import { collections, products, shippingServices } from '../mocks/catalog';
 import { SERVED_COUNTRIES } from '../utils/checkout';
 import { usePreferenceStore } from '../store/preferenceStore';
+import { applyStoreLanguages } from '../i18n';
 import type { Collection, Product, ShippingService } from '../types/domain';
 
 /**
@@ -16,7 +17,7 @@ const useVersion = create<{ version: number }>(() => ({ version: 0 }));
 /** Subscribe a component to catalog refreshes (stock and prices are read at render time). */
 export const useCatalogVersion = () => useVersion((s) => s.version);
 
-interface CatalogResponse { products: Product[]; collections?: Collection[]; shippingServices: ShippingService[]; usdToIdr: number; servedCountries: string[] }
+interface CatalogResponse { products: Product[]; collections?: Collection[]; shippingServices: ShippingService[]; usdToIdr: number; servedCountries: string[]; languages?: string[]; defaultLanguage?: string }
 
 export async function loadCatalog(): Promise<boolean> {
   const res = await api<CatalogResponse>('/catalog');
@@ -27,6 +28,7 @@ export async function loadCatalog(): Promise<boolean> {
   shippingServices.splice(0, shippingServices.length, ...res.data.shippingServices);
   SERVED_COUNTRIES.splice(0, SERVED_COUNTRIES.length, ...res.data.servedCountries);
   usePreferenceStore.setState({ usdToIdr: res.data.usdToIdr });
+  applyStoreLanguages(res.data.languages, res.data.defaultLanguage);
   useVersion.setState((s) => ({ version: s.version + 1 }));
   return true;
 }

@@ -3,11 +3,14 @@
  * Ini adalah kontrak data sementara untuk mock; skema fisik final ada di dokumen teknis.
  */
 
-export type Locale = 'id' | 'en';
+/** A language the storefront can be read in. */
+export type Locale = 'id' | 'en' | 'zh' | 'ko' | 'ja';
+/** A language the store's own writing (products, policies) exists in; the others are looked up from it. */
+export type ContentLocale = 'id' | 'en';
 export type Currency = 'IDR' | 'USD';
 
 /** Teks bilingual (ContentTranslation, FR-03-01). */
-export type I18nText = Record<Locale, string>;
+export type I18nText = Record<ContentLocale, string>;
 
 export type Category = 'ring' | 'bracelet' | 'necklace' | 'earring';
 
@@ -197,6 +200,8 @@ export interface OrderTracking {
   /** The lookup by order number and email gives the name only. */
   driver?: { name: string; phone?: string | null; plateNumber?: string | null; photoUrl?: string | null } | null;
   map?: ShipmentMapData | null;
+  /** What the courier was handed: how many parcels, and the weight declared for them. */
+  parcel?: { count: number; weightGrams: number };
 }
 
 export type ShipmentTone = 'normal' | 'gray' | 'orange' | 'green' | 'purple' | 'red';
@@ -217,7 +222,8 @@ export interface ShipmentMapData {
   progress: number;
   returning: boolean;
   etaAt: string | null;
-  origin: LatLng | null;
+  /** The store; `city` when its postal code names one. */
+  origin: (LatLng & { city?: string | null }) | null;
   destination: (LatLng & { precision: 'district' | 'city'; city: string }) | null;
   /** `straight`: no road joins the two (another island, air freight); drawn as a dashed line. */
   route: { kind: 'road' | 'straight'; distanceKm: number; passed: [number, number][]; remaining: [number, number][] } | null;

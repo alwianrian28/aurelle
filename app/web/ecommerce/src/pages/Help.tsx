@@ -1,6 +1,7 @@
 import { NavLink, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale, useLocalePath, useLocalized } from '../hooks/useLocale';
+import { intlLocale } from '../i18n';
 import { faqGroups, policies, type PolicySlug } from '../content/site';
 import { BRAND_CONTACT, BRAND_PENDING, buildWhatsAppLink } from '../config/brand';
 import Icon from '../components/ServiceIcons';
@@ -29,7 +30,7 @@ export default function Help({ kind }: { kind: 'faq' | 'policy' }) {
   const title = policy ? text(policy.title) : t('help.faqTitle');
   const intro = policy ? text(policy.intro) : t('help.faqIntro');
   const updated = policy?.updated
-    ? new Date(policy.updated).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? new Date(policy.updated).toLocaleDateString(intlLocale(locale), { day: 'numeric', month: 'long', year: 'numeric' })
     : PENDING_DATE;
   const ready = !BRAND_CONTACT.isPlaceholder;
   const whatsapp = (id: string, className?: string) => ready ? (

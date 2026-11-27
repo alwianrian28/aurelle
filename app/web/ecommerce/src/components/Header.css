@@ -263,3 +263,30 @@
   .header__lang { gap: 4px; padding: 0 6px; }
   .header__lang svg:first-child { display: none; }
 }
+
+/* ---- Phone bar: burger, wordmark, bag. Search, account and language move into the burger panel. ---- */
+.header__nav-extras { display: none; }
+@media (max-width: 960px) {
+  /* The panel scrolls by itself when it is taller than the screen (five languages, landscape phones). */
+  .header__nav { max-height: calc(100vh - var(--header-h)); max-height: calc(100dvh - var(--header-h)); overflow-y: auto; overscroll-behavior: contain; }
+  .header__burger { align-items: center; justify-content: center; width: 44px; height: 44px; margin-left: -12px; padding: 0; }
+  /* Narrower gap so the 40px buttons fit beside the wordmark on a 768px tablet without being squeezed. */
+  .header__bar { gap: 12px; }
+  .header__actions > * { flex-shrink: 0; }
+  .header__icon-btn { width: 40px; height: 40px; }
+}
+@media (max-width: 760px) {
+  .header__actions .lang-menu, .header__actions > .account-menu, .header__actions > .header__account { display: none; }
+  .header__actions { margin-right: -11px; }
+  .header__icon-btn { width: 44px; height: 44px; }
+  .header__badge { top: 4px; right: 4px; }
+  .header__nav-extras { display: flex; flex-direction: column; }
+  .header__link--icon { justify-content: flex-start; gap: 14px; width: 100%; background: none; border: 0; border-bottom: 1px solid var(--c-line); font-family: inherit; text-align: left; cursor: pointer; }
+  .header__link--icon svg { flex: none; }
+  .header__nav-lang { display: grid; gap: 14px; padding-top: 20px; }
+  .header__nav-lang-label { display: flex; align-items: center; gap: 14px; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .18em; line-height: 1; color: var(--c-muted); }
+  .header__nav-lang-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .header__nav-lang-btn { min-height: 44px; padding: 0 18px; border: 1px solid var(--c-line-strong); border-radius: var(--radius-pill); background: none; font: 500 14px/1.2 var(--font-sans); color: var(--c-ink); cursor: pointer; transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+  .header__nav-lang-btn[aria-pressed=true] { background: var(--c-ink); border-color: var(--c-ink); color: #fff; }
+  .header__nav-lang-btn:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
+}

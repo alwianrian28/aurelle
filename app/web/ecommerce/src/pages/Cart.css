@@ -113,6 +113,10 @@
   .cart__more { margin-top: 48px; padding-top: 36px; }
   .cart__more-head h2 { font-size: 28px; }
   .cart-empty { padding: 72px 0 64px; }
+  /* 40px+ touch targets: quantity steppers, save and remove. */
+  .cart-item__qty { height: 44px; padding: 0 2px; }
+  .cart-item__qty button { width: 40px; height: 40px; }
+  .cart-item__icon { width: 44px; height: 44px; }
 }
 @media (max-width: 620px) {
   /* Photo beside name and price; quantity and links take the full width underneath. */

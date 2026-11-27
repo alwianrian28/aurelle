@@ -85,4 +85,7 @@
   .auth-shell__side-copy { display: none; }
   .auth-shell__main { min-height: 0; }
   .auth-shell__content { margin: 0 auto; padding-block: 32px 40px; }
+  /* 44px touch target for the way back; the content gives the extra height back. */
+  .auth-shell__back { min-height: 44px; margin-top: -10px; }
+  .auth-shell__content { padding-top: 22px; }
 }

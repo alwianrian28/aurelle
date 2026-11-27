@@ -30,6 +30,8 @@ export default function ShipmentMap({ map, points = NO_POINTS, label, labels }: 
   const el = useRef<HTMLDivElement>(null);
   const leaflet = useRef<L.Map | null>(null);
   const layer = useRef<L.LayerGroup | null>(null);
+  /** Brings everything drawn into view; run again whenever the box changes size. */
+  const fit = useRef<() => void>(() => undefined);
 
   useEffect(() => {
     if (!el.current) return;
@@ -38,7 +40,10 @@ export default function ShipmentMap({ map, points = NO_POINTS, label, labels }: 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(m);
     layer.current = L.layerGroup().addTo(m);
     leaflet.current = m;
-    return () => { m.remove(); leaflet.current = null; };
+    // The box can change size without the window doing so (full screen, a column that reflows).
+    const resized = new ResizeObserver(() => { m.invalidateSize({ animate: false }); fit.current(); });
+    resized.observe(el.current);
+    return () => { resized.disconnect(); m.remove(); leaflet.current = null; };
   }, []);
 
   useEffect(() => {
@@ -69,8 +74,11 @@ export default function ShipmentMap({ map, points = NO_POINTS, label, labels }: 
     if (map?.vehicle) {
       L.marker([map.vehicle.lat, map.vehicle.lng], { icon: parcel(map.tone), title: labels.parcel, keyboard: false, zIndexOffset: 500 }).bindPopup(escapeHtml(labels.parcel)).addTo(group);
     }
-    if (seen.length === 1) m.setView(seen[0], 10);
-    else if (seen.length > 1) m.fitBounds(L.latLngBounds(seen), { padding: [36, 36], maxZoom: 12 });
+    fit.current = () => {
+      if (seen.length === 1) m.setView(seen[0], 10, { animate: false });
+      else if (seen.length > 1) m.fitBounds(L.latLngBounds(seen), { padding: [36, 36], maxZoom: 12, animate: false });
+    };
+    fit.current();
   }, [map, points, labels.origin, labels.destination, labels.parcel]);
 
   return <div ref={el} className="tracking-map" role="application" aria-label={label} />;

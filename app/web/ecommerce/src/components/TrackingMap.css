@@ -11,3 +11,6 @@
 .shipment-pin--destination { background: #151922; }
 .shipment-pin--point { background: #9aa1ab; }
 .shipment-parcel span { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 2px 8px rgba(21, 25, 34, .45); }
+
+/* The shipment map is drawn muted, so the route and the parcel stand out from the streets. */
+.tracking-map .leaflet-tile-pane { filter: grayscale(1) contrast(.92) brightness(1.06); }

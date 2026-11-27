@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent, type PointerEvent, type ReactNode } from 'react';
 import type { I18nText } from '../types/domain';
+import { useLocalized } from '../hooks/useLocale';
 import './HeroSlider.css';
 
 export interface HeroSlide {
@@ -17,12 +18,11 @@ const SWIPE_THRESHOLD_PX = 50;
  * (touch or mouse drag). `children` renders the overlay for the active slide.
  * Rotation holds while keyboard focus is inside, and never starts for reduced-motion users.
  */
-export default function HeroSlider({ slides, locale, children }: {
+export default function HeroSlider({ slides, children }: {
   slides: HeroSlide[];
-  locale: 'id' | 'en';
   children?: (index: number) => ReactNode;
 }) {
-  const id = locale === 'id';
+  const text = useLocalized();
   const count = slides.length;
   // Unbounded position: it only ever steps to a neighbour, so the last slide flows on into the
   // first instead of rewinding across the whole track. `index` is the slide it lands on.
@@ -72,7 +72,7 @@ export default function HeroSlider({ slides, locale, children }: {
       className="hero-slider"
       role="region"
       aria-roledescription="carousel"
-      aria-label={id ? 'Sorotan koleksi' : 'Collection highlights'}
+      aria-label={text({ id: 'Sorotan koleksi', en: 'Collection highlights' })}
       // Keyboard focus only: a mouse click on the CTA must not freeze the rotation.
       onFocus={e => setFocused(e.target.matches(':focus-visible'))}
       onBlur={onBlur}
@@ -98,7 +98,7 @@ export default function HeroSlider({ slides, locale, children }: {
           >
             <img
               src={slide.src}
-              alt={id ? slide.alt.id : slide.alt.en}
+              alt={text(slide.alt)}
               style={{ objectPosition: slide.position }}
               draggable={false}
               decoding="async"
@@ -118,7 +118,7 @@ export default function HeroSlider({ slides, locale, children }: {
               type="button"
               id={`hero-slide-${i + 1}`}
               className={`hero-slider__dot${i === index ? ' is-active' : ''}${autoplay ? '' : ' is-paused'}`}
-              aria-label={id ? `Tampilkan foto ${i + 1} dari ${count}` : `Show photo ${i + 1} of ${count}`}
+              aria-label={text({ id: 'Tampilkan foto {n} dari {count}', en: 'Show photo {n} of {count}' }).replace('{n}', String(i + 1)).replace('{count}', String(count))}
               aria-current={i === index}
               onClick={() => go(i)}
             >

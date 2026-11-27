@@ -1,11 +1,16 @@
+import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { LANGUAGES, setLanguage } from '../i18n';
 import ShipmentJourney from '../components/ShipmentJourney';
+import { Result, type Shown } from '../pages/TrackOrder';
 import type { OrderTracking, ShipmentMapData, ShipmentTone } from '../types/domain';
 
 /**
  * DEV-ONLY: the parcel journey in every state a shipment can be in, with made-up data, so the
  * colours and the map can be checked without waiting for a courier to report each status
- * (/__shipment, or /__shipment?only=on_hold). Not part of the production build.
+ * (/__shipment, or /__shipment?only=on_hold). With ?page=track the same samples are shown as the
+ * Track order page shows them (add &guest=1 for what a lookup without login sees). Not part of
+ * the production build.
  */
 const ROAD: [number, number][] = [[-6.2437, 106.8003], [-6.31, 106.95], [-6.42, 107.18], [-6.55, 107.44], [-6.74, 107.52], [-6.8848, 107.6152]];
 const ORIGIN = { lat: ROAD[0][0], lng: ROAD[0][1] };
@@ -55,6 +60,23 @@ const CASES: [string, OrderTracking][] = [
 export default function ShipmentPreview() {
   const [params] = useSearchParams();
   const only = params.get('only');
+  // ?lang=ja shows the samples in that language (and leaves the browser in it).
+  const lang = LANGUAGES.find((l) => l.code === params.get('lang'))?.code;
+  useEffect(() => { if (lang) setLanguage(lang); }, [lang]);
+  if (params.get('page') === 'track') {
+    const [, tracking] = CASES.find(([name]) => name === (only ?? 'in_transit')) ?? CASES[3];
+    const guest = params.get('guest') === '1';
+    const delivered = tracking.status === 'delivered';
+    const order: Shown = {
+      id: guest ? undefined : 'ord-preview', number: 'AUR-RS-261126-4894', status: delivered ? 'delivered' : 'shipped', paymentStatus: 'paid', createdAt: '2026-11-26T14:09:00Z', updatedAt: '2026-11-27T14:21:00Z',
+      history: [{ status: 'awaiting_payment', paymentStatus: 'unpaid', at: '2026-11-26T14:09:00Z' }, { status: 'confirmed', paymentStatus: 'paid', at: '2026-11-26T14:10:00Z' }, { status: 'preparing', paymentStatus: 'paid', at: '2026-11-26T14:15:00Z' }, { status: 'ready_to_ship', paymentStatus: 'paid', at: '2026-11-26T14:20:00Z' }],
+      tracking: { ...tracking, link: 'https://example.com/track', parcel: { count: 1, weightGrams: 400 }, driver: tracking.driver && guest ? { name: tracking.driver.name } : tracking.driver, map: tracking.map ? { ...tracking.map, origin: tracking.map.origin && { ...tracking.map.origin, city: 'Jakarta Selatan' } } : tracking.map },
+      items: [{ name: { en: 'Open Ring', id: 'Cincin Terbuka' }, variantLabel: { en: 'White gold · US 6', id: 'Emas putih · US 6' }, image: '', qty: 1 }, { name: { en: 'Layered Necklace', id: 'Kalung Berlapis' }, variantLabel: { en: 'White gold · 42 cm', id: 'Emas putih · 42 cm' }, image: '', qty: 1 }],
+      shippingService: { courier: 'JNE', name: { en: 'Regular', id: 'Reguler' }, etaDays: '2-4' }, destination: { city: tracking.map?.destination?.city ?? 'Bandung', country: 'Indonesia' }, paymentMethod: guest ? undefined : 'qris',
+      recipient: guest ? undefined : { name: 'Sample Customer', phone: '+62 812-••••-4471', lines: ['Jl. Contoh Raya No. 18', 'Bandung, Jawa Barat 40115'] },
+    };
+    return <article className="trk"><div className="container trk__inner" style={{ paddingTop: 24 }}><Result order={order} detailPath={guest ? null : '/account/orders/ord-preview'} contactPath="/contact" /></div></article>;
+  }
   const fmtDate = (iso: string) => new Date(iso).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   return (
     <main style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 32, padding: 32, background: '#fff' }}>

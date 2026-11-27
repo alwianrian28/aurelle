@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useLocale, useLocalePath } from '../hooks/useLocale';
+import { useLocalePath, useLocalized } from '../hooks/useLocale';
 import { products } from '../mocks/catalog';
 import ProductCard from '../components/ProductCard';
 import StoreService from '../components/StoreService';
@@ -57,7 +57,8 @@ type SortKey = 'featured' | 'low' | 'high';
 
 /** Static editorial storefront; cinematic 3D is isolated on the entrance route. */
 export default function Home() {
-  const id = useLocale() === 'id';
+  // The page's own copy is written in Indonesian and English; other languages look the English up.
+  const text = useLocalized();
   const path = useLocalePath();
   const { t } = useTranslation();
   const [category, setCategory] = useState<Category | ''>('');
@@ -71,12 +72,11 @@ export default function Home() {
   }, [category, sort]);
   return <div className="storefront"><div className="container">
     <title>Aurelle | White Gold Jewelry</title>
-    <meta name="description" content={id ? 'Jelajahi koleksi Aurelle: cincin, gelang, kalung dan anting dari emas putih.' : 'Explore Aurelle rings, bracelets, necklaces and earrings in white gold.'} />
+    <meta name="description" content={text({ id: 'Jelajahi koleksi Aurelle: cincin, gelang, kalung dan anting dari emas putih.', en: 'Explore Aurelle rings, bracelets, necklaces and earrings in white gold.' })} />
     <section className="storefront__hero" aria-labelledby="store-title">
-      <HeroSlider slides={HERO_SLIDES} locale={id ? 'id' : 'en'}>
+      <HeroSlider slides={HERO_SLIDES}>
         {index => {
           const slide = HERO_SLIDES[index];
-          const text = (value: I18nText) => (id ? value.id : value.en);
           return <div className="storefront__hero-copy" key={index}>
             <h1 id="store-title">{text(slide.title)}</h1>
             <p>{text(slide.body)}</p>
@@ -85,10 +85,10 @@ export default function Home() {
         }}
       </HeroSlider>
     </section>
-    <div className="storefront__benefits" aria-label={id ? 'Layanan Aurelle' : 'Aurelle services'}>
-      <span>{id ? 'Koleksi emas putih' : 'White gold collections'}</span>
-      <span>{id ? 'Pilihan ready stock' : 'Ready-stock selection'}</span>
-      <span>IDR / USD </span>
+    <div className="storefront__benefits" aria-label={text({ id: 'Layanan Aurelle', en: 'Aurelle services' })}>
+      <span>{text({ id: 'Koleksi emas putih', en: 'White gold collections' })}</span>
+      <span>{text({ id: 'Pilihan ready stock', en: 'Ready-stock selection' })}</span>
+      <span>{text({ id: 'Harga dalam rupiah', en: 'Prices in rupiah' })}</span>
     </div>
     <section id="store-collection" aria-label={t('nav.shop')}>
       <div className="storefront__toolbar">
@@ -97,16 +97,16 @@ export default function Home() {
         </div>
         <SortMenu<SortKey>
           id="store-sort"
-          label={id ? 'Urutkan' : 'Sort'}
+          label={text({ id: 'Urutkan', en: 'Sort' })}
           value={sort}
           onChange={setSort}
           options={[
-            { value: 'featured', label: id ? 'Pilihan kami' : 'Featured' },
-            { value: 'low', label: id ? 'Harga terendah' : 'Price, low to high' },
-            { value: 'high', label: id ? 'Harga tertinggi' : 'Price, high to low' },
+            { value: 'featured', label: text({ id: 'Pilihan kami', en: 'Featured' }) },
+            { value: 'low', label: text({ id: 'Harga terendah', en: 'Price, low to high' }) },
+            { value: 'high', label: text({ id: 'Harga tertinggi', en: 'Price, high to low' }) },
           ]}
         />
-        <span className="visually-hidden" role="status">{id ? `${listed.length} produk` : `${listed.length} pieces`}</span>
+        <span className="visually-hidden" role="status">{text({ id: '{n} produk', en: '{n} pieces' }).replace('{n}', String(listed.length))}</span>
       </div>
       {/* Default view (All + Featured) is grouped by category; any filter or sort shows one grid. */}
       {!category && sort === 'featured'
@@ -119,7 +119,7 @@ export default function Home() {
         : <div className="storefront__grid is-filtered">
             {listed.map(product => <ProductCard key={product.id} product={product} />)}
           </div>}
-      <div className="storefront__end"><NavLink id="store-full-catalog" to={path('/shop')}>{id ? 'Lihat seluruh katalog' : 'Explore the full catalog'}</NavLink></div>
+      <div className="storefront__end"><NavLink id="store-full-catalog" to={path('/shop')}>{text({ id: 'Lihat seluruh katalog', en: 'Explore the full catalog' })}</NavLink></div>
     </section>
     <StoreService />
   </div></div>;
