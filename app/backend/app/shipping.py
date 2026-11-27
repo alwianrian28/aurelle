@@ -365,6 +365,8 @@ def _live_tracking(db: Database, row: Row, public: bool = False) -> dict:
             status=now or tracking["status"], link=scans["link"] or tracking["link"], updatedAt=scans["fetchedAt"], history=scans["history"],
             driver={"name": driver["name"]} if driver and public else driver,
         )
+    # What the courier was handed: one parcel, at the weight every booking declares per piece.
+    tracking["parcel"] = {"count": 1, "weightGrams": sum(int(item["qty"]) for item in order["items"]) * ITEM_GRAMS}
     tracking["map"] = tracking_map.build(db, order, tracking)
     return tracking
 

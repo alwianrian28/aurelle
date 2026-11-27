@@ -236,9 +236,6 @@ def create_order(body: OrderIn, user: User, db: Db, response: Response):
     # FR-01-03: email must be verified before checkout.
     if not user["email_verified"]:
         raise HTTPException(403, "email_unverified")
-    # FR-03-07: QRIS is offered for IDR only (working assumption, OD-11 open).
-    if body.paymentMethod == "qris" and body.currency != "IDR":
-        raise HTTPException(400, "invalid_order")
     if body.address.country not in served_countries(db):
         raise HTTPException(400, "country_not_served")
 
@@ -341,8 +338,9 @@ def track_order(body: TrackIn, request: Request, db: Db):
         raise HTTPException(429, {"error": "too_many_attempts", "retryAfterMs": int(locked * 1000)})
     expire_stale(db)
     row = db.execute(
-        "SELECT o.* FROM orders o JOIN users u ON u.id = o.user_id WHERE o.number = ? AND u.email = ?",
-        (body.number.strip().upper(), body.email.strip().lower()),
+        # The courier's tracking number finds the order too. Either way the email must be the buyer's.
+        "SELECT o.* FROM orders o JOIN users u ON u.id = o.user_id WHERE (o.number = ? OR o.waybill_id = ?) AND u.email = ?",
+        (body.number.strip().upper(), body.number.strip(), body.email.strip().lower()),
     ).fetchone()
     if not row:
         track_limiter.fail(key)

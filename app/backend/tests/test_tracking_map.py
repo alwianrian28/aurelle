@@ -336,7 +336,7 @@ def test_tracking_carries_the_map_for_the_owner(api, maps, monkeypatch):  # noqa
     assert (shown["status"], shown["stage"], shown["tone"], shown["estimated"], shown["returning"]) == ("in_transit", 3, "normal", True, False)
     # Picked 32 hours ago with a "2-3 days" service: in transit for 24 of the 64 hours to the estimate.
     assert shown["progress"] == pytest.approx(0.05 + 0.8 * 24 / 64, abs=0.002)
-    assert shown["origin"] == {"lat": -6.2, "lng": 106.8}
+    assert shown["origin"] == {"lat": -6.2, "lng": 106.8, "city": "Jakarta"} and tracking["parcel"] == {"count": 1, "weightGrams": 200}
     assert shown["destination"] == {"lat": -6.9, "lng": 107.6, "precision": "district", "city": "Bandung"}
     assert shown["route"]["kind"] == "road" and shown["route"]["distanceKm"] == 151.2
     assert shown["route"]["passed"][0] == [-6.2, 106.8] and shown["route"]["remaining"][-1] == [-6.9, 107.6]
@@ -355,6 +355,9 @@ def test_public_lookup_gives_scans_and_map_but_only_the_drivers_name(api, maps, 
     order = found.json()["order"]
     assert order["status"] == "shipped"  # reading the scans moved the order along
     assert order["tracking"]["driver"] == {"name": "Budi"}
+    # The courier's tracking number finds the order as well, with the same email.
+    assert guest.post("/api/orders/track", json={"number": "JNE0001", "email": "a@example.com"}).json()["order"]["number"] == placed["number"]
+    assert guest.post("/api/orders/track", json={"number": "JNE0001", "email": "b@example.com"}).status_code == 404
     assert [h["note"] for h in order["tracking"]["history"]] == ["Paket dijemput", "Tiba di gudang Bandung"]
     assert order["tracking"]["map"]["route"]["kind"] == "road" and order["tracking"]["map"]["destination"]["city"] == "Bandung"
     assert all(private not in found.text for private in ("Jl. Uji 1", "8123456789", "0812000111", "B 1234 XY", "a@example.com", "ord-12345678", "40115"))
@@ -431,7 +434,7 @@ def test_the_store_is_located_by_its_postal_code_when_no_point_is_set(db, maps, 
     monkeypatch.delenv("BITESHIP_ORIGIN_LAT")
     for name, value in (("NAME", "Aurelle Store"), ("PHONE", "0811111111"), ("ADDRESS", "Jl. Toko 1, Jakarta"), ("POSTAL_CODE", "12190")):
         monkeypatch.setenv(f"BITESHIP_ORIGIN_{name}", value)
-    assert tracking_map.origin(db) == {"lat": -6.21, "lng": 106.85}  # Kebayoran Baru is not known: its city is
+    assert tracking_map.origin(db) == {"lat": -6.21, "lng": 106.85, "city": "Jakarta"}  # Kebayoran Baru is not known: its city is
     assert [c[1]["q"] for c in maps.calls] == ["Kebayoran Baru, Jakarta, DKI Jakarta, Indonesia", "Jakarta, DKI Jakarta, Indonesia"]
     monkeypatch.setenv("BITESHIP_ORIGIN_POSTAL_CODE", "99999")
     assert tracking_map.origin(db) is None

@@ -305,14 +305,16 @@ def locate(db: Database, province: str, city: str, postal_code: str) -> dict | N
 
 
 def origin(db: Database) -> dict | None:
-    """Where the store is: the configured point, or else the area of its postal code."""
-    point = map_origin_point()
-    if point:
-        return {"lat": point[0], "lng": point[1]}
+    """Where the store is: the configured point, or else the area of its postal code. `city` is
+    the store's city when its postal code names one."""
     store = biteship_origin()
     area = area_of_postal(store["postalCode"]) if store else None
+    city = area[1] if area else None
+    point = map_origin_point()
+    if point:
+        return {"lat": point[0], "lng": point[1], "city": city}
     found = locate(db, area[0], area[1], store["postalCode"]) if area else None
-    return {"lat": found["lat"], "lng": found["lng"]} if found else None
+    return {"lat": found["lat"], "lng": found["lng"], "city": city} if found else None
 
 
 # -------------------------------------------------------------------- routes
@@ -385,7 +387,7 @@ def build(db: Database, order: dict, tracking: dict, now: datetime | None = None
         db.commit()
         start = origin(db)
         area = locate(db, str(address.get("state", "")), str(address.get("city", "")), str(address.get("postalCode", "")))
-        shown["origin"] = {"lat": start["lat"], "lng": start["lng"]} if start else None
+        shown["origin"] = {"lat": start["lat"], "lng": start["lng"], "city": start["city"]} if start else None
         shown["destination"] = {"lat": area["lat"], "lng": area["lng"], "precision": area["precision"], "city": address.get("city")} if area else None
         way = route(db, start, area) if start and area else None
         if way:

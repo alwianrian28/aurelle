@@ -288,6 +288,16 @@ def test_admin_edits_store_settings_and_shipping(api):
     assert (saved["usdToIdr"], saved["reservationMinutes"], saved["servedCountries"]) == (16_250, 45, ["Indonesia", "Japan"])
     shop = api.get("/api/catalog").json()
     assert (shop["usdToIdr"], shop["servedCountries"]) == (16_250, ["Indonesia", "Japan"])
+    # Storefront languages: every one is offered and a first visit opens in English, until an admin says otherwise.
+    assert (saved["languages"], saved["defaultLanguage"], saved["allLanguages"]) == (["en", "id", "zh", "ko", "ja"], "en", ["en", "id", "zh", "ko", "ja"])
+    for bad in ({"languages": []}, {"languages": ["fr"]}, {"defaultLanguage": "de"}, {"languages": ["en", "id"], "defaultLanguage": "ja"}):
+        assert admin.patch("/api/admin/settings", json=bad).status_code == 400, bad
+    chosen = admin.patch("/api/admin/settings", json={"languages": ["ja", "id", "en"], "defaultLanguage": "id"}).json()
+    assert (chosen["languages"], chosen["defaultLanguage"]) == (["en", "id", "ja"], "id")
+    shop = api.get("/api/catalog").json()
+    assert (shop["languages"], shop["defaultLanguage"]) == (["en", "id", "ja"], "id")
+    # Taking the default language off the list moves the default to the first one left.
+    assert admin.patch("/api/admin/settings", json={"languages": ["en", "ja"]}).json()["defaultLanguage"] == "en"
     # Checkout follows at once: Singapore is no longer served, and the new window is the one that runs.
     assert api.post("/api/orders", json={**order_body("ord-nosg0000"), "address": {**ADDRESS, "country": "Singapore"}}).json() == {"error": "country_not_served"}
     order = api.post("/api/orders", json=order_body("ord-window00", qty=1)).json()["order"]
@@ -703,9 +713,10 @@ def test_snap_transaction_is_created_once_and_priced_by_the_server(api, monkeypa
     assert api.get("/api/orders/ord-12345678").json()["order"]["paymentMethod"] == "card"
     assert api.post("/api/payments/ord-12345678/snap").json()["token"] == "snap-token-2"  # no method given: the current one
     assert api.post("/api/payments/ord-12345678/snap", json={"method": "bank"}).status_code == 400
-    # QRIS stays an IDR-only method, also when switching.
+    # QRIS is open to every order, whatever currency its prices were shown in: the charge is in rupiah either way.
     usd = api.post("/api/orders", json={**order_body("ord-usd00000", qty=1), "paymentMethod": "card", "currency": "USD"})
-    assert usd.status_code == 201 and api.post("/api/payments/ord-usd00000/snap", json={"method": "qris"}).status_code == 400
+    assert usd.status_code == 201 and api.post("/api/payments/ord-usd00000/snap", json={"method": "qris"}).json()["method"] == "qris"
+    assert api.post("/api/orders", json={**order_body("ord-usd00001", qty=1), "currency": "USD"}).status_code == 201  # checkout with QRIS too
     assert TestClient(api.app).post("/api/payments/ord-12345678/snap").status_code == 401
 
 
@@ -818,9 +829,9 @@ def test_own_qris_code_is_one_per_attempt(api, monkeypatch):
     api.post("/api/payments/midtrans/notification", json=notification(f"{order['number']}-2", "settlement", gross=f"{total}.00"))
     assert api.get("/api/orders/ord-12345678").json()["order"]["paymentStatus"] == "paid"
     assert api.post("/api/payments/ord-12345678/qris").status_code == 409
-    # QRIS stays an IDR-only method.
+    # An order whose prices were shown in US dollars is paid by QRIS like any other.
     api.post("/api/orders", json={**order_body("ord-usdqris0", qty=1), "paymentMethod": "card", "currency": "USD"})
-    assert api.post("/api/payments/ord-usdqris0/qris").status_code == 400
+    assert api.post("/api/payments/ord-usdqris0/qris").json()["qrString"] == qr(len(made))
 
 
 def test_payment_under_way_is_closed_at_midtrans_when_the_hold_runs_out(api, monkeypatch):

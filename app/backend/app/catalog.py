@@ -107,6 +107,24 @@ def reservation_minutes(db: Database) -> int:
     return int(row[0]) if row else RESERVATION_MINUTES
 
 
+# Languages the storefront has a dictionary for. The dashboard chooses which of them are offered
+# and which one a first visit opens in.
+LANGUAGES = ("en", "id", "zh", "ko", "ja")
+
+
+def store_languages(db: Database) -> tuple[list[str], str]:
+    """(languages offered, in the order shown; the one a first visit opens in). Until an admin
+    sets them: every language, opening in English."""
+    saved = {r["name"]: r["value"] for r in db.execute("SELECT name, value FROM settings WHERE name IN ('languages', 'default_language')").fetchall()}
+    try:
+        offered = [code for code in json.loads(saved.get("languages", "null")) or [] if code in LANGUAGES]
+    except (ValueError, TypeError):
+        offered = []
+    offered = offered or list(LANGUAGES)
+    default = saved.get("default_language")
+    return offered, default if default in offered else offered[0]
+
+
 def usd_to_idr(db: Database) -> int:
     return int(db.execute("SELECT value FROM settings WHERE name = 'usd_to_idr'").fetchone()[0])
 
@@ -155,6 +173,8 @@ def get_catalog(db: Db):
         "shippingServices": [shipping_service(s) for s in db.execute("SELECT * FROM shipping_services ORDER BY sort").fetchall()],
         "usdToIdr": usd_to_idr(db),
         "servedCountries": served_countries(db),
+        "languages": store_languages(db)[0],
+        "defaultLanguage": store_languages(db)[1],
     }
 
 
@@ -240,6 +260,9 @@ class SettingsPatch(BaseModel):
     usdToIdr: int | None = Field(default=None, ge=1_000, le=100_000)
     reservationMinutes: int | None = Field(default=None, ge=5, le=1440)
     servedCountries: list[Annotated[str, Field(min_length=2, max_length=80, pattern=r"^[^<>\"]+$")]] | None = Field(default=None, min_length=1, max_length=60)
+    # Storefront languages on offer, and the one a first visit opens in (it must be on offer).
+    languages: list[Literal["en", "id", "zh", "ko", "ja"]] | None = Field(default=None, min_length=1, max_length=5)
+    defaultLanguage: Literal["en", "id", "zh", "ko", "ja"] | None = None
 
 
 class ShippingPatch(BaseModel):
@@ -397,6 +420,9 @@ def _store_settings(db: Database) -> dict:
         "usdToIdr": usd_to_idr(db),
         "servedCountries": served_countries(db),
         "reservationMinutes": reservation_minutes(db),
+        "languages": store_languages(db)[0],
+        "defaultLanguage": store_languages(db)[1],
+        "allLanguages": list(LANGUAGES),
         "shippingServices": [shipping_service(s) for s in db.execute("SELECT * FROM shipping_services ORDER BY sort").fetchall()],
     }
 
@@ -422,9 +448,20 @@ def update_settings(body: SettingsPatch, user: Admin, db: Db):
             raise HTTPException(400, "invalid_input")
         if countries != served_countries(db):
             changes.append(("served_countries", ", ".join(served_countries(db)), json.dumps(countries)))
+    offered, default = store_languages(db)
+    if body.languages is not None or body.defaultLanguage is not None:
+        # Kept in the order the storefront lists them, whatever order they were sent in.
+        wanted = [code for code in LANGUAGES if code in body.languages] if body.languages is not None else offered
+        first = body.defaultLanguage or (default if default in wanted else wanted[0])
+        if first not in wanted:
+            raise HTTPException(400, "invalid_input")
+        if wanted != offered:
+            changes.append(("languages", ", ".join(offered), json.dumps(wanted)))
+        if first != default:
+            changes.append(("default_language", default, first))
     for name, old, value in changes:
         db.execute("INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value", (name, value))
-        _audit(db, user, "setting", name, "value", old, ", ".join(json.loads(value)) if name == "served_countries" else value)
+        _audit(db, user, "setting", name, "value", old, ", ".join(json.loads(value)) if name in ("served_countries", "languages") else value)
     return _store_settings(db)
 
 
