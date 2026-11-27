@@ -1,0 +1,27 @@
+{% import "partials/_ui.html" as ui %}
+{# Baris 3 kiri: detail pengiriman + statistik muatan. #}
+<section class="flex flex-col rounded-xl border border-slate-100 bg-white shadow-sm">
+  <div class="border-b border-slate-100 px-4 py-3">{{ ui.card_title("Detail Pengiriman") }}</div>
+  <dl class="grid flex-1 grid-cols-2 gap-x-4 gap-y-4 px-4 py-4">
+    <div>
+      <dt>{{ ui.label("No. Resi") }}</dt>
+      <dd class="mt-0.5 flex items-center gap-1.5 text-sm font-bold">
+        <span class="break-all">{{ t.detail.no_resi }}</span>
+        <button type="button" @click="copyResi()" class="text-slate-400 hover:text-slate-700" title="Salin no. resi" aria-label="Salin no. resi">{{ ui.icon("copy", "h-3.5 w-3.5") }}</button>
+      </dd>
+    </div>
+    <div><dt>{{ ui.label("Via") }}</dt><dd class="mt-0.5 text-sm font-bold">{{ t.detail.via }}</dd></div>
+    <div><dt>{{ ui.label("Alamat Muat") }}</dt><dd class="mt-0.5 text-sm font-bold">{{ t.detail.alamat_muat }}</dd></div>
+    <div><dt>{{ ui.label("Pengirim") }}</dt><dd class="mt-0.5 text-sm font-bold">{{ t.detail.pengirim }}</dd></div>
+    <div><dt>{{ ui.label("Alamat Bongkar") }}</dt><dd class="mt-0.5 text-sm font-bold">{{ t.detail.alamat_bongkar }}</dd></div>
+    <div><dt>{{ ui.label("Penerima") }}</dt><dd class="mt-0.5 text-sm font-bold">{{ t.detail.penerima }}</dd></div>
+  </dl>
+  <dl class="grid grid-cols-4 divide-x divide-slate-100 border-t border-slate-100 text-center">
+    {% for name, value in [("Koli", t.detail.koli), ("Ikat", t.detail.ikat), ("Qty", t.detail.qty), ("Berat", t.detail.berat_teks)] %}
+    <div class="px-2 py-3">
+      <dt>{{ ui.label(name) }}</dt>
+      <dd class="mt-0.5 text-sm font-bold">{{ value if value is not none else "–" }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+</section>

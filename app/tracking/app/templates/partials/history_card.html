@@ -1,0 +1,74 @@
+{% import "partials/_ui.html" as ui %}
+{# Baris 4 kanan: riwayat pengiriman, terbaru di atas. Tabel di desktop, daftar kartu di mobile. #}
+{% macro foto(h) -%}
+  {% if h.foto_url %}
+  <button type="button" @click="lightbox = $el.dataset.full" data-full="{{ h.foto_url }}" class="block h-8 w-8 overflow-hidden rounded border border-slate-200 hover:ring-2 hover:ring-blue-300" aria-label="Lihat foto bukti">
+    <img src="{{ h.foto_url }}" alt="Foto bukti {{ h.tanggal }}" loading="lazy" class="h-8 w-8 object-cover">
+  </button>
+  {% else %}
+  <span class="flex h-8 w-8 items-center justify-center rounded border border-dashed border-slate-200 text-slate-300" title="Tidak ada foto">{{ ui.icon("image") }}</span>
+  {% endif %}
+{%- endmacro %}
+
+<section class="flex min-w-0 flex-col rounded-xl border border-slate-100 bg-white shadow-sm">
+  <div class="border-b border-slate-100 px-4 py-3">{{ ui.card_title("History Pengiriman") }}</div>
+
+  {% if not t.histories %}
+  <p class="px-4 py-8 text-center text-sm text-slate-400">Belum ada riwayat pengiriman.</p>
+  {% else %}
+
+  {# Desktop: tabel dengan garis timeline di kolom pertama #}
+  <div class="hidden overflow-x-auto md:block">
+    <table class="w-full text-left text-[13px]">
+      <thead>
+        <tr class="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          <th scope="col" class="py-2 pl-4 pr-3 font-semibold">Waktu / Tanggal</th>
+          <th scope="col" class="px-2 py-2 font-semibold">Status</th>
+          <th scope="col" class="px-2 py-2 font-semibold">Tahap</th>
+          <th scope="col" class="px-2 py-2 font-semibold">Posisi</th>
+          <th scope="col" class="px-2 py-2 font-semibold">Memo / Catatan</th>
+          <th scope="col" class="py-2 pl-2 pr-4 font-semibold">Foto</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in t.histories %}
+        <tr class="align-top">
+          <td class="relative whitespace-nowrap py-3 pl-10 pr-2">
+            <span class="absolute left-[21px] w-px bg-slate-200 {{ 'top-4' if loop.first else 'top-0' }} {{ 'h-0' if loop.last else 'bottom-0' }}" aria-hidden="true"></span>
+            <span class="absolute left-4 top-4 h-[11px] w-[11px] rounded-full ring-2 ring-white {{ ui.dot(h.color) }}" aria-hidden="true"></span>
+            <div class="font-bold text-slate-800">{{ h.tanggal }}</div>
+            <div class="text-xs text-slate-500">{{ h.jam }}</div>
+          </td>
+          <td class="px-2 py-3">{{ ui.badge(h.label, h.color) }}</td>
+          <td class="min-w-[150px] px-2 py-3 text-slate-700">{{ h.tahap }}</td>
+          <td class="px-2 py-3 text-slate-700">{{ h.posisi }}</td>
+          <td class="max-w-[150px] px-2 py-3">
+            {% if h.memo %}<div class="truncate italic text-slate-500" title="{{ h.memo }}">{{ h.memo }}</div>{% else %}<span class="text-slate-300">–</span>{% endif %}
+          </td>
+          <td class="py-2 pl-2 pr-4">{{ foto(h) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Mobile: daftar kartu #}
+  <ol class="divide-y divide-slate-100 md:hidden">
+    {% for h in t.histories %}
+    <li class="flex gap-3 px-4 py-3">
+      <span class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full {{ ui.dot(h.color) }}" aria-hidden="true"></span>
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div><span class="text-sm font-bold text-slate-800">{{ h.tanggal }}</span> <span class="text-xs text-slate-500">{{ h.jam }}</span></div>
+          {{ ui.badge(h.label, h.color) }}
+        </div>
+        <div class="mt-1 text-sm text-slate-700">{{ h.tahap }}</div>
+        <div class="mt-0.5 text-xs text-slate-500">Posisi: {{ h.posisi }}</div>
+        {% if h.memo %}<div class="mt-1 truncate text-xs italic text-slate-500" title="{{ h.memo }}">{{ h.memo }}</div>{% endif %}
+      </div>
+      <div class="shrink-0">{{ foto(h) }}</div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+</section>
