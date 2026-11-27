@@ -347,12 +347,16 @@ def track_order(body: TrackIn, request: Request, db: Db):
     if not row:
         track_limiter.fail(key)
         raise HTTPException(404, "not_found")
-    order = _to_order(db, row)
+    from .shipping import _live_tracking  # late import: shipping builds on this module
+
+    # The courier's scans and the map come first: reading them can move the order along.
+    tracking = _live_tracking(db, row, public=True)
+    order = _to_order(db, _get(db, row["id"]))
     service, address = order["shippingService"], order["addressSnapshot"]
     return {"order": {
         "number": order["number"], "status": order["status"], "paymentStatus": order["paymentStatus"],
         "createdAt": order["createdAt"], "updatedAt": order["updatedAt"], "cancelReason": order.get("cancelReason"),
-        "history": order["history"], "tracking": order["tracking"],
+        "history": order["history"], "tracking": tracking,
         "items": [{"name": i["name"], "variantLabel": i["variantLabel"], "image": i["image"], "qty": i["qty"]} for i in order["items"]],
         "shippingService": {"courier": service["courier"], "name": service["name"], "etaDays": service["etaDays"]},
         "destination": {"city": address["city"], "country": address["country"]},

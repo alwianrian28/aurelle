@@ -112,6 +112,84 @@ def biteship_webhook_auth() -> tuple[str, str | None]:
     return os.environ.get("BITESHIP_WEBHOOK_HEADER", "x-aurelle-webhook").strip().lower(), os.environ.get("BITESHIP_WEBHOOK_SECRET", "").strip() or None
 
 
+def biteship_tracking_cache_seconds() -> int:
+    """How long Biteship's answer about a shipment is reused before it is asked again
+    (BITESHIP_TRACKING_CACHE_SECONDS, default 60). 0 asks every time."""
+    return max(0, _number("BITESHIP_TRACKING_CACHE_SECONDS", 60))
+
+
+def _number(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, "").strip() or default)
+    except ValueError:
+        return default
+
+
+def _percent_range(name: str, default: tuple[int, int]) -> tuple[float, float]:
+    """A range written as "5-85" (percent of the route), as fractions. A value that cannot be
+    read, or runs backwards, gives the default."""
+    parts = os.environ.get(name, "").replace(" ", "").split("-")
+    try:
+        low, high = (float(p) for p in parts)
+    except ValueError:
+        low, high = default
+    if not 0 <= low <= high <= 100:
+        low, high = default
+    return low / 100, high / 100
+
+
+def tracking_stages() -> dict:
+    """How far along the route the parcel is drawn at each stage of a shipment, and how long a
+    stage that has no end time of its own is taken to last.
+
+    TRACKING_PROGRESS_PICKED (default 0-5), TRACKING_PROGRESS_TRANSIT (5-85) and
+    TRACKING_PROGRESS_DROPOFF (85-98) are percentages of the route;
+    TRACKING_PICKED_HOURS (6) and TRACKING_DROPOFF_HOURS (8) are durations."""
+    return {
+        "picked": _percent_range("TRACKING_PROGRESS_PICKED", (0, 5)),
+        "in_transit": _percent_range("TRACKING_PROGRESS_TRANSIT", (5, 85)),
+        "dropping_off": _percent_range("TRACKING_PROGRESS_DROPOFF", (85, 98)),
+        "picked_hours": max(1, _number("TRACKING_PICKED_HOURS", 6)),
+        "dropping_off_hours": max(1, _number("TRACKING_DROPOFF_HOURS", 8)),
+    }
+
+
+def map_origin_point() -> tuple[float, float] | None:
+    """Where the store is on the map (BITESHIP_ORIGIN_LAT, BITESHIP_ORIGIN_LNG). Unset: the
+    store's postal code is looked up instead, which gives the middle of its district or city."""
+    try:
+        lat, lng = float(os.environ.get("BITESHIP_ORIGIN_LAT", "")), float(os.environ.get("BITESHIP_ORIGIN_LNG", ""))
+    except ValueError:
+        return None
+    return (lat, lng) if -90 <= lat <= 90 and -180 <= lng <= 180 else None
+
+
+def nominatim_url() -> str | None:
+    """Geocoder that turns a district or city name into a point (NOMINATIM_URL, default the
+    public OpenStreetMap one). Set it to an empty value to switch geocoding off."""
+    return os.environ.get("NOMINATIM_URL", "https://nominatim.openstreetmap.org").strip().rstrip("/") or None
+
+
+def osrm_url() -> str | None:
+    """Router that draws the road between two points (OSRM_URL, default the public demo
+    server). Set it to an empty value to switch routes off."""
+    return os.environ.get("OSRM_URL", "https://router.project-osrm.org").strip().rstrip("/") or None
+
+
+def map_user_agent() -> str:
+    """How this application names itself to the geocoder and the router. OpenStreetMap's usage
+    policy asks for the application's name and a way to reach its operator: MAP_CONTACT (an
+    email address or a URL), by default the shop's own address."""
+    contact = os.environ.get("MAP_CONTACT", "").strip() or "https://byaurelle.vercel.app"
+    return f"AurelleShop/1.0 ({contact})"
+
+
+def geo_retry_days() -> int:
+    """After how many days an area the geocoder could not find is looked up again
+    (GEO_RETRY_DAYS, default 7)."""
+    return max(1, _number("GEO_RETRY_DAYS", 7))
+
+
 def database_url() -> str:
     """Postgres connection string.
 

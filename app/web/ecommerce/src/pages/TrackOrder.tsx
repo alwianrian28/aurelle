@@ -3,14 +3,15 @@ import { NavLink, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale, useLocalePath, useLocalized } from '../hooks/useLocale';
 import { useMyOrders } from '../hooks/useMyOrders';
+import { useCourierTracking } from '../hooks/useCourierTracking';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../lib/api';
 import { ScrollSmoother } from '../lib/gsap';
 import { BRAND_CONTACT, buildWhatsAppLink } from '../config/brand';
-import type { Order, ReadyStockOrderStatus, TrackedOrder } from '../types/domain';
+import type { Order, OrderTracking, ReadyStockOrderStatus, TrackedOrder } from '../types/domain';
 import Icon from '../components/ServiceIcons';
 import SmartImage from '../components/SmartImage';
-import TrackingMap from '../components/TrackingMap';
+import ShipmentJourney from '../components/ShipmentJourney';
 import './TrackOrder.css';
 
 const STEPS = ['placed', 'paid', 'preparing', 'shipped', 'delivered'] as const;
@@ -26,8 +27,9 @@ const STEP_OF: Record<ReadyStockOrderStatus, number> = {
   cancelled: 0,
 };
 
-/** A signed-in customer's own order, reduced to what this page shows. */
-function fromOwnOrder(order: Order): TrackedOrder {
+/** A signed-in customer's own order, reduced to what this page shows. `live` is the courier's
+ * scans, driver and map, once they have been read (useCourierTracking). */
+function fromOwnOrder(order: Order, live: OrderTracking | null): TrackedOrder {
   return {
     id: order.id,
     number: order.number,
@@ -37,7 +39,7 @@ function fromOwnOrder(order: Order): TrackedOrder {
     updatedAt: order.updatedAt,
     cancelReason: order.cancelReason,
     history: order.history,
-    tracking: order.tracking,
+    tracking: live ?? order.tracking,
     items: order.items,
     shippingService: order.shippingService,
     destination: { city: order.addressSnapshot.city, country: order.addressSnapshot.country },
@@ -69,7 +71,9 @@ export default function TrackOrder() {
   // An own order is read from the synced store, so it stays current; a looked-up one is a snapshot.
   const picked = params.get('order');
   const own = picked ? myOrders.find((o) => o.number === picked) : undefined;
-  const order = own ? fromOwnOrder(own) : looked;
+  // Once a courier is booked, its scans and the map are read for the picked order.
+  const live = useCourierTracking(own?.tracking?.status ? own.id : undefined, own?.tracking?.updatedAt);
+  const order = own ? fromOwnOrder(own, live) : looked;
 
   const show = (orderNumber: string | null) => {
     setParams(orderNumber ? { order: orderNumber } : {}, { replace: true, preventScrollReset: true });
@@ -221,9 +225,9 @@ function Result({ order, fmtDate, copied, onCopy, onReset, detailPath, contactPa
   // When each step was first reached, from the order's own history.
   const reachedAt = STEPS.map((_, index) =>
     index === 0 ? order.createdAt : order.history.find((h) => h.status !== 'cancelled' && STEP_OF[h.status] >= index)?.at);
-  const points = order.tracking?.points ?? [];
   const awb = order.tracking?.trackingNumber;
   const courier = order.tracking?.courier || order.shippingService.courier;
+  const eta = order.status === 'delivered' ? null : order.tracking?.map?.etaAt;
   const helpMessage = t('track.helpMessage', { number: order.number });
 
   return (
@@ -267,26 +271,19 @@ function Result({ order, fmtDate, copied, onCopy, onReset, detailPath, contactPa
           </dd>
         </div>
         <div><dt>{t('track.destination')}</dt><dd>{order.destination.city}, {order.destination.country}</dd></div>
-        <div><dt>{t('track.estimate')}</dt><dd>{t('checkout.eta', { days: order.shippingService.etaDays })}</dd></div>
+        {eta ? (
+          <div><dt>{t('track.arrival')}</dt><dd>{t('track.arrivalBy', { date: fmtDate(eta, false) })}</dd></div>
+        ) : (
+          <div><dt>{t('track.estimate')}</dt><dd>{t('checkout.eta', { days: order.shippingService.etaDays })}</dd></div>
+        )}
       </dl>
 
       {!cancelled && (
         <section className="track-journey" aria-labelledby="track-journey-title">
           <h3 id="track-journey-title" className="track__label">{t('track.journey')}</h3>
-          {points.length > 0 ? (
-            <>
-              <TrackingMap points={points} label={t('order.trackingMap')} />
-              <ol>
-                {[...points].reverse().map((point, index) => (
-                  <li key={point.id} className={index === 0 ? 'is-latest' : ''}>
-                    <strong>{point.label}</strong>
-                    {point.note && <span>{point.note}</span>}
-                    <small>{fmtDate(point.at)}</small>
-                  </li>
-                ))}
-              </ol>
-            </>
-          ) : <p className="track-journey__empty">{t('order.trackingEmpty')}</p>}
+          {order.tracking
+            ? <ShipmentJourney tracking={order.tracking} fmtDate={fmtDate} />
+            : <p className="track-journey__empty">{t('order.trackingEmpty')}</p>}
         </section>
       )}
 

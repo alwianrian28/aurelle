@@ -76,18 +76,8 @@
 .track-facts__muted { color: var(--svc-muted); }
 
 .track-journey, .track-items { margin-top: 44px; }
-.track-journey .tracking-map { margin-top: 16px; }
-.track-journey ol { margin: 24px 0 0; padding: 0; list-style: none; }
-.track-journey li { position: relative; display: grid; gap: 2px; padding: 0 0 22px 28px; }
-.track-journey li::before { content: ''; position: absolute; top: 6px; left: 0; width: 9px; height: 9px; border: 1px solid #b9b9b3; border-radius: 50%; background: #fff; }
-.track-journey li::after { content: ''; position: absolute; top: 20px; bottom: 2px; left: 5px; width: 1px; background: var(--svc-line); }
-.track-journey li:last-child { padding-bottom: 0; }
-.track-journey li:last-child::after { display: none; }
-.track-journey li.is-latest::before { border-color: var(--svc-ink); background: var(--svc-ink); }
-.track-journey strong { font-size: 15px; font-weight: 500; }
-.track-journey li.is-latest strong { font-weight: 600; }
-.track-journey li span { font-size: 14px; line-height: 1.5; color: var(--svc-muted); }
-.track-journey small { font-size: 13px; color: var(--svc-soft); }
+/* The journey itself (status, map, checkpoints) is styled in components/ShipmentJourney.css. */
+.track-journey .journey { margin-top: 16px; }
 .track-journey__empty { margin: 16px 0 0; padding: 20px; border: 1px dashed #d8d5cb; border-radius: 8px; font-size: 14px; line-height: 1.6; color: var(--svc-muted); }
 
 .track-items ul { margin: 12px 0 0; padding: 0; border-top: 1px solid var(--svc-line); list-style: none; }

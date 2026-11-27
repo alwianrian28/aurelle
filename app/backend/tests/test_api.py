@@ -1003,6 +1003,8 @@ def biteship(monkeypatch):
         monkeypatch.setenv(f"BITESHIP_ORIGIN_{name}", value)
     for name in ("BITESHIP_WEBHOOK_SECRET", "BITESHIP_WEBHOOK_TOKEN", "BITESHIP_AUTO_BOOK", "ORIGIN_POSTAL_CODE"):
         monkeypatch.delenv(name, raising=False)
+    # Every look at a shipment asks the fake; test_tracking_map covers the reuse of an answer.
+    monkeypatch.setenv("BITESHIP_TRACKING_CACHE_SECONDS", "0")
     fake = FakeBiteship()
     monkeypatch.setattr("app.shipping._biteship", fake)
     return fake
@@ -1246,12 +1248,12 @@ def test_biteship_webhook_and_tracking(api, monkeypatch):
     assert api.get("/api/orders/ord-12345678/tracking").json()["tracking"]["status"] == "delivered" and status() == "delivered"
 
     # Biteship cannot be reached: the webhook still answers 200 and takes the message's word;
-    # tracking gives what is stored.
     fake.down = True
     assert outside.post(f"{hook}?token=t0ken", json={"event": "order.price", "order_id": "bs-order-1", "status": "delivered", "price": 27000, "courier_waybill_id": "JNE0001"}).json() == {"ok": True}
     assert shipping_columns()["shipping_cost"] == 27000
+    # tracking gives the last scans Biteship did answer with.
     stored = api.get("/api/orders/ord-12345678/tracking").json()["tracking"]
-    assert (stored["status"], stored["history"], stored["driver"]) == ("delivered", [], None)
+    assert (stored["status"], [h["status"] for h in stored["history"]], stored["driver"]["name"]) == ("delivered", ["picked", "dropping_off"], "Budi")
 
 
 def test_shipping_migration_runs_again_and_backfills_old_orders(api):
@@ -1283,3 +1285,6 @@ def test_shipping_migration_runs_again_and_backfills_old_orders(api):
     from app.db import SHIPPING_MIGRATION
 
     assert Path(__file__).parents[1].joinpath("migrations", "2026-11-26_biteship_shipping.sql").read_text(encoding="utf-8").split("\n\n", 1)[1].strip() == ";\n\n".join(SHIPPING_MIGRATION) + ";"
+    from app.db import SHIPMENT_MAP_MIGRATION
+
+    assert Path(__file__).parents[1].joinpath("migrations", "2026-11-27_shipment_map.sql").read_text(encoding="utf-8").split("\n\n", 1)[1].strip() == ";\n\n".join(SHIPMENT_MAP_MIGRATION) + ";"

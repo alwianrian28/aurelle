@@ -7,8 +7,9 @@
   on the order and an admin books again from the dashboard
   (`POST /api/admin/orders/{id}/biteship`). BITESHIP_AUTO_BOOK=false leaves all booking to the
   dashboard.
-- Tracking: `GET /api/orders/{id}/tracking` reads the courier's scans from Biteship each time
-  the customer opens it; only the latest status, the waybill and the tracking link are stored.
+- Tracking: `GET /api/orders/{id}/tracking` gives the courier's scans, the driver and the
+  shipment map (tracking_map.py). Biteship's answer is kept per order for a minute
+  (`shipment_tracking_cache`), so looking again and again does not ask Biteship each time.
 - Webhook: Biteship calls `POST /api/shipping/biteship/webhook?token=…` whenever a shipment
   changes. It is always answered with 200.
 
@@ -27,8 +28,9 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field, StrictInt
 
+from . import tracking_map
 from .auth import Admin, Db, User, now_iso
-from .config import biteship_api_key, biteship_auto_book, biteship_couriers, biteship_origin, biteship_webhook_auth, biteship_webhook_token
+from .config import biteship_api_key, biteship_auto_book, biteship_couriers, biteship_origin, biteship_tracking_cache_seconds, biteship_webhook_auth, biteship_webhook_token
 from .db import Database, Row
 from .orders import _add_event, _admin_order, _admin_row, _get, _own, _to_order
 from .security import Limiter
@@ -213,6 +215,7 @@ def _save(db: Database, row: Row, remote: dict, reference: str | None = None) ->
             status, datetime.now(timezone.utc), company.upper() if company else None, waybill, now_iso(), row["id"],
         ),
     )
+    _forget_scans(db, row["id"])
     _advance(db, row, status)
     return _get(db, row["id"])
 
@@ -307,29 +310,63 @@ def auto_book(db: Database, order_id: str) -> None:
         print(f"[biteship] auto-booking skipped for {order_id}: {error!r}", flush=True)
 
 
-def _live_tracking(db: Database, row: Row) -> dict:
-    """The order's tracking with the courier's scans and driver, read from Biteship now. When
-    Biteship cannot be asked, what is stored (status, waybill, link) is given without scans."""
-    tracking = {**_to_order(db, row)["tracking"], "history": [], "driver": None}
-    if not row["tracking_id"]:
-        return tracking
+def _scans(db: Database, row: Row) -> dict | None:
+    """What Biteship says about the shipment: {status, link, history, driver, fetchedAt}.
+
+    Its answer is kept per order and reused for BITESHIP_TRACKING_CACHE_SECONDS, so a page that
+    is opened or looked up again and again asks Biteship once. When Biteship cannot be asked,
+    the last answer it gave is used, however old. None when there has never been one."""
+    kept = db.execute("SELECT payload, fetched_at FROM shipment_tracking_cache WHERE order_id = ? AND tracking_id = ?", (row["id"], row["tracking_id"])).fetchone()
+    if kept and (datetime.now(timezone.utc) - kept["fetched_at"]).total_seconds() < biteship_tracking_cache_seconds():
+        return kept["payload"]
     try:
         status, remote = _biteship("GET", f"/v1/trackings/{row['tracking_id']}")
     except HTTPException:
-        return tracking
+        status, remote = 0, {}
     if not _ok(status, remote):
-        return tracking
+        return kept["payload"] if kept else None
     courier = remote.get("courier") or {}
-    now = _status(remote.get("status"))
-    if now and (now != row["shipping_status"] or (remote.get("link") and remote.get("link") != row["tracking_link"])):
-        locked = _lock(db, row["id"])
-        db.execute("UPDATE orders SET shipping_status = ?, tracking_link = COALESCE(?, tracking_link), shipping_updated_at = ? WHERE id = ?", (now, remote.get("link") or None, datetime.now(timezone.utc), row["id"]))
-        _advance(db, locked, now)
-    return {
-        **tracking, "status": now or tracking["status"], "link": remote.get("link") or tracking["link"], "updatedAt": now_iso(),
+    scans = {
+        "status": _status(remote.get("status")), "link": remote.get("link") or None, "fetchedAt": now_iso(),
         "history": [{"status": _status(h.get("status")), "note": str(h.get("note") or "")[:300], "at": str(h.get("updated_at") or "")} for h in remote.get("history") or [] if isinstance(h, dict)],
         "driver": {"name": courier["driver_name"], "phone": courier.get("driver_phone") or None, "plateNumber": courier.get("driver_plate_number") or None, "photoUrl": courier.get("driver_photo_url") or None} if courier.get("driver_name") else None,
     }
+    db.execute(
+        "INSERT INTO shipment_tracking_cache (order_id, tracking_id, payload, fetched_at) VALUES (?, ?, CAST(? AS JSONB), ?) "
+        "ON CONFLICT (order_id) DO UPDATE SET tracking_id = EXCLUDED.tracking_id, payload = EXCLUDED.payload, fetched_at = EXCLUDED.fetched_at",
+        (row["id"], row["tracking_id"], json.dumps(scans), datetime.now(timezone.utc)),
+    )
+    return scans
+
+
+def _forget_scans(db: Database, order_id: str) -> None:
+    """The shipment changed (a webhook, a sync, a new booking): the next look asks Biteship
+    again instead of repeating an answer from before the change."""
+    db.execute("UPDATE shipment_tracking_cache SET fetched_at = ? WHERE order_id = ?", (datetime.fromtimestamp(0, timezone.utc), order_id))
+
+
+def _live_tracking(db: Database, row: Row, public: bool = False) -> dict:
+    """The order's tracking with the courier's scans, the driver and the shipment map.
+
+    `public` is the lookup by order number and email (no login): the driver's name is given,
+    the phone, plate and photo are not. When Biteship has never been reached for this order,
+    what is stored (status, waybill, link) is given without scans."""
+    order = _to_order(db, row)
+    tracking = {**order["tracking"], "history": [], "driver": None}
+    scans = _scans(db, row) if row["tracking_id"] else None
+    if scans:
+        now = scans["status"]
+        if now and (now != row["shipping_status"] or (scans["link"] and scans["link"] != row["tracking_link"])):
+            locked = _lock(db, row["id"])
+            db.execute("UPDATE orders SET shipping_status = ?, tracking_link = COALESCE(?, tracking_link), shipping_updated_at = ? WHERE id = ?", (now, scans["link"], datetime.now(timezone.utc), row["id"]))
+            _advance(db, locked, now)
+        driver = scans["driver"]
+        tracking.update(
+            status=now or tracking["status"], link=scans["link"] or tracking["link"], updatedAt=scans["fetchedAt"], history=scans["history"],
+            driver={"name": driver["name"]} if driver and public else driver,
+        )
+    tracking["map"] = tracking_map.build(db, order, tracking)
+    return tracking
 
 
 # ------------------------------------------------------------------ customer
@@ -426,6 +463,7 @@ def _from_payload(db: Database, row: Row, payload: dict) -> None:
         "tracking_link = COALESCE(?, tracking_link), shipping_updated_at = ? WHERE id = ?",
         (status, int(price) if isinstance(price, (int, float)) else None, waybill, waybill, payload.get("courier_link") or None, datetime.now(timezone.utc), row["id"]),
     )
+    _forget_scans(db, row["id"])
     _advance(db, row, status or "")
 
 

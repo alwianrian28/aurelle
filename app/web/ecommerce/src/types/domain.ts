@@ -192,9 +192,36 @@ export interface OrderTracking {
   status?: string | null;
   link?: string | null;
   updatedAt?: string | null;
-  /** Only in the answer of GET /orders/{id}/tracking, read from the courier at that moment. */
+  /** Only in the answers of GET /orders/{id}/tracking and POST /orders/track: the courier's scans. */
   history?: { status: string; note: string; at: string }[];
-  driver?: { name: string; phone: string | null; plateNumber: string | null; photoUrl: string | null } | null;
+  /** The lookup by order number and email gives the name only. */
+  driver?: { name: string; phone?: string | null; plateNumber?: string | null; photoUrl?: string | null } | null;
+  map?: ShipmentMapData | null;
+}
+
+export type ShipmentTone = 'normal' | 'gray' | 'orange' | 'green' | 'purple' | 'red';
+type LatLng = { lat: number; lng: number };
+
+/**
+ * Where a parcel is drawn between the store and the customer's area. The position is an
+ * estimate from the courier's status and the time, never a GPS reading; the destination is the
+ * middle of a district or city, never the address. Any of the points can be missing.
+ */
+export interface ShipmentMapData {
+  estimated: true;
+  /** The courier's status as Biteship names it, e.g. `in_transit`. */
+  status: string;
+  stage: 1 | 2 | 3 | 4 | 5;
+  tone: ShipmentTone;
+  /** 0 = at the store, 1 = at the customer. */
+  progress: number;
+  returning: boolean;
+  etaAt: string | null;
+  origin: LatLng | null;
+  destination: (LatLng & { precision: 'district' | 'city'; city: string }) | null;
+  /** `straight`: no road joins the two (another island, air freight); drawn as a dashed line. */
+  route: { kind: 'road' | 'straight'; distanceKm: number; passed: [number, number][]; remaining: [number, number][] } | null;
+  vehicle: LatLng | null;
 }
 
 export interface Order {

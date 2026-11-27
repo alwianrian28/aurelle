@@ -18,12 +18,21 @@ TEST_DB = "aurelle_test"
 LOCAL = f"postgresql://aurelle:{quote(os.environ['POSTGRES_PASSWORD'], safe='')}@127.0.0.1:5433"
 
 
+def _no_network(url, params):
+    raise ConnectionError(f"a test tried to reach {url}")
+
+
 @pytest.fixture(autouse=True)
 def test_database(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", f"{LOCAL}/{TEST_DB}")
     monkeypatch.setenv("APP_ENV", "development")
     # Cheapest bcrypt cost so the suite stays fast; production uses 12 (asserted in test_api).
     monkeypatch.setattr("app.security.BCRYPT_ROUNDS", 4)
+    # No test reaches the geocoder or the router: a test that needs them puts its own answers here.
+    monkeypatch.setattr("app.tracking_map._fetch", _no_network)
+    monkeypatch.setattr("app.tracking_map.time.sleep", lambda seconds: None)
+    for name in ("BITESHIP_ORIGIN_LAT", "BITESHIP_ORIGIN_LNG", "NOMINATIM_URL", "OSRM_URL", "MAP_CONTACT", "GEO_RETRY_DAYS", "BITESHIP_TRACKING_CACHE_SECONDS"):
+        monkeypatch.delenv(name, raising=False)
     admin = psycopg.connect(f"{LOCAL}/postgres", autocommit=True)
     admin.execute(f"DROP DATABASE IF EXISTS {TEST_DB} WITH (FORCE)")
     admin.execute(f"CREATE DATABASE {TEST_DB}")

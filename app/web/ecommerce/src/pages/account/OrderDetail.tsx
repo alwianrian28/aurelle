@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useParams } from 'react-router-dom';
-import { loadOrderTracking } from '../../lib/shipping';
-import type { OrderTracking } from '../../types/domain';
+import { useCourierTracking } from '../../hooks/useCourierTracking';
 import { useTranslation } from 'react-i18next';
 import { useLocale, useLocalePath, useLocalized } from '../../hooks/useLocale';
 import { useMyOrders } from '../../hooks/useMyOrders';
@@ -11,7 +9,7 @@ import { formatOrderMoney } from '../../utils/currency';
 import { PaymentStatusPill, WorkStatusPill } from '../../components/StatusPill';
 import SmartImage from '../../components/SmartImage';
 import CostBreakdownList from '../../components/CostBreakdownList';
-import TrackingMap from '../../components/TrackingMap';
+import ShipmentJourney from '../../components/ShipmentJourney';
 
 /**
  * F-18 Detail pesanan ready stock.
@@ -29,17 +27,8 @@ export default function OrderDetail() {
   const navigate = useNavigate();
   const orders = useMyOrders();
   const order = orders.find((o) => o.id === orderId);
-  // Once a courier is booked, its scans and driver are read from the courier when the page opens.
-  const [courier, setCourier] = useState<OrderTracking | null>(null);
-  const shipmentBooked = !!order?.tracking?.status;
-  const shipmentChecked = order?.tracking?.updatedAt;
-  useEffect(() => {
-    if (!orderId || !shipmentBooked) return;
-    let gone = false;
-    void loadOrderTracking(orderId).then((tracking) => { if (!gone) setCourier(tracking); });
-    return () => { gone = true; };
-  }, [orderId, shipmentBooked, shipmentChecked]);
-  const scans = courier?.history ?? [];
+  // Once a courier is booked, its scans, driver and map are read when the page opens.
+  const courier = useCourierTracking(order?.tracking?.status ? order.id : undefined, order?.tracking?.updatedAt);
   const remainingMs = useCountdown(order?.status === 'awaiting_payment' ? order.reservationExpiresAt : undefined);
 
   if (!order) {
@@ -162,35 +151,8 @@ export default function OrderDetail() {
                     {order.tracking.link && <> · <a id="order-courier-page" href={order.tracking.link} target="_blank" rel="noopener noreferrer">{t('order.courierPage')}</a></>}
                   </p>
                 )}
-                {/* The courier's own scans and driver, read from the courier when this page opens. */}
-                {courier?.driver && (
-                  <p className="text-sm" style={{ marginBottom: 'var(--space-4)' }}>
-                    <span className="text-muted">{t('order.driver')}: </span>{[courier.driver.name, courier.driver.phone, courier.driver.plateNumber].filter(Boolean).join(' · ')}
-                  </p>
-                )}
-                {scans.length > 0 && (
-                  <ol className="timeline" style={{ marginBottom: 'var(--space-4)' }}>
-                    {[...scans].reverse().map((scan, i) => (
-                      <li key={i} className="timeline__item">
-                        <span className="text-muted">{scan.at ? fmtDate(scan.at) : ''}</span>
-                        <span>{scan.note || scan.status.replace(/_/g, ' ')}</span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-                {order.tracking.points.length > 0 ? (
-                  <>
-                    <TrackingMap points={order.tracking.points} label={t('order.trackingMap')} />
-                    <ol className="timeline" style={{ marginTop: 'var(--space-4)' }}>
-                      {[...order.tracking.points].reverse().map((point) => (
-                        <li key={point.id} className="timeline__item">
-                          <span className="text-muted">{fmtDate(point.at)}</span>
-                          <span><strong>{point.label}</strong>{point.note && `: ${point.note}`}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </>
-                ) : scans.length === 0 && <p className="text-sm text-muted">{t('order.trackingEmpty')}</p>}
+                {/* Status, the map with the estimated position, the driver and every checkpoint. */}
+                <ShipmentJourney tracking={courier ?? order.tracking} fmtDate={fmtDate} />
               </section>
             )}
           </div>
